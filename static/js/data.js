@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     if (importForm) {
-        importForm.addEventListener('submit', importDataToHealthImaging);
+        importForm.addEventListener('submit', importDataFromS3);
     }
 });
 
@@ -111,7 +111,7 @@ async function loadBucketObjects(bucketName) {
     }
 }
 
-async function importDataToHealthImaging(e) {
+async function importDataFromS3(e) {
     e.preventDefault();
     
     if (!window.MedMLApp.selectedBucket) {
@@ -120,76 +120,25 @@ async function importDataToHealthImaging(e) {
     }
     
     const formData = new FormData(e.target);
-    const datastoreName = formData.get('datastore_name');
-    
-    if (!datastoreName) {
-        showStatus('import-status', 'Please enter a datastore name', 'error');
-        return;
-    }
+    const prefix = formData.get('prefix') || '';
     
     try {
-        showStatus('import-status', 'Creating HealthImaging datastore...', 'info');
+        showStatus('import-status', 'Importing data from S3...', 'info');
         
-        // Create datastore first
-        const datastoreResponse = await apiCall('/api/aws/healthimaging/datastore', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `datastore_name=${encodeURIComponent(datastoreName)}`
-        });
-        
-        showStatus('import-status', 'Starting data import...', 'info');
-        
-        // Start import job
         const importRequest = {
             bucket_name: window.MedMLApp.selectedBucket.name,
-            prefix: '',
-            destination_datastore_id: datastoreResponse.datastore_id
+            prefix: prefix
         };
         
-        const importResponse = await apiCall('/api/data/import', {
+        const response = await apiCall('/api/data/import', {
             method: 'POST',
             body: JSON.stringify(importRequest)
         });
         
-        showStatus('import-status', 
-            `Import job started successfully! Job ID: ${importResponse.job_id}`, 
-            'success'
-        );
-        
-        // Enable preprocessing section
+        showStatus('import-status', response.message, 'success');
         enableSection('preprocessing');
-        
-        // Monitor import progress
-        monitorImportProgress(importResponse.job_id);
         
     } catch (error) {
         showStatus('import-status', `Import failed: ${error.message}`, 'error');
     }
-}
-
-async function monitorImportProgress(jobId) {
-    const checkProgress = async () => {
-        try {
-            const status = await apiCall(`/api/data/import/${jobId}/status`);
-            
-            if (status.status === 'completed') {
-                showStatus('import-status', 'Data import completed successfully!', 'success');
-                return;
-            } else if (status.status === 'failed') {
-                showStatus('import-status', 'Data import failed', 'error');
-                return;
-            }
-            
-            // Continue monitoring
-            setTimeout(checkProgress, 5000);
-            
-        } catch (error) {
-            console.error('Error checking import status:', error);
-        }
-    };
-    
-    // Start monitoring after 5 seconds
-    setTimeout(checkProgress, 5000);
 }

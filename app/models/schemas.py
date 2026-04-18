@@ -15,7 +15,6 @@ class S3Bucket(BaseModel):
 class DataImportRequest(BaseModel):
     bucket_name: str
     prefix: str = ""
-    destination_datastore_id: str
 
 class PreprocessingStep(str, Enum):
     RESIZE = "resize"

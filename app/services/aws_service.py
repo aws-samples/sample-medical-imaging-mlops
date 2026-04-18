@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 class AWSService:
     def __init__(self):
         self.s3_client = None
-        self.healthimaging_client = None
         self.sagemaker_client = None
         self._session = None
 
@@ -21,7 +20,6 @@ class AWSService:
         try:
             self._session = boto3.Session()
             self.s3_client = self._session.client('s3')
-            self.healthimaging_client = self._session.client('medical-imaging')
             self.sagemaker_client = self._session.client('sagemaker')
 
             # Test connection
@@ -42,7 +40,6 @@ class AWSService:
             )
             
             self.s3_client = self._session.client('s3')
-            self.healthimaging_client = self._session.client('medical-imaging')
             self.sagemaker_client = self._session.client('sagemaker')
             
             # Test connection
@@ -116,43 +113,6 @@ class AWSService:
             logger.error(f"Failed to list bucket objects: {e}")
             raise
     
-    def import_to_healthimaging(self, bucket_name: str, prefix: str, datastore_id: str) -> str:
-        """Import data from S3 to AWS HealthImaging"""
-        if not self.healthimaging_client:
-            raise ValueError("AWS credentials not configured")
-            
-        try:
-            response = self.healthimaging_client.start_dicom_import_job(
-                datastoreId=datastore_id,
-                dataAccessRoleArn=f"arn:aws:iam::123456789012:role/HealthImagingImportRole",
-                clientToken=f"import-{bucket_name}-{prefix}",
-                inputS3Uri=f"s3://{bucket_name}/{prefix}",
-                outputS3Uri=f"s3://{bucket_name}/healthimaging-output/"
-            )
-            
-            return response['jobId']
-            
-        except ClientError as e:
-            logger.error(f"Failed to start HealthImaging import: {e}")
-            raise
-    
-    def create_healthimaging_datastore(self, datastore_name: str) -> str:
-        """Create a new HealthImaging datastore"""
-        if not self.healthimaging_client:
-            raise ValueError("AWS credentials not configured")
-            
-        try:
-            response = self.healthimaging_client.create_datastore(
-                datastoreName=datastore_name,
-                clientToken=f"datastore-{datastore_name}"
-            )
-            
-            return response['datastoreId']
-            
-        except ClientError as e:
-            logger.error(f"Failed to create HealthImaging datastore: {e}")
-            raise
-
     def download_from_s3(self, bucket: str, key: str, local_path: str) -> str:
         """Download a file from S3 to local path"""
         if not self.s3_client:

@@ -57,15 +57,3 @@ async def list_bucket_objects(bucket_name: str, prefix: str = ""):
     except Exception as e:
         logger.error(f"Failed to list bucket objects: {e}")
         raise HTTPException(status_code=500, detail="Failed to retrieve bucket objects")
-
-@router.post("/healthimaging/datastore")
-async def create_datastore(datastore_name: str):
-    """Create HealthImaging datastore"""
-    try:
-        datastore_id = aws_service.create_healthimaging_datastore(datastore_name)
-        return {"datastore_id": datastore_id, "name": datastore_name}
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.error(f"Failed to create datastore: {e}")
-        raise HTTPException(status_code=500, detail="Failed to create HealthImaging datastore")

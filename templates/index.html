@@ -31,7 +31,7 @@
             <div class="card-header">
                 <h3>Connect to AWS</h3>
                 <span id="aws-connection-indicator" class="aws-disconnected">● Disconnected</span>
-                <p>Configure your AWS credentials to access S3 and HealthImaging services</p>
+                <p>Configure your AWS credentials to access S3 and SageMaker services</p>
             </div>
             <div class="card-body">
                 <form id="aws-config-form">
@@ -84,13 +84,13 @@
             <div class="step">
                 <div class="step-number">2</div>
                 <div class="step-content">
-                    <h3>Import to HealthImaging</h3>
+                    <h3>Import from S3</h3>
                     <div class="card">
                         <div class="card-body">
                             <form id="import-form">
                                 <div class="form-group">
-                                    <label for="datastore-name">Datastore Name</label>
-                                    <input type="text" id="datastore-name" name="datastore_name" placeholder="medical-images-datastore">
+                                    <label for="prefix">S3 Prefix (optional)</label>
+                                    <input type="text" id="prefix" name="prefix" placeholder="data/images/">
                                 </div>
                                 <button type="submit" class="btn btn-primary">
                                     <i class="fas fa-upload"></i> Import Data
