@@ -67,13 +67,31 @@
         <h2><i class="fas fa-database"></i> Data</h2>
         <div class="card">
             <div class="card-header">
+                <h3>S3 Bucket URI</h3>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="s3-uri">S3 URI</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="s3-uri" placeholder="s3://my-bucket/path/to/data/" style="flex: 1;">
+                        <button id="load-s3-uri" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Browse
+                        </button>
+                    </div>
+                </div>
+                <div id="s3-uri-status" class="status-indicator"></div>
+                <div id="buckets-list" class="buckets-grid"></div>
+            </div>
+        </div>
+        <div class="card" style="margin-top: 16px;">
+            <div class="card-header">
                 <h3>S3 Buckets</h3>
             </div>
             <div class="card-body">
                 <button id="load-buckets" class="btn btn-secondary">
                     <i class="fas fa-sync"></i> Load S3 Buckets
                 </button>
-                <div id="buckets-list" class="buckets-grid"></div>
+                <div id="all-buckets-list" class="buckets-grid"></div>
             </div>
         </div>
     </div>
