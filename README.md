@@ -5,7 +5,6 @@ A FastAPI web dashboard for managing medical image classification workflows on A
 ## Features
 
 - **AWS Integration** — connect via environment credentials or explicit keys, browse S3 buckets
-- **Data Management** — import datasets from S3, manage raw and processed data
 - **Preprocessing** — resize, normalize, augment, denoise, and contrast-enhance medical images
 - **Local Training** — train ResNet50, VGG16, EfficientNet, DenseNet121, ViT, or custom models with MLflow and TensorBoard tracking
 - **SageMaker Training** — launch BYOC training jobs on SageMaker (e.g. `ml.g5.xlarge`) with MLflow integration

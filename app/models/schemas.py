@@ -12,10 +12,6 @@ class S3Bucket(BaseModel):
     region: str
     creation_date: str
 
-class DataImportRequest(BaseModel):
-    bucket_name: str
-    prefix: str = ""
-
 class PreprocessingStep(str, Enum):
     RESIZE = "resize"
     NORMALIZE = "normalize"

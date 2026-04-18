@@ -7,7 +7,7 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 
-from app.routers import aws_router, data_router, preprocessing_router, training_router, deployment_router
+from app.routers import aws_router, preprocessing_router, training_router, deployment_router
 from app.services.aws_service import AWSService
 
 load_dotenv()
@@ -22,7 +22,6 @@ templates = Jinja2Templates(directory="templates")
 
 # Include routers
 app.include_router(aws_router.router, prefix="/api/aws", tags=["AWS"])
-app.include_router(data_router.router, prefix="/api/data", tags=["Data"])
 app.include_router(preprocessing_router.router, prefix="/api/preprocessing", tags=["Preprocessing"])
 app.include_router(training_router.router, prefix="/api/training", tags=["Training"])
 app.include_router(deployment_router.router, prefix="/api/deployment", tags=["Deployment"])
