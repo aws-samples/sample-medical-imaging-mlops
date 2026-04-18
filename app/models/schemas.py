@@ -12,17 +12,6 @@ class S3Bucket(BaseModel):
     region: str
     creation_date: str
 
-class PreprocessingStep(str, Enum):
-    RESIZE = "resize"
-    NORMALIZE = "normalize"
-    AUGMENT = "augment"
-    DENOISE = "denoise"
-    CONTRAST_ENHANCE = "contrast_enhance"
-
-class PreprocessingConfig(BaseModel):
-    steps: List[PreprocessingStep]
-    parameters: Dict[str, Any] = {}
-
 class ModelType(str, Enum):
     RESNET50 = "resnet50"
     VGG16 = "vgg16"

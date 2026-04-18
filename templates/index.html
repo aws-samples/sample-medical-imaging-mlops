@@ -97,29 +97,6 @@
     </div>
 </section>
 
-<!-- Preprocessing Section -->
-<section id="preprocessing" class="section">
-    <div class="container">
-        <h2><i class="fas fa-cogs"></i> Preprocessing Pipeline</h2>
-        <div class="card">
-            <div class="card-header">
-                <h3>Configure Preprocessing Steps</h3>
-                <p>Select and configure preprocessing steps for your medical images</p>
-            </div>
-            <div class="card-body">
-                <div id="preprocessing-steps" class="preprocessing-grid"></div>
-                <div class="preprocessing-config">
-                    <h4>Selected Steps</h4>
-                    <div id="selected-steps" class="selected-steps"></div>
-                    <button id="configure-preprocessing" class="btn btn-primary">
-                        <i class="fas fa-play"></i> Configure Pipeline
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
 <!-- Training Section -->
 <section id="training" class="section">
     <div class="container">
@@ -376,7 +353,6 @@
 {% block scripts %}
 <script src="/static/js/aws.js"></script>
 <script src="/static/js/data.js"></script>
-<script src="/static/js/preprocessing.js"></script>
 <script src="/static/js/training.js"></script>
 <script src="/static/js/deployment.js"></script>
 {% endblock %}

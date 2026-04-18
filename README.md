@@ -1,11 +1,10 @@
 # MedML Training Dashboard
 
-A FastAPI web dashboard for managing medical image classification workflows on AWS. Provides a UI for data ingestion, preprocessing, model training (local and SageMaker), and deployment.
+A FastAPI web dashboard for managing medical image classification workflows on AWS. Provides a UI for data ingestion, model training (local and SageMaker), and deployment.
 
 ## Features
 
 - **AWS Integration** — connect via environment credentials or explicit keys, browse S3 buckets
-- **Preprocessing** — resize, normalize, augment, denoise, and contrast-enhance medical images
 - **Local Training** — train ResNet50, VGG16, EfficientNet, DenseNet121, ViT, or custom models with MLflow and TensorBoard tracking
 - **SageMaker Training** — launch BYOC training jobs on SageMaker (e.g. `ml.g5.xlarge`) with MLflow integration
 - **Deployment** — deploy trained models to SageMaker endpoints
@@ -95,7 +94,5 @@ This starts MLflow, TensorBoard, and the FastAPI app together.
 | Prefix | Description |
 |---|---|
 | `/api/aws` | AWS credentials and S3 operations |
-| `/api/data` | Dataset import and management |
-| `/api/preprocessing` | Image preprocessing pipelines |
 | `/api/training` | Local and SageMaker training jobs |
 | `/api/deployment` | Model deployment to SageMaker |
