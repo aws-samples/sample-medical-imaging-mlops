@@ -28,8 +28,18 @@ class TrainingConfig(BaseModel):
     optimizer: str = "adam"
     loss_function: str = "cross_entropy"
 
+class TaskType(str, Enum):
+    CLASSIFICATION = "classification"
+    SEGMENTATION = "segmentation"
+
+class DimensionType(str, Enum):
+    TWO_D = "2D"
+    THREE_D = "3D"
+
 class SageMakerTrainingConfig(BaseModel):
-    model_name: str = "DenseNet121"
+    model_name: str = "densenet121"
+    task_type: TaskType = TaskType.CLASSIFICATION
+    dimension: DimensionType = DimensionType.TWO_D
     epochs: int = 1
     batch_size: int = 16
     learning_rate: float = 0.001
@@ -38,11 +48,10 @@ class SageMakerTrainingConfig(BaseModel):
     instance_type: str = "ml.g5.xlarge"
     instance_count: int = 1
     image_uri: str
-    train_s3_uri: str
-    test_s3_uri: str
+    data_s3_uri: str
     role_arn: str
-    source_dir: str = "src"
-    entry_point: str = "train_mlflow.py"
+    source_dir: str = "src/densenet121"
+    entry_point: str = "train.py"
     framework_version: str = "1.12"
     py_version: str = "py38"
     mlflow_tracking_uri: Optional[str] = None

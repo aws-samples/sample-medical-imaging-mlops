@@ -618,3 +618,224 @@ input:focus, select:focus, textarea:focus {
     0%   { background-position: 200% 0; }
     100% { background-position: -200% 0; }
 }
+
+/* Model Info Panel */
+.model-info-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    color: var(--aws-dark-gray);
+    text-align: center;
+    gap: 1rem;
+}
+
+.model-info-placeholder i {
+    font-size: 2.5rem;
+    color: #ccc;
+}
+
+.model-info-blurb {
+    color: var(--aws-dark-gray);
+    line-height: 1.7;
+    margin-bottom: 1.25rem;
+}
+
+.model-info-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.model-meta-tag {
+    background-color: var(--aws-gray);
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.85rem;
+    color: var(--aws-blue);
+}
+
+.model-papers-heading {
+    color: var(--aws-blue);
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.model-papers-heading i {
+    color: var(--aws-orange);
+}
+
+.model-papers-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.model-papers-list li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.model-papers-list a {
+    color: var(--aws-light-blue);
+    text-decoration: none;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.model-papers-list a:hover {
+    text-decoration: underline;
+}
+
+.model-papers-list a i {
+    font-size: 0.75rem;
+}
+
+.paper-authors {
+    font-size: 0.8rem;
+    color: var(--aws-dark-gray);
+    padding-left: 1.1rem;
+}
+
+/* Dimension badges (2D / 3D) */
+.model-dim-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    width: 100%;
+}
+
+.model-dim-badge {
+    padding: 0.25rem 0.85rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+}
+
+.model-dim-2d {
+    background-color: #e8f4fd;
+    color: var(--aws-light-blue);
+    border: 1px solid var(--aws-light-blue);
+}
+
+.model-dim-3d {
+    background-color: #fff3e0;
+    color: var(--aws-orange);
+    border: 1px solid var(--aws-orange);
+}
+
+/* Radio button groups (task type / dimension) */
+.checkbox-group {
+    display: flex;
+    gap: 1.5rem;
+    padding-top: 0.5rem;
+}
+
+/* Validation Panel */
+.validation-panel {
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid #ddd;
+}
+
+.validation-panel h4 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+}
+
+.validation-passed {
+    background-color: #f0faf4;
+    border-color: var(--success-green);
+}
+
+.validation-passed h4 { color: var(--success-green); }
+
+.validation-failed {
+    background-color: #fdf3f3;
+    border-color: var(--error-red);
+}
+
+.validation-failed h4 { color: var(--error-red); }
+
+.validation-checks {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+}
+
+.validation-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+}
+
+.validation-check i {
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.validation-check div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.validation-check span {
+    color: var(--aws-dark-gray);
+}
+
+.check-ok i  { color: var(--success-green); }
+.check-fail i { color: var(--error-red); }
+
+/* Stats */
+.validation-stats {
+    border-top: 1px solid #ddd;
+    padding-top: 1rem;
+    margin-top: 0.5rem;
+}
+
+.validation-stats h5 {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+    color: var(--aws-blue);
+}
+
+.stat-split {
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+}
+
+.stat-classes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+}
+
+.stat-class-tag {
+    background-color: var(--aws-gray);
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 0.15rem 0.6rem;
+    font-size: 0.8rem;
+    color: var(--aws-blue);
+}

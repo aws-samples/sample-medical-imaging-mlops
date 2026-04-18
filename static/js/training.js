@@ -6,11 +6,6 @@ document.addEventListener('DOMContentLoaded', function() {
     loadImportedModels();
     loadSageMakerJobs();
     
-    const trainingForm = document.getElementById('training-form');
-    if (trainingForm) {
-        trainingForm.addEventListener('submit', startTraining);
-    }
-
     const importForm = document.getElementById('model-import-form');
     if (importForm) {
         importForm.addEventListener('submit', importModel);
@@ -30,9 +25,18 @@ async function loadAvailableModels() {
     try {
         const response = await apiCall('/api/training/models');
         displayModels(response.models);
+        populateSageMakerModelDropdown(response.models);
     } catch (error) {
         console.error('Error loading models:', error);
     }
+}
+
+function populateSageMakerModelDropdown(models) {
+    const select = document.getElementById('sm_model_name');
+    if (!select) return;
+    select.innerHTML = models.map(m =>
+        `<option value="${m.name}">${m.name.toUpperCase()}</option>`
+    ).join('');
 }
 
 function displayModels(models) {
@@ -61,56 +65,106 @@ function displayModels(models) {
     });
 }
 
+const MODEL_INFO = {
+    resnet50: {
+        blurb: "ResNet-50 is a 50-layer deep residual network that introduced skip connections to solve the vanishing gradient problem, enabling training of much deeper networks. It remains a strong baseline for medical image classification tasks due to its balance of accuracy and computational efficiency.",
+        specs: { Parameters: "25.6M", "Input Size": "224×224", Pretrained: "ImageNet" },
+        dimensions: ["2D"],
+        papers: [
+            { title: "Deep Residual Learning for Image Recognition", authors: "He et al., 2016", url: "https://arxiv.org/abs/1512.03385" },
+            { title: "Identity Mappings in Deep Residual Networks", authors: "He et al., 2016", url: "https://arxiv.org/abs/1603.05027" },
+        ]
+    },
+    vgg16: {
+        blurb: "VGG-16 is a 16-layer convolutional network known for its simplicity — using only 3×3 convolutions throughout. Despite its large parameter count, it has been widely used as a feature extractor in medical imaging, particularly for transfer learning on small datasets.",
+        specs: { Parameters: "138M", "Input Size": "224×224", Pretrained: "ImageNet" },
+        dimensions: ["2D"],
+        papers: [
+            { title: "Very Deep Convolutional Networks for Large-Scale Image Recognition", authors: "Simonyan & Zisserman, 2015", url: "https://arxiv.org/abs/1409.1556" },
+            { title: "How transferable are features in deep neural networks?", authors: "Yosinski et al., 2014", url: "https://arxiv.org/abs/1411.1792" },
+        ]
+    },
+    efficientnet: {
+        blurb: "EfficientNet-B0 uses compound scaling to uniformly scale network depth, width, and resolution. It achieves state-of-the-art accuracy with significantly fewer parameters than comparable models, making it well-suited for resource-constrained medical imaging deployments.",
+        specs: { Parameters: "5.3M", "Input Size": "224×224", Pretrained: "ImageNet" },
+        dimensions: ["2D"],
+        papers: [
+            { title: "EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks", authors: "Tan & Le, 2019", url: "https://arxiv.org/abs/1905.11946" },
+            { title: "EfficientNetV2: Smaller Models and Faster Training", authors: "Tan & Le, 2021", url: "https://arxiv.org/abs/2104.00298" },
+        ]
+    },
+    DenseNet121: {
+        blurb: "DenseNet-121 connects each layer to every other layer in a feed-forward fashion, encouraging feature reuse and reducing the number of parameters. It has become a standard architecture in medical imaging, most notably used in CheXNet for chest X-ray pathology detection.",
+        specs: { Parameters: "8M", "Input Size": "224×224", Pretrained: "ImageNet" },
+        dimensions: ["2D", "3D"],
+        papers: [
+            { title: "Densely Connected Convolutional Networks", authors: "Huang et al., 2017", url: "https://arxiv.org/abs/1608.06993" },
+            { title: "CheXNet: Radiologist-Level Pneumonia Detection on Chest X-Rays", authors: "Rajpurkar et al., 2017", url: "https://arxiv.org/abs/1711.05225" },
+        ]
+    },
+    ViT: {
+        blurb: "Vision Transformer (ViT) applies the transformer architecture — originally designed for NLP — directly to image patches. It excels on large datasets and has shown strong performance in medical imaging tasks such as histopathology and radiology when fine-tuned from large pretrained checkpoints.",
+        specs: { Parameters: "86M (ViT-B/16)", "Input Size": "224×224", Pretrained: "ImageNet-21k" },
+        dimensions: ["2D", "3D"],
+        papers: [
+            { title: "An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale", authors: "Dosovitskiy et al., 2021", url: "https://arxiv.org/abs/2010.11929" },
+            { title: "Transformers in Medical Imaging: A Survey", authors: "Shamshad et al., 2023", url: "https://arxiv.org/abs/2201.09873" },
+        ]
+    },
+    custom: {
+        blurb: "Upload your own model architecture and weights. Custom models can be imported from S3 in PyTorch, ONNX, or TensorFlow formats and registered for training or deployment.",
+        specs: { Parameters: "Variable", "Input Size": "Configurable", Pretrained: "User-defined" },
+        dimensions: ["2D", "3D"],
+        papers: []
+    }
+};
+
 function selectModel(model, element) {
-    // Remove previous selection
-    document.querySelectorAll('.model-item').forEach(item => {
-        item.classList.remove('selected');
-    });
-    
-    // Select current model
+    document.querySelectorAll('.model-item').forEach(item => item.classList.remove('selected'));
     element.classList.add('selected');
     window.MedMLApp.selectedModel = model;
+    showModelInfo(model);
 }
 
-async function startTraining(e) {
-    e.preventDefault();
-    
-    if (!window.MedMLApp.selectedModel) {
-        alert('Please select a model first');
+function showModelInfo(model) {
+    const key = Object.keys(MODEL_INFO).find(
+        k => k.toLowerCase() === (model.name || '').toLowerCase()
+    );
+    const info = key ? MODEL_INFO[key] : null;
+
+    const placeholder = document.getElementById('model-info-placeholder');
+    const content = document.getElementById('model-info-content');
+
+    if (!info) {
+        console.warn('No MODEL_INFO entry for model name:', model.name);
         return;
     }
-    
-    const formData = new FormData(e.target);
-    const config = {
-        model_type: window.MedMLApp.selectedModel.name,
-        epochs: parseInt(formData.get('epochs')),
-        batch_size: parseInt(formData.get('batch_size')),
-        learning_rate: parseFloat(formData.get('learning_rate')),
-        optimizer: formData.get('optimizer'),
-        loss_function: 'cross_entropy'
-    };
-    
-    try {
-        const response = await apiCall('/api/training/start', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `dataset_path=/path/to/preprocessed/data&${new URLSearchParams(config)}`
-        });
-        
-        window.MedMLApp.currentJobId = response.job_id;
-        
-        alert(`Training started successfully! Job ID: ${response.job_id}`);
-        
-        // Enable deployment section
-        enableSection('deployment');
-        
-        // Refresh jobs list
-        loadTrainingJobs();
-        
-    } catch (error) {
-        alert(`Error starting training: ${error.message}`);
+
+    placeholder.style.display = 'none';
+    content.style.display = 'block';
+
+    document.getElementById('model-info-title').innerHTML = `<i class="fas fa-info-circle"></i> ${model.name.toUpperCase()}`;
+    document.getElementById('model-info-blurb').textContent = info.blurb;
+
+    const meta = document.getElementById('model-info-meta');
+    meta.innerHTML = Object.entries(info.specs).map(([k, v]) =>
+        `<span class="model-meta-tag"><strong>${k}:</strong> ${v}</span>`
+    ).join('');
+
+    const dimBadges = (info.dimensions || []).map(d =>
+        `<span class="model-dim-badge model-dim-${d.toLowerCase()}">${d}</span>`
+    ).join('');
+    meta.innerHTML += `<div class="model-dim-row">${dimBadges}</div>`;
+
+    const papersList = document.getElementById('model-papers-list');
+    if (info.papers.length === 0) {
+        papersList.innerHTML = '<li>No papers listed for custom models.</li>';
+    } else {
+        papersList.innerHTML = info.papers.map(p =>
+            `<li><a href="${p.url}" target="_blank" rel="noopener">
+                <i class="fas fa-external-link-alt"></i> ${p.title}
+            </a><span class="paper-authors">${p.authors}</span></li>`
+        ).join('');
     }
 }
 
@@ -291,6 +345,98 @@ function displayImportedModels(models) {
 
 // --- SageMaker BYOC Training ---
 
+async function validateSageMakerConfig() {
+    const form = document.getElementById('sagemaker-training-form');
+    const fd = new FormData(form);
+    const btn = document.getElementById('sm-validate-btn');
+    const resultsEl = document.getElementById('sm-validation-results');
+
+    // Build same payload as startSageMakerTraining
+    const payload = {
+        model_name: fd.get('sm_model_name') || 'densenet121',
+        image_uri: fd.get('sm_image_uri') || '',
+        data_s3_uri: fd.get('sm_data_s3_uri') || '',
+        role_arn: fd.get('sm_role_arn') || '',
+        task_type: fd.get('sm_task_type') || 'classification',
+        dimension: fd.get('sm_dimension') || '2D',
+        epochs: parseInt(fd.get('sm_epochs') || '1'),
+        batch_size: parseInt(fd.get('sm_batch_size') || '16'),
+        learning_rate: parseFloat(fd.get('sm_learning_rate') || '0.001'),
+        num_classes: parseInt(fd.get('sm_num_classes') || '8'),
+        val_interval: 1,
+        instance_type: fd.get('sm_instance_type') || 'ml.g5.xlarge',
+        instance_count: 1,
+        entry_point: fd.get('sm_entry_point') || 'train.py',
+        source_dir: 'src/' + (fd.get('sm_model_name') || 'densenet121'),
+        mlflow_tracking_uri: fd.get('sm_mlflow_tracking_uri') || null,
+    };
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-spinner"></span> Validating...';
+    resultsEl.style.display = 'none';
+
+    try {
+        const result = await apiCall('/api/training/sagemaker/validate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        renderValidationResults(result, resultsEl);
+    } catch (error) {
+        resultsEl.style.display = 'block';
+        resultsEl.innerHTML = `<div class="validation-panel validation-failed">
+            <h4><i class="fas fa-times-circle"></i> Validation Error</h4>
+            <p>${error.message}</p>
+        </div>`;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-check-circle"></i> Validate';
+    }
+}
+
+function renderValidationResults(result, container) {
+    const overallClass = result.passed ? 'validation-passed' : 'validation-failed';
+    const overallIcon = result.passed ? 'fa-check-circle' : 'fa-times-circle';
+    const overallText = result.passed ? 'All checks passed — ready to train' : 'Validation failed — fix issues before training';
+
+    let checksHtml = (result.checks || []).map(c => `
+        <div class="validation-check ${c.passed ? 'check-ok' : 'check-fail'}">
+            <i class="fas ${c.passed ? 'fa-check' : 'fa-times'}"></i>
+            <div>
+                <strong>${c.name}</strong>
+                <span>${c.message}</span>
+            </div>
+        </div>
+    `).join('');
+
+    let statsHtml = '';
+    const stats = result.statistics || {};
+    if (stats.splits) {
+        statsHtml = '<div class="validation-stats"><h5><i class="fas fa-chart-bar"></i> Dataset Statistics</h5>';
+        for (const [split, s] of Object.entries(stats.splits)) {
+            statsHtml += `<div class="stat-split">
+                <strong>${split}</strong> — ${s.num_classes} classes, ${s.total_files} files, ${s.total_size_mb} MB
+                <div class="stat-classes">${Object.entries(s.classes).map(([cls, n]) =>
+                    `<span class="stat-class-tag">${cls}: ${n}</span>`).join('')}
+                </div>
+            </div>`;
+        }
+        statsHtml += '</div>';
+    } else if (stats.total_files !== undefined) {
+        statsHtml = `<div class="validation-stats"><h5><i class="fas fa-chart-bar"></i> Dataset Statistics</h5>
+            <p>${stats.total_files} files &nbsp;|&nbsp; ${stats.total_size_mb} MB</p>
+        </div>`;
+    }
+
+    container.style.display = 'block';
+    container.innerHTML = `
+        <div class="validation-panel ${overallClass}">
+            <h4><i class="fas ${overallIcon}"></i> ${overallText}</h4>
+            <div class="validation-checks">${checksHtml}</div>
+            ${statsHtml}
+        </div>`;
+}
+
 async function startSageMakerTraining(e) {
     e.preventDefault();
     const fd = new FormData(e.target);
@@ -304,11 +450,12 @@ async function startSageMakerTraining(e) {
         instance_type: fd.get('sm_instance_type'),
         instance_count: parseInt(fd.get('sm_instance_count') || '1'),
         image_uri: fd.get('sm_image_uri'),
-        train_s3_uri: fd.get('sm_train_s3_uri'),
-        test_s3_uri: fd.get('sm_test_s3_uri'),
+        data_s3_uri: fd.get('sm_data_s3_uri'),
         role_arn: fd.get('sm_role_arn'),
-        entry_point: fd.get('sm_entry_point') || 'train_mlflow.py',
-        source_dir: fd.get('sm_source_dir') || 'src',
+        task_type: fd.get('sm_task_type'),
+        dimension: fd.get('sm_dimension'),
+        entry_point: fd.get('sm_entry_point') || 'train.py',
+        source_dir: fd.get('sm_source_dir') || 'src/densenet121',
         mlflow_tracking_uri: fd.get('sm_mlflow_tracking_uri') || null,
     };
 

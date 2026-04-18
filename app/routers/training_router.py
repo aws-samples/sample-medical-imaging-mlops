@@ -19,40 +19,56 @@ training_jobs = {}
 training_service = TrainingService()
 sm_training_service = SageMakerTrainingService()
 
+SRC_DIR = Path("src")
+
+# Metadata for known models — used when no model_info.json exists in the folder
+MODEL_METADATA = {
+    "densenet121": {"description": "DenseNet-121 for medical image classification", "parameters": "8M", "input_size": "256x256", "pretrained": True},
+    "vit":         {"description": "Vision Transformer for medical imaging", "parameters": "86M", "input_size": "256x256", "pretrained": True},
+    "resnet50":    {"description": "ResNet-50 for medical image classification", "parameters": "25.6M", "input_size": "224x224", "pretrained": True},
+    "vgg16":       {"description": "VGG-16 for medical image analysis", "parameters": "138M", "input_size": "224x224", "pretrained": True},
+    "efficientnet":{"description": "EfficientNet-B0 for efficient medical imaging", "parameters": "5.3M", "input_size": "224x224", "pretrained": True},
+    "segresnet":   {"description": "SegResNet for 3D medical image segmentation", "parameters": "5M", "input_size": "128x128x64", "pretrained": False},
+    "swinunetr":   {"description": "SwinUNETR for 3D medical image segmentation", "parameters": "62M", "input_size": "128x128x64", "pretrained": False},
+}
+
 @router.get("/models")
 async def get_available_models():
-    """Get list of available pre-trained models"""
-    models = [
-        {
-            "name": ModelType.RESNET50,
-            "description": "ResNet-50 for medical image classification",
-            "parameters": "25.6M",
-            "input_size": "224x224",
-            "pretrained": True
-        },
-        {
-            "name": ModelType.VGG16,
-            "description": "VGG-16 for medical image analysis",
-            "parameters": "138M",
-            "input_size": "224x224",
-            "pretrained": True
-        },
-        {
-            "name": ModelType.EFFICIENTNET,
-            "description": "EfficientNet-B0 for efficient medical imaging",
-            "parameters": "5.3M",
-            "input_size": "224x224",
-            "pretrained": True
-        },
-        {
-            "name": ModelType.CUSTOM,
-            "description": "Upload your own model architecture",
-            "parameters": "Variable",
-            "input_size": "Configurable",
-            "pretrained": False
-        }
-    ]
+    """Return models discovered from src/ subdirectories."""
+    models = []
+
+    if SRC_DIR.exists():
+        for folder in sorted(SRC_DIR.iterdir()):
+            if not folder.is_dir():
+                continue
+            name = folder.name
+            # Try loading model_info.json from the folder first
+            info_file = folder / "model_info.json"
+            if info_file.exists():
+                import json
+                with open(info_file) as f:
+                    meta = json.load(f)
+            else:
+                meta = MODEL_METADATA.get(name.lower(), {
+                    "description": f"{name} model",
+                    "parameters": "N/A",
+                    "input_size": "N/A",
+                    "pretrained": False,
+                })
+            models.append({
+                "name": name,
+                "description": meta.get("description", ""),
+                "parameters": meta.get("parameters", "N/A"),
+                "input_size": meta.get("input_size", "N/A"),
+                "pretrained": meta.get("pretrained", False),
+                "source_dir": str(folder),
+            })
+
+    if not models:
+        logger.warning("No model folders found under src/. Returning empty list.")
+
     return {"models": models}
+
 
 
 @router.post("/models/import", response_model=ImportedModel)
@@ -192,6 +208,30 @@ async def stop_training_job(job_id: str):
 
 
 # --- SageMaker BYOC Training ---
+
+@router.post("/sagemaker/validate")
+async def validate_sagemaker_config(config: SageMakerTrainingConfig):
+    """Validate data, credentials, IAM role and image URI before launching a training job."""
+    from app.services.validation_service import validate_training_data
+    try:
+        if not aws_service.s3_client:
+            raise ValueError("AWS credentials not configured")
+        iam_client = aws_service._session.client("iam")
+        result = validate_training_data(
+            s3_client=aws_service.s3_client,
+            iam_client=iam_client,
+            data_s3_uri=config.data_s3_uri,
+            task_type=config.task_type,
+            role_arn=config.role_arn,
+            image_uri=config.image_uri,
+        )
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Validation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.post("/sagemaker/start")
 async def start_sagemaker_training(config: SageMakerTrainingConfig):

@@ -1,0 +1,10 @@
+{
+    "Vertebral_collapse": 0,
+    "No_finding": 1,
+    "Spondylolysthesis": 2,
+    "Disc_space_narrowing": 3,
+    "Osteophytes": 4,
+    "Other_lesions": 5,
+    "Surgical_implant": 6,
+    "Foraminal_stenosis": 7
+}

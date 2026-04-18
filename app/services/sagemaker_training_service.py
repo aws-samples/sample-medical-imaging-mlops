@@ -22,6 +22,8 @@ class SageMakerTrainingService:
             "model_name": config.model_name,
             "num_classes": config.num_classes,
             "val_interval": config.val_interval,
+            "task_type": config.task_type,
+            "dimension": config.dimension,
         }
 
         env = {}
@@ -44,8 +46,7 @@ class SageMakerTrainingService:
         )
 
         inputs = {
-            "train": TrainingInput(s3_data=config.train_s3_uri),
-            "test": TrainingInput(s3_data=config.test_s3_uri),
+            "data": TrainingInput(s3_data=config.data_s3_uri),
         }
 
         estimator.fit(inputs, wait=False)
