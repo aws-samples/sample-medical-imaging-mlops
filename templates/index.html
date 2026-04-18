@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero-content">
+        <h1>Medical Imaging ML Training Platform</h1>
+        <p>Train and deploy machine learning models for medical imaging with AWS integration</p>
+        <div class="hero-features">
+            <div class="feature">
+                <i class="fas fa-cloud"></i>
+                <span>AWS Integration</span>
+            </div>
+            <div class="feature">
+                <i class="fas fa-chart-line"></i>
+                <span>MLflow & TensorBoard</span>
+            </div>
+            <div class="feature">
+                <i class="fas fa-rocket"></i>
+                <span>One-Click Deployment</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- AWS Configuration Section -->
+<section id="aws-config" class="section">
+    <div class="container">
+        <h2><i class="fab fa-aws"></i> AWS Configuration</h2>
+        <div class="card">
+            <div class="card-header">
+                <h3>Connect to AWS</h3>
+                <span id="aws-connection-indicator" class="aws-disconnected">● Disconnected</span>
+                <p>Configure your AWS credentials to access S3 and HealthImaging services</p>
+            </div>
+            <div class="card-body">
+                <form id="aws-config-form">
+                    <div class="form-group">
+                        <label for="access-key">Access Key ID</label>
+                        <input type="text" id="access-key" name="access_key_id" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="secret-key">Secret Access Key</label>
+                        <input type="password" id="secret-key" name="secret_access_key" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="region">Region</label>
+                        <select id="region" name="region">
+                            <option value="us-east-1">US East (N. Virginia)</option>
+                            <option value="us-west-2">US West (Oregon)</option>
+                            <option value="eu-west-1">Europe (Ireland)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plug"></i> Connect to AWS
+                    </button>
+                </form>
+                <div id="aws-status" class="status-indicator"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Data Import Section -->
+<section id="data-import" class="section">
+    <div class="container">
+        <h2><i class="fas fa-database"></i> Data Import</h2>
+        <div class="workflow-steps">
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>Select S3 Bucket</h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <button id="load-buckets" class="btn btn-secondary">
+                                <i class="fas fa-sync"></i> Load S3 Buckets
+                            </button>
+                            <div id="buckets-list" class="buckets-grid"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>Import to HealthImaging</h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <form id="import-form">
+                                <div class="form-group">
+                                    <label for="datastore-name">Datastore Name</label>
+                                    <input type="text" id="datastore-name" name="datastore_name" placeholder="medical-images-datastore">
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-upload"></i> Import Data
+                                </button>
+                            </form>
+                            <div id="import-status" class="status-indicator"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Preprocessing Section -->
+<section id="preprocessing" class="section">
+    <div class="container">
+        <h2><i class="fas fa-cogs"></i> Preprocessing Pipeline</h2>
+        <div class="card">
+            <div class="card-header">
+                <h3>Configure Preprocessing Steps</h3>
+                <p>Select and configure preprocessing steps for your medical images</p>
+            </div>
+            <div class="card-body">
+                <div id="preprocessing-steps" class="preprocessing-grid"></div>
+                <div class="preprocessing-config">
+                    <h4>Selected Steps</h4>
+                    <div id="selected-steps" class="selected-steps"></div>
+                    <button id="configure-preprocessing" class="btn btn-primary">
+                        <i class="fas fa-play"></i> Configure Pipeline
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Training Section -->
+<section id="training" class="section">
+    <div class="container">
+        <h2><i class="fas fa-brain"></i> Model Training</h2>
+        <div class="training-grid">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Model Selection</h3>
+                </div>
+                <div class="card-body">
+                    <div id="models-list" class="models-grid"></div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3>Training Configuration</h3>
+                </div>
+                <div class="card-body">
+                    <form id="training-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="epochs">Epochs</label>
+                                <input type="number" id="epochs" name="epochs" value="10" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label for="batch-size">Batch Size</label>
+                                <input type="number" id="batch-size" name="batch_size" value="32" min="1">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="learning-rate">Learning Rate</label>
+                                <input type="number" id="learning-rate" name="learning_rate" value="0.001" step="0.0001">
+                            </div>
+                            <div class="form-group">
+                                <label for="optimizer">Optimizer</label>
+                                <select id="optimizer" name="optimizer">
+                                    <option value="adam">Adam</option>
+                                    <option value="sgd">SGD</option>
+                                    <option value="rmsprop">RMSprop</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-play"></i> Start Training
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Training Jobs -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Import Model from S3</h3>
+            </div>
+            <div class="card-body">
+                <form id="model-import-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="model_name">Model Name</label>
+                            <input type="text" id="model_name" name="model_name" placeholder="my-custom-model" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="model_format">Format</label>
+                            <select id="model_format" name="model_format">
+                                <option value="pytorch">PyTorch (.pt/.pth)</option>
+                                <option value="onnx">ONNX (.onnx)</option>
+                                <option value="tensorflow">TensorFlow (.pb/.h5)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="s3_bucket">S3 Bucket</label>
+                            <input type="text" id="s3_bucket" name="s3_bucket" placeholder="my-bucket" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="s3_key">S3 Key (path)</label>
+                            <input type="text" id="s3_key" name="s3_key" placeholder="models/model.pt" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="num_classes">Number of Classes</label>
+                            <input type="number" id="num_classes" name="num_classes" value="2" min="2">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-file-import"></i> Import Model
+                    </button>
+                </form>
+                <div id="imported-models-list" class="models-grid" style="margin-top: 15px;"></div>
+            </div>
+        </div>
+
+        <!-- Training Jobs -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Training Jobs</h3>
+                <div class="monitoring-links">
+                    <a href="http://localhost:6006" target="_blank" class="btn btn-secondary">
+                        <i class="fas fa-chart-area"></i> TensorBoard
+                    </a>
+                    <a href="http://localhost:5000" target="_blank" class="btn btn-secondary">
+                        <i class="fas fa-flask"></i> MLflow
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="training-jobs" class="jobs-list"></div>
+            </div>
+        </div>
+
+        <!-- SageMaker BYOC Training -->
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-cloud"></i> SageMaker Training (BYOC)</h3>
+            </div>
+            <div class="card-body">
+                <form id="sagemaker-training-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="sm_model_name">Model</label>
+                            <select id="sm_model_name" name="sm_model_name">
+                                <option value="DenseNet121">DenseNet121</option>
+                                <option value="ViT">ViT</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="sm_image_uri">Container Image URI</label>
+                            <input type="text" id="sm_image_uri" name="sm_image_uri" placeholder="123456789.dkr.ecr.us-east-1.amazonaws.com/repo:latest" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="sm_train_s3_uri">Train Data S3 URI</label>
+                            <input type="text" id="sm_train_s3_uri" name="sm_train_s3_uri" placeholder="s3://bucket/dataset/train" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="sm_test_s3_uri">Test Data S3 URI</label>
+                            <input type="text" id="sm_test_s3_uri" name="sm_test_s3_uri" placeholder="s3://bucket/dataset/valid" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="sm_role_arn">IAM Role ARN</label>
+                            <input type="text" id="sm_role_arn" name="sm_role_arn" placeholder="arn:aws:iam::123456789012:role/SageMakerRole" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="sm_instance_type">Instance Type</label>
+                            <select id="sm_instance_type" name="sm_instance_type">
+                                <option value="ml.g5.xlarge">ml.g5.xlarge (GPU)</option>
+                                <option value="ml.g5.2xlarge">ml.g5.2xlarge (GPU)</option>
+                                <option value="ml.p3.2xlarge">ml.p3.2xlarge (GPU)</option>
+                                <option value="ml.m5.xlarge">ml.m5.xlarge (CPU)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="sm_epochs">Epochs</label>
+                            <input type="number" id="sm_epochs" name="sm_epochs" value="1" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="sm_batch_size">Batch Size</label>
+                            <input type="number" id="sm_batch_size" name="sm_batch_size" value="16" min="1">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="sm_learning_rate">Learning Rate</label>
+                            <input type="number" id="sm_learning_rate" name="sm_learning_rate" value="0.001" step="0.0001">
+                        </div>
+                        <div class="form-group">
+                            <label for="sm_num_classes">Number of Classes</label>
+                            <input type="number" id="sm_num_classes" name="sm_num_classes" value="8" min="2">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="sm_entry_point">Entry Point</label>
+                            <input type="text" id="sm_entry_point" name="sm_entry_point" value="train_mlflow.py">
+                        </div>
+                        <div class="form-group">
+                            <label for="sm_mlflow_tracking_uri">MLflow Tracking URI (optional)</label>
+                            <input type="text" id="sm_mlflow_tracking_uri" name="sm_mlflow_tracking_uri" placeholder="http://mlflow-server:5000">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-cloud-upload-alt"></i> Start SageMaker Training
+                    </button>
+                </form>
+                <div id="sagemaker-jobs" class="jobs-list" style="margin-top: 15px;"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Deployment Section -->
+<section id="deployment" class="section">
+    <div class="container">
+        <h2><i class="fas fa-rocket"></i> Model Deployment</h2>
+        <div class="deployment-grid">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Deploy Model</h3>
+                </div>
+                <div class="card-body">
+                    <form id="deployment-form">
+                        <div class="form-group">
+                            <label for="endpoint-name">Endpoint Name</label>
+                            <input type="text" id="endpoint-name" name="endpoint_name" placeholder="medical-imaging-endpoint">
+                        </div>
+                        <div class="form-group">
+                            <label for="instance-type">Instance Type</label>
+                            <select id="instance-type" name="instance_type">
+                                <option value="ml.t2.medium">ml.t2.medium</option>
+                                <option value="ml.m5.large">ml.m5.large</option>
+                                <option value="ml.c5.xlarge">ml.c5.xlarge</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="instance-count">Initial Instance Count</label>
+                            <input type="number" id="instance-count" name="initial_instance_count" value="1" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="auto-scaling" name="auto_scaling">
+                                Enable Auto Scaling
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-rocket"></i> Deploy Model
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3>Active Deployments</h3>
+                </div>
+                <div class="card-body">
+                    <div id="deployments-list" class="deployments-grid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/aws.js"></script>
+<script src="/static/js/data.js"></script>
+<script src="/static/js/preprocessing.js"></script>
+<script src="/static/js/training.js"></script>
+<script src="/static/js/deployment.js"></script>
+{% endblock %}

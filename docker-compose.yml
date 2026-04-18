@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  medml-platform:
+    build: .
+    ports:
+      - "8000:8000"  # FastAPI application
+      - "5000:5000"  # MLflow
+      - "6006:6006"  # TensorBoard
+    environment:
+      - DEBUG=True
+      - LOG_LEVEL=INFO
+      - MLFLOW_TRACKING_URI=http://localhost:5000
+      - TENSORBOARD_LOG_DIR=./logs/tensorboard
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./models:/app/models
+    restart: unless-stopped
+    
+  # Optional: Add a database for production use
+  # postgres:
+  #   image: postgres:13
+  #   environment:
+  #     POSTGRES_DB: medml
+  #     POSTGRES_USER: medml
+  #     POSTGRES_PASSWORD: medml_password
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+
+# volumes:
+#   postgres_data:
