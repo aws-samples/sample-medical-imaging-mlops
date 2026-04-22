@@ -27,7 +27,7 @@ app.include_router(deployment_router.router, prefix="/api/deployment", tags=["De
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    return templates.TemplateResponse(request, "index.html")
+    return templates.TemplateResponse("index.html", {"request": request})
 
 @app.get("/health")
 async def health_check():

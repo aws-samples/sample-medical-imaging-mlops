@@ -1,0 +1,13 @@
+# Build args:
+#   TASK=classification (default) | segmentation
+ARG TASK=classification
+
+FROM 763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-training:2.9.0-gpu-py312-cu130-ubuntu22.04-sagemaker
+
+ARG TASK
+COPY src/${TASK}/requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
+
+COPY src/${TASK}/ /opt/program/
+
+ENV SAGEMAKER_PROGRAM train.py

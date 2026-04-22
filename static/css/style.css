@@ -839,3 +839,208 @@ input:focus, select:focus, textarea:focus {
     font-size: 0.8rem;
     color: var(--aws-blue);
 }
+
+/* Validation chart */
+.validation-chart-wrap {
+    position: relative;
+    max-width: 700px;
+    margin-top: 0.75rem;
+}
+
+/* Walking animation */
+.validation-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    gap: 1rem;
+}
+
+.validation-loading p {
+    color: var(--aws-dark-gray);
+    font-size: 0.95rem;
+}
+
+.walker-scene {
+    width: 100%;
+    height: 70px;
+    position: relative;
+}
+
+/* Progress track */
+.walker-track {
+    position: absolute;
+    bottom: 10px;
+    left: 0;
+    width: 100%;
+    height: 8px;
+    background: var(--aws-gray);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.walker-track-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(to right, var(--aws-light-blue), var(--aws-orange));
+    border-radius: 4px;
+    transition: width 0.1s linear;
+}
+
+/* Walker sits on top of the track */
+.walker {
+    position: absolute;
+    bottom: 14px;
+    left: 0;
+    transition: left 0.1s linear;
+}
+
+/* Stick figure */
+.walker-figure {
+    position: relative;
+    width: 30px;
+    height: 55px;
+}
+
+/* Head */
+.walker-head {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--aws-blue);
+    position: absolute;
+    top: 0;
+    left: 8px;
+}
+
+/* Body */
+.walker-body {
+    width: 3px;
+    height: 18px;
+    background: var(--aws-blue);
+    position: absolute;
+    top: 14px;
+    left: 13px;
+}
+
+/* Arms */
+.walker-arm-left,
+.walker-arm-right {
+    width: 12px;
+    height: 3px;
+    background: var(--aws-blue);
+    position: absolute;
+    top: 20px;
+    border-radius: 2px;
+    transform-origin: right center;
+}
+
+.walker-arm-left  { left: 2px;  animation: arm-left  0.5s ease-in-out infinite alternate; }
+.walker-arm-right { left: 15px; animation: arm-right 0.5s ease-in-out infinite alternate; }
+
+@keyframes arm-left  { from { transform: rotate(-40deg); } to { transform: rotate(40deg); } }
+@keyframes arm-right { from { transform: rotate(40deg);  } to { transform: rotate(-40deg); } }
+
+/* Legs */
+.walker-leg-left,
+.walker-leg-right {
+    width: 3px;
+    height: 18px;
+    background: var(--aws-blue);
+    position: absolute;
+    top: 32px;
+    left: 13px;
+    border-radius: 2px;
+    transform-origin: top center;
+}
+
+.walker-leg-left  { animation: leg-left  0.5s ease-in-out infinite alternate; }
+.walker-leg-right { animation: leg-right 0.5s ease-in-out infinite alternate; }
+
+@keyframes leg-left  { from { transform: rotate(-35deg); } to { transform: rotate(35deg); } }
+@keyframes leg-right { from { transform: rotate(35deg);  } to { transform: rotate(-35deg); } }
+
+/* Ground dots — removed, replaced by progress track */
+.walker-ground { display: none; }
+
+/* SageMaker submission status banner */
+.sm-status-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+.sm-status-submitting {
+    background: #e8f4fd;
+    color: #1a6fa8;
+    border: 1px solid #90caf9;
+}
+.sm-status-success {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #a5d6a7;
+}
+.sm-status-error {
+    background: #fdecea;
+    color: #c62828;
+    border: 1px solid #ef9a9a;
+}
+
+/* Job status badges */
+.job-status { padding: 2px 10px; border-radius: 12px; font-size: 0.82rem; font-weight: 600; }
+.status-running  { background: #e3f2fd; color: #1565c0; }
+.status-completed { background: #e8f5e9; color: #2e7d32; }
+.status-failed   { background: #fdecea; color: #c62828; }
+.status-stopping { background: #fff8e1; color: #f57f17; }
+.status-stopped  { background: #f3e5f5; color: #6a1b9a; }
+.status-unknown  { background: #f5f5f5; color: #616161; }
+
+/* Inline job status detail panel */
+.job-status-detail {
+    margin: 0.5rem 0;
+    padding: 0.6rem 0.8rem;
+    background: #f9f9f9;
+    border-left: 3px solid #90caf9;
+    border-radius: 4px;
+    font-size: 0.88rem;
+}
+.status-detail-row {
+    display: flex;
+    gap: 0.5rem;
+    padding: 2px 0;
+}
+.status-detail-row span { color: #666; min-width: 120px; }
+.status-detail-row.status-error { color: #c62828; }
+
+/* Model list — task-based color coding */
+.model-item-classification {
+    border-left: 4px solid #e8871a;
+    background: linear-gradient(135deg, #fff8f0 0%, #ffffff 100%);
+}
+.model-item-segmentation {
+    border-left: 4px solid #1a6fa8;
+    background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
+}
+
+.model-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.3rem;
+}
+
+.model-tag {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.model-tag-classification { background: #fef3e2; color: #e8871a; }
+.model-tag-segmentation   { background: #e3f2fd; color: #1a6fa8; }

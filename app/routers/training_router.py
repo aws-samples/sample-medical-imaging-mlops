@@ -21,52 +21,62 @@ sm_training_service = SageMakerTrainingService()
 
 SRC_DIR = Path("src")
 
-# Metadata for known models — used when no model_info.json exists in the folder
-MODEL_METADATA = {
-    "densenet121": {"description": "DenseNet-121 for medical image classification", "parameters": "8M", "input_size": "256x256", "pretrained": True},
-    "vit":         {"description": "Vision Transformer for medical imaging", "parameters": "86M", "input_size": "256x256", "pretrained": True},
-    "resnet50":    {"description": "ResNet-50 for medical image classification", "parameters": "25.6M", "input_size": "224x224", "pretrained": True},
-    "vgg16":       {"description": "VGG-16 for medical image analysis", "parameters": "138M", "input_size": "224x224", "pretrained": True},
-    "efficientnet":{"description": "EfficientNet-B0 for efficient medical imaging", "parameters": "5.3M", "input_size": "224x224", "pretrained": True},
-    "segresnet":   {"description": "SegResNet for 3D medical image segmentation", "parameters": "5M", "input_size": "128x128x64", "pretrained": False},
-    "swinunetr":   {"description": "SwinUNETR for 3D medical image segmentation", "parameters": "62M", "input_size": "128x128x64", "pretrained": False},
+# Task folders that contain a model_def.py with a MODELS registry dict
+TASK_DIRS = {
+    "classification": SRC_DIR / "classification",
+    "segmentation":   SRC_DIR / "segmentation",
 }
+
+
+def _load_models_from_task(task: str) -> list:
+    """Parse MODELS dict from a task's model_def.py using AST — no imports needed."""
+    import ast
+    task_dir = TASK_DIRS.get(task)
+    if not task_dir or not task_dir.exists():
+        return []
+    model_def_path = task_dir / "model_def.py"
+    if not model_def_path.exists():
+        return []
+
+    try:
+        tree = ast.parse(model_def_path.read_text())
+    except SyntaxError:
+        logger.warning("Syntax error parsing %s", model_def_path)
+        return []
+
+    models_dict = {}
+    for node in ast.walk(tree):
+        # Find: MODELS = { ... }
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id == "MODELS":
+                    try:
+                        models_dict = ast.literal_eval(node.value)
+                    except Exception:
+                        pass
+
+    return [
+        {
+            "name":        name,
+            "description": meta.get("description", ""),
+            "parameters":  meta.get("parameters", "N/A"),
+            "input_size":  meta.get("input_size", "N/A"),
+            "pretrained":  meta.get("pretrained", False),
+            "task":        meta.get("task", task),
+            "dimension":   meta.get("dimension", "2D"),
+            "source_dir":  str(task_dir),
+        }
+        for name, meta in models_dict.items()
+    ]
 
 @router.get("/models")
 async def get_available_models():
-    """Return models discovered from src/ subdirectories."""
+    """Return models from all task model_def.py registries."""
     models = []
-
-    if SRC_DIR.exists():
-        for folder in sorted(SRC_DIR.iterdir()):
-            if not folder.is_dir():
-                continue
-            name = folder.name
-            # Try loading model_info.json from the folder first
-            info_file = folder / "model_info.json"
-            if info_file.exists():
-                import json
-                with open(info_file) as f:
-                    meta = json.load(f)
-            else:
-                meta = MODEL_METADATA.get(name.lower(), {
-                    "description": f"{name} model",
-                    "parameters": "N/A",
-                    "input_size": "N/A",
-                    "pretrained": False,
-                })
-            models.append({
-                "name": name,
-                "description": meta.get("description", ""),
-                "parameters": meta.get("parameters", "N/A"),
-                "input_size": meta.get("input_size", "N/A"),
-                "pretrained": meta.get("pretrained", False),
-                "source_dir": str(folder),
-            })
-
+    for task in TASK_DIRS:
+        models.extend(_load_models_from_task(task))
     if not models:
-        logger.warning("No model folders found under src/. Returning empty list.")
-
+        logger.warning("No models found in src/classification or src/segmentation.")
     return {"models": models}
 
 
@@ -254,8 +264,26 @@ async def start_sagemaker_training(config: SageMakerTrainingConfig):
 
 @router.get("/sagemaker/jobs")
 async def list_sagemaker_jobs():
-    """List all SageMaker training jobs launched from this platform"""
-    return {"jobs": sm_training_service.list_jobs()}
+    """List all SageMaker training jobs, refreshing status from AWS"""
+    jobs = sm_training_service.list_jobs()
+    if aws_service.sagemaker_client:
+        terminal_states = {"Completed", "Failed", "Stopped"}
+        for job in jobs:
+            if job.get("status") in terminal_states:
+                continue  # already final — skip AWS call
+            try:
+                updated = sm_training_service.get_job_status(job["job_name"], aws_service.sagemaker_client)
+                job["status"] = updated["status"]
+                job["model_artifacts"] = updated.get("model_artifacts")
+                job["failure_reason"]  = updated.get("failure_reason")
+                sm_training_service.update_job_status(
+                    job["job_name"], updated["status"],
+                    model_artifacts=updated.get("model_artifacts"),
+                    failure_reason=updated.get("failure_reason"),
+                )
+            except Exception:
+                pass
+    return {"jobs": jobs}
 
 
 @router.get("/sagemaker/jobs/{job_name}/status")

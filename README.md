@@ -6,7 +6,7 @@ A FastAPI web dashboard for managing medical image classification workflows on A
 
 - **AWS Integration** — connect via environment credentials or explicit keys, browse S3 buckets
 - **Local Training** — train ResNet50, VGG16, EfficientNet, DenseNet121, ViT, or custom models with MLflow and TensorBoard tracking
-- **SageMaker Training** — launch BYOC training jobs on SageMaker (e.g. `ml.g5.xlarge`) with MLflow integration
+- **SageMaker Training** — launch BYOC training jobs on SageMaker (e.g. `ml.g5.xlarge`) with MLflow integration; job list auto-refreshes status, artifacts, and failure reasons from AWS on each request; jobs are persisted to `data/sagemaker_jobs.json` and survive server restarts
 - **Deployment** — deploy trained models to SageMaker endpoints
 
 ## Stack
@@ -82,7 +82,11 @@ This starts MLflow, TensorBoard, and the FastAPI app together.
 │   └── services/       # Business logic (AWS, training, SageMaker)
 ├── static/             # CSS and JS
 ├── templates/          # Jinja2 HTML templates
-├── data/               # Raw, processed, and model artifacts (gitignored)
+├── data/
+│   ├── raw/                    # Raw input data (gitignored)
+│   ├── processed/              # Preprocessed datasets (gitignored)
+│   ├── models/                 # Imported model artifacts (gitignored)
+│   └── sagemaker_jobs.json     # Persisted SageMaker job records (auto-created)
 ├── logs/               # TensorBoard logs (gitignored)
 ├── main.py             # App entry point
 ├── Dockerfile

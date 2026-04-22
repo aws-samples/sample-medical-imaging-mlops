@@ -18,6 +18,7 @@ class ModelType(str, Enum):
     EFFICIENTNET = "efficientnet"
     DENSENET121 = "DenseNet121"
     VIT = "ViT"
+    SEGRESNET = "SegResNet"
     CUSTOM = "custom"
 
 class TrainingConfig(BaseModel):
@@ -43,7 +44,7 @@ class SageMakerTrainingConfig(BaseModel):
     epochs: int = 1
     batch_size: int = 16
     learning_rate: float = 0.001
-    num_classes: int = 8
+    num_classes: int = 1  # derived from data; kept for segmentation default only
     val_interval: int = 1
     instance_type: str = "ml.g5.xlarge"
     instance_count: int = 1
@@ -55,6 +56,7 @@ class SageMakerTrainingConfig(BaseModel):
     framework_version: str = "1.12"
     py_version: str = "py38"
     mlflow_tracking_uri: Optional[str] = None
+    output_s3_uri: Optional[str] = None
 
 class ModelImportRequest(BaseModel):
     model_name: str

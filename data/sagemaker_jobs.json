@@ -1,0 +1,83 @@
+{
+  "sm-training-byoc-classification-2026-04-22-02-25-15-006": {
+    "job_name": "sm-training-byoc-classification-2026-04-22-02-25-15-006",
+    "status": "Failed",
+    "model_artifacts": "s3://public-datasets-imaging-us-east-1/test_upload/sm-training-byoc-classification-2026-04-22-02-25-15-006/output/model.tar.gz",
+    "failure_reason": "AlgorithmError: ExecuteUserScriptError:\nExitCode 2\nErrorMessage \"\"\nCommand \"/usr/local/bin/python train.py --batch_size 16 --dimension 2D --epochs 20 --learning_rate 0.001 --model_name densenet121 --num_classes 8 --task_type classification --val_interval 10\", exit code: 1",
+    "config": {
+      "model_name": "densenet121",
+      "task_type": "classification",
+      "dimension": "2D",
+      "epochs": 20,
+      "batch_size": 16,
+      "learning_rate": 0.001,
+      "num_classes": 8,
+      "val_interval": 10,
+      "instance_type": "ml.g5.xlarge",
+      "instance_count": 1,
+      "image_uri": "575108919340.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-classification",
+      "data_s3_uri": "s3://public-datasets-imaging-us-east-1/vindr-spinexr-subset/",
+      "role_arn": "arn:aws:iam::575108919340:role/service-role/AmazonSageMaker-ExecutionRole-20240907T181142",
+      "source_dir": "src/classification",
+      "entry_point": "train.py",
+      "framework_version": "1.12",
+      "py_version": "py38",
+      "mlflow_tracking_uri": "arn:aws:sagemaker:us-east-1:575108919340:mlflow-app/app-CJ756CTBIIL7",
+      "output_s3_uri": "s3://public-datasets-imaging-us-east-1/test_upload/"
+    }
+  },
+  "sm-training-byoc-classification-2026-04-22-03-02-01-237": {
+    "job_name": "sm-training-byoc-classification-2026-04-22-03-02-01-237",
+    "status": "Failed",
+    "model_artifacts": "s3://public-datasets-imaging-us-east-1/test_upload/sm-training-byoc-classification-2026-04-22-03-02-01-237/output/model.tar.gz",
+    "failure_reason": "AlgorithmError: ExecuteUserScriptError:\nExitCode 1\nErrorMessage \"RuntimeError: Caught RuntimeError in DataLoader worker process 0.\n Original Traceback (most recent call last)\n File \"/usr/local/lib/python3.12/site-packages/monai/transforms/transform.py\", line 141, in apply_transform\n return _apply_transform(transform, data, unpack_items, lazy, overrides, log_stats)\n ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n File \"/usr/local/lib/python3.12/site-packages/monai/transforms/transform.py\", line 98, in _apply_transform\n return transform(data, lazy=lazy) if isinstance(transform, LazyTrait) else transform(data)\n ^^^^^^^^^^^^^^^\n File \"/usr/local/lib/python3.12/site-packages/monai/transforms/io/array.py\", line 283, in __call__\n raise RuntimeError(\n RuntimeError: LoadImage cannot find a suitable reader for file: /opt/ml/input/data/data/train/Disc_space_narrowing/077b3c6c8341d49be6e8872d6054eb51.dcm.\n Please install the reader libraries, see also the installation instructions\n https://do",
+    "config": {
+      "model_name": "densenet121",
+      "task_type": "classification",
+      "dimension": "2D",
+      "epochs": 20,
+      "batch_size": 16,
+      "learning_rate": 0.001,
+      "num_classes": 8,
+      "val_interval": 10,
+      "instance_type": "ml.g5.xlarge",
+      "instance_count": 1,
+      "image_uri": "575108919340.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-classification",
+      "data_s3_uri": "s3://public-datasets-imaging-us-east-1/vindr-spinexr-subset/",
+      "role_arn": "arn:aws:iam::575108919340:role/service-role/AmazonSageMaker-ExecutionRole-20240907T181142",
+      "source_dir": "src/classification",
+      "entry_point": "train.py",
+      "framework_version": "1.12",
+      "py_version": "py38",
+      "mlflow_tracking_uri": "arn:aws:sagemaker:us-east-1:575108919340:mlflow-app/app-CJ756CTBIIL7",
+      "output_s3_uri": "s3://public-datasets-imaging-us-east-1/test_upload/"
+    }
+  },
+  "sm-training-byoc-classification-2026-04-22-03-20-34-173": {
+    "job_name": "sm-training-byoc-classification-2026-04-22-03-20-34-173",
+    "status": "InProgress",
+    "model_artifacts": null,
+    "failure_reason": null,
+    "config": {
+      "model_name": "densenet121",
+      "task_type": "classification",
+      "dimension": "2D",
+      "epochs": 20,
+      "batch_size": 16,
+      "learning_rate": 0.001,
+      "num_classes": 8,
+      "val_interval": 10,
+      "instance_type": "ml.g5.xlarge",
+      "instance_count": 1,
+      "image_uri": "575108919340.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-classification",
+      "data_s3_uri": "s3://public-datasets-imaging-us-east-1/mednist-processed/",
+      "role_arn": "arn:aws:iam::575108919340:role/service-role/AmazonSageMaker-ExecutionRole-20240907T181142",
+      "source_dir": "src/classification",
+      "entry_point": "train.py",
+      "framework_version": "1.12",
+      "py_version": "py38",
+      "mlflow_tracking_uri": "arn:aws:sagemaker:us-east-1:575108919340:mlflow-app/app-CJ756CTBIIL7",
+      "output_s3_uri": "s3://public-datasets-imaging-us-east-1/test_upload/"
+    }
+  }
+}

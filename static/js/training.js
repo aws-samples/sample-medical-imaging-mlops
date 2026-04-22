@@ -18,7 +18,17 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Refresh training jobs every 10 seconds
     setInterval(loadTrainingJobs, 10000);
-    setInterval(loadSageMakerJobs, 15000);
+
+    // Poll SageMaker jobs every 15s, stop when all are in terminal state
+    const TERMINAL = new Set(["Completed", "Failed", "Stopped"]);
+    const smPollInterval = setInterval(async () => {
+        const response = await apiCall('/api/training/sagemaker/jobs').catch(() => null);
+        if (!response) return;
+        displaySageMakerJobs(response.jobs);
+        const allDone = response.jobs.length > 0 &&
+            response.jobs.every(j => TERMINAL.has(j.status));
+        if (allDone) clearInterval(smPollInterval);
+    }, 15000);
 });
 
 async function loadAvailableModels() {
@@ -31,44 +41,52 @@ async function loadAvailableModels() {
     }
 }
 
-function populateSageMakerModelDropdown(models) {
-    const select = document.getElementById('sm_model_name');
-    if (!select) return;
-    select.innerHTML = models.map(m =>
-        `<option value="${m.name}">${m.name.toUpperCase()}</option>`
-    ).join('');
-}
-
 function displayModels(models) {
     const container = document.getElementById('models-list');
     if (!container) return;
-    
+
     container.innerHTML = '';
-    
+
     models.forEach(model => {
+        const task = (model.task || 'classification').toLowerCase();
+        const taskClass = task === 'segmentation' ? 'model-tag-segmentation' : 'model-tag-classification';
+        const taskLabel = task === 'segmentation' ? 'Segmentation' : 'Classification';
+
         const modelElement = document.createElement('div');
-        modelElement.className = 'model-item';
+        modelElement.className = `model-item model-item-${task}`;
         modelElement.dataset.modelType = model.name;
-        
+
         modelElement.innerHTML = `
-            <div class="model-name">${model.name.toUpperCase()}</div>
+            <div class="model-item-header">
+                <div class="model-name">${getDisplayName(model.name)}</div>
+                <span class="model-tag ${taskClass}">${taskLabel}</span>
+            </div>
             <div class="model-description">${model.description}</div>
             <div class="model-specs">
                 <span>Parameters: ${model.parameters}</span>
                 <span>Input: ${model.input_size}</span>
-                <span>${model.pretrained ? 'Pre-trained' : 'Custom'}</span>
             </div>
         `;
-        
+
         modelElement.addEventListener('click', () => selectModel(model, modelElement));
         container.appendChild(modelElement);
     });
 }
 
+function populateSageMakerModelDropdown(models) {
+    const select = document.getElementById('sm_model_name');
+    if (!select) return;
+    select.innerHTML = models.map(m => {
+        const task = (m.task || 'classification').toLowerCase();
+        const label = task === 'segmentation' ? '🔬' : '🏷️';
+        return `<option value="${m.name}" data-task="${task}">${label} ${getDisplayName(m.name)} (${task})</option>`;
+    }).join('');
+}
+
 const MODEL_INFO = {
     resnet50: {
         blurb: "ResNet-50 is a 50-layer deep residual network that introduced skip connections to solve the vanishing gradient problem, enabling training of much deeper networks. It remains a strong baseline for medical image classification tasks due to its balance of accuracy and computational efficiency.",
-        specs: { Parameters: "25.6M", "Input Size": "224×224", Pretrained: "ImageNet" },
+        specs: { Parameters: "25.6M", "Input Size": "224×224" },
         dimensions: ["2D"],
         papers: [
             { title: "Deep Residual Learning for Image Recognition", authors: "He et al., 2016", url: "https://arxiv.org/abs/1512.03385" },
@@ -77,7 +95,7 @@ const MODEL_INFO = {
     },
     vgg16: {
         blurb: "VGG-16 is a 16-layer convolutional network known for its simplicity — using only 3×3 convolutions throughout. Despite its large parameter count, it has been widely used as a feature extractor in medical imaging, particularly for transfer learning on small datasets.",
-        specs: { Parameters: "138M", "Input Size": "224×224", Pretrained: "ImageNet" },
+        specs: { Parameters: "138M", "Input Size": "224×224" },
         dimensions: ["2D"],
         papers: [
             { title: "Very Deep Convolutional Networks for Large-Scale Image Recognition", authors: "Simonyan & Zisserman, 2015", url: "https://arxiv.org/abs/1409.1556" },
@@ -86,7 +104,7 @@ const MODEL_INFO = {
     },
     efficientnet: {
         blurb: "EfficientNet-B0 uses compound scaling to uniformly scale network depth, width, and resolution. It achieves state-of-the-art accuracy with significantly fewer parameters than comparable models, making it well-suited for resource-constrained medical imaging deployments.",
-        specs: { Parameters: "5.3M", "Input Size": "224×224", Pretrained: "ImageNet" },
+        specs: { Parameters: "5.3M", "Input Size": "224×224" },
         dimensions: ["2D"],
         papers: [
             { title: "EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks", authors: "Tan & Le, 2019", url: "https://arxiv.org/abs/1905.11946" },
@@ -95,7 +113,7 @@ const MODEL_INFO = {
     },
     DenseNet121: {
         blurb: "DenseNet-121 connects each layer to every other layer in a feed-forward fashion, encouraging feature reuse and reducing the number of parameters. It has become a standard architecture in medical imaging, most notably used in CheXNet for chest X-ray pathology detection.",
-        specs: { Parameters: "8M", "Input Size": "224×224", Pretrained: "ImageNet" },
+        specs: { Parameters: "8M", "Input Size": "224×224" },
         dimensions: ["2D", "3D"],
         papers: [
             { title: "Densely Connected Convolutional Networks", authors: "Huang et al., 2017", url: "https://arxiv.org/abs/1608.06993" },
@@ -104,7 +122,7 @@ const MODEL_INFO = {
     },
     ViT: {
         blurb: "Vision Transformer (ViT) applies the transformer architecture — originally designed for NLP — directly to image patches. It excels on large datasets and has shown strong performance in medical imaging tasks such as histopathology and radiology when fine-tuned from large pretrained checkpoints.",
-        specs: { Parameters: "86M (ViT-B/16)", "Input Size": "224×224", Pretrained: "ImageNet-21k" },
+        specs: { Parameters: "86M (ViT-B/16)", "Input Size": "224×224" },
         dimensions: ["2D", "3D"],
         papers: [
             { title: "An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale", authors: "Dosovitskiy et al., 2021", url: "https://arxiv.org/abs/2010.11929" },
@@ -113,9 +131,35 @@ const MODEL_INFO = {
     },
     custom: {
         blurb: "Upload your own model architecture and weights. Custom models can be imported from S3 in PyTorch, ONNX, or TensorFlow formats and registered for training or deployment.",
-        specs: { Parameters: "Variable", "Input Size": "Configurable", Pretrained: "User-defined" },
+        specs: { Parameters: "Variable", "Input Size": "Configurable" },
         dimensions: ["2D", "3D"],
         papers: []
+    },
+    segresnet: {
+        blurb: "SegResNet is a residual encoder-decoder network designed for volumetric medical image segmentation. It uses residual blocks throughout with deep supervision, achieving strong Dice scores with a compact ~5M parameter footprint — ideal for prototyping and quick iterations on 3D CT/MRI data.",
+        specs: { Parameters: "5M", "Input Size": "128×128×64" },
+        dimensions: ["3D"],
+        papers: [
+            { title: "3D MRI Brain Tumor Segmentation Using Autoencoder Regularization", authors: "Myronenko, 2018", url: "https://arxiv.org/abs/1810.11654" },
+        ]
+    },
+    swinunetr: {
+        blurb: "SwinUNETR combines Swin Transformers with a U-shaped encoder-decoder for 3D medical image segmentation. It captures long-range dependencies via shifted window attention, achieving state-of-the-art results on volumetric tasks at the cost of higher GPU memory (~20GB).",
+        specs: { Parameters: "62M", "Input Size": "128×128×64" },
+        dimensions: ["3D"],
+        papers: [
+            { title: "Swin UNETR: Swin Transformers for Semantic Segmentation of Brain Tumors in MRI Images", authors: "Hatamizadeh et al., 2022", url: "https://arxiv.org/abs/2201.01266" },
+            { title: "Self-Supervised Pre-Training of Swin Transformers for 3D Medical Image Analysis", authors: "Tang et al., 2022", url: "https://arxiv.org/abs/2111.14791" },
+        ]
+    },
+    unet: {
+        blurb: "UNet is the classic encoder-decoder architecture with skip connections for medical image segmentation. The 3D variant extends this to volumetric data and remains a strong, well-understood baseline for organ and lesion segmentation tasks.",
+        specs: { Parameters: "31M", "Input Size": "128×128×64" },
+        dimensions: ["3D"],
+        papers: [
+            { title: "U-Net: Convolutional Networks for Biomedical Image Segmentation", authors: "Ronneberger et al., 2015", url: "https://arxiv.org/abs/1505.04597" },
+            { title: "3D U-Net: Learning Dense Volumetric Segmentation from Sparse Annotation", authors: "Çiçek et al., 2016", url: "https://arxiv.org/abs/1606.06650" },
+        ]
     }
 };
 
@@ -136,7 +180,18 @@ function showModelInfo(model) {
     const content = document.getElementById('model-info-content');
 
     if (!info) {
-        console.warn('No MODEL_INFO entry for model name:', model.name);
+        // Fallback — show basic info from the model object itself
+        placeholder.style.display = 'none';
+        content.style.display = 'block';
+        document.getElementById('model-info-title').innerHTML = `<i class="fas fa-info-circle"></i> ${getDisplayName(model.name)}`;
+        document.getElementById('model-info-blurb').textContent = model.description || 'No description available.';
+        const meta = document.getElementById('model-info-meta');
+        meta.innerHTML = [
+            model.parameters ? `<span class="model-meta-tag"><strong>Parameters:</strong> ${model.parameters}</span>` : '',
+            model.input_size  ? `<span class="model-meta-tag"><strong>Input:</strong> ${model.input_size}</span>` : '',
+            model.task        ? `<span class="model-meta-tag"><strong>Task:</strong> ${model.task}</span>` : '',
+        ].join('');
+        document.getElementById('model-papers-list').innerHTML = '<li>No papers listed.</li>';
         return;
     }
 
@@ -373,7 +428,37 @@ async function validateSageMakerConfig() {
 
     btn.disabled = true;
     btn.innerHTML = '<span class="btn-spinner"></span> Validating...';
-    resultsEl.style.display = 'none';
+    resultsEl.style.display = 'block';
+    resultsEl.innerHTML = `
+        <div class="validation-loading">
+            <div class="walker-scene">
+                <div class="walker-track">
+                    <div class="walker-track-fill" id="walker-track-fill"></div>
+                </div>
+                <div class="walker" id="walker-figure">
+                    <div class="walker-figure">
+                        <div class="walker-head"></div>
+                        <div class="walker-body"></div>
+                        <div class="walker-arm-left"></div>
+                        <div class="walker-arm-right"></div>
+                        <div class="walker-leg-left"></div>
+                        <div class="walker-leg-right"></div>
+                    </div>
+                </div>
+            </div>
+            <p>Validating your configuration...</p>
+        </div>`;
+
+    // Animate progress bar while waiting
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+        // Ease toward 90% but never reach 100% until done
+        progress += (90 - progress) * 0.03;
+        const fill = document.getElementById('walker-track-fill');
+        const walker = document.getElementById('walker-figure');
+        if (fill) fill.style.width = progress + '%';
+        if (walker) walker.style.left = `calc(${progress}% - 18px)`;
+    }, 80);
 
     try {
         const result = await apiCall('/api/training/sagemaker/validate', {
@@ -381,8 +466,15 @@ async function validateSageMakerConfig() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
         });
-        renderValidationResults(result, resultsEl);
+        clearInterval(progressInterval);
+        // Snap to 100% before rendering results
+        const fill = document.getElementById('walker-track-fill');
+        const walker = document.getElementById('walker-figure');
+        if (fill) fill.style.width = '100%';
+        if (walker) walker.style.left = 'calc(100% - 18px)';
+        setTimeout(() => renderValidationResults(result, resultsEl), 300);
     } catch (error) {
+        clearInterval(progressInterval);
         resultsEl.style.display = 'block';
         resultsEl.innerHTML = `<div class="validation-panel validation-failed">
             <h4><i class="fas fa-times-circle"></i> Validation Error</h4>
@@ -411,17 +503,63 @@ function renderValidationResults(result, container) {
 
     let statsHtml = '';
     const stats = result.statistics || {};
+
     if (stats.splits) {
-        statsHtml = '<div class="validation-stats"><h5><i class="fas fa-chart-bar"></i> Dataset Statistics</h5>';
-        for (const [split, s] of Object.entries(stats.splits)) {
-            statsHtml += `<div class="stat-split">
-                <strong>${split}</strong> — ${s.num_classes} classes, ${s.total_files} files, ${s.total_size_mb} MB
-                <div class="stat-classes">${Object.entries(s.classes).map(([cls, n]) =>
-                    `<span class="stat-class-tag">${cls}: ${n}</span>`).join('')}
+        const chartId = 'validation-dist-chart';
+        statsHtml = `
+            <div class="validation-stats">
+                <h5><i class="fas fa-chart-bar"></i> Dataset Statistics</h5>
+                <div class="validation-chart-wrap">
+                    <canvas id="${chartId}"></canvas>
                 </div>
             </div>`;
-        }
-        statsHtml += '</div>';
+
+        container.style.display = 'block';
+        container.innerHTML = `
+            <div class="validation-panel ${overallClass}">
+                <h4><i class="fas ${overallIcon}"></i> ${overallText}</h4>
+                <div class="validation-checks">${checksHtml}</div>
+                ${statsHtml}
+            </div>`;
+
+        // Build chart data
+        const splits = Object.keys(stats.splits);
+        const allClasses = [...new Set(splits.flatMap(s => Object.keys(stats.splits[s].classes || {})))].sort();
+        const colors = [
+            '#4B9CD3', '#FF9900', '#16A085', '#E74C3C',
+            '#8E44AD', '#2ECC71', '#F39C12', '#1ABC9C',
+            '#E67E22', '#3498DB', '#E91E63', '#00BCD4'
+        ];
+
+        const datasets = splits.map((split, i) => ({
+            label: split,
+            data: allClasses.map(cls => stats.splits[split].classes?.[cls] || 0),
+            backgroundColor: colors[i % colors.length] + 'cc',
+            borderColor: colors[i % colors.length],
+            borderWidth: 1,
+        }));
+
+        new Chart(document.getElementById(chartId), {
+            type: 'bar',
+            data: { labels: allClasses, datasets },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' },
+                    title: {
+                        display: true,
+                        text: 'Class Distribution per Split',
+                        font: { size: 14 }
+                    }
+                },
+                scales: {
+                    x: { title: { display: true, text: 'Class' } },
+                    y: { title: { display: true, text: 'Number of Files' }, beginAtZero: true }
+                }
+            }
+        });
+        return;
+
     } else if (stats.total_files !== undefined) {
         statsHtml = `<div class="validation-stats"><h5><i class="fas fa-chart-bar"></i> Dataset Statistics</h5>
             <p>${stats.total_files} files &nbsp;|&nbsp; ${stats.total_size_mb} MB</p>
@@ -445,7 +583,6 @@ async function startSageMakerTraining(e) {
         epochs: parseInt(fd.get('sm_epochs')),
         batch_size: parseInt(fd.get('sm_batch_size')),
         learning_rate: parseFloat(fd.get('sm_learning_rate')),
-        num_classes: parseInt(fd.get('sm_num_classes')),
         val_interval: parseInt(fd.get('sm_val_interval') || '1'),
         instance_type: fd.get('sm_instance_type'),
         instance_count: parseInt(fd.get('sm_instance_count') || '1'),
@@ -455,9 +592,22 @@ async function startSageMakerTraining(e) {
         task_type: fd.get('sm_task_type'),
         dimension: fd.get('sm_dimension'),
         entry_point: fd.get('sm_entry_point') || 'train.py',
-        source_dir: fd.get('sm_source_dir') || 'src/densenet121',
+        source_dir: fd.get('sm_source_dir') || ('src/' + (fd.get('sm_task_type') || 'classification')),
         mlflow_tracking_uri: fd.get('sm_mlflow_tracking_uri') || null,
+        output_s3_uri: fd.get('sm_output_s3_uri') || null,
     };
+
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const statusBanner = document.getElementById('sm-submission-status');
+
+    // Show submitting state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+    if (statusBanner) {
+        statusBanner.className = 'sm-status-banner sm-status-submitting';
+        statusBanner.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting training job to SageMaker...';
+        statusBanner.style.display = 'flex';
+    }
 
     try {
         const response = await apiCall('/api/training/sagemaker/start', {
@@ -465,10 +615,21 @@ async function startSageMakerTraining(e) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        alert(`SageMaker training started! Job: ${response.job_name}`);
+
+        if (statusBanner) {
+            statusBanner.className = 'sm-status-banner sm-status-success';
+            statusBanner.innerHTML = `<i class="fas fa-check-circle"></i> Job submitted: <strong>${response.job_name}</strong> — Status: <strong>${response.status || 'InProgress'}</strong>`;
+        }
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Start SageMaker Training';
         loadSageMakerJobs();
     } catch (error) {
-        alert(`Error starting SageMaker training: ${error.message}`);
+        if (statusBanner) {
+            statusBanner.className = 'sm-status-banner sm-status-error';
+            statusBanner.innerHTML = `<i class="fas fa-exclamation-circle"></i> Failed: ${error.message}`;
+        }
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Start SageMaker Training';
     }
 }
 
@@ -492,20 +653,30 @@ function displaySageMakerJobs(jobs) {
 
     container.innerHTML = '';
     jobs.forEach(job => {
+        const statusClass = {
+            'InProgress': 'status-running',
+            'Completed': 'status-completed',
+            'Failed': 'status-failed',
+            'Stopping': 'status-stopping',
+            'Stopped': 'status-stopped',
+        }[job.status] || 'status-unknown';
+
         const el = document.createElement('div');
         el.className = 'job-item';
+        el.id = `sm-job-${job.job_name}`;
         el.innerHTML = `
             <div class="job-header">
                 <div class="job-id">Job: ${job.job_name}</div>
-                <div class="job-status ${job.status}">${job.status}</div>
+                <div class="job-status ${statusClass}">${job.status}</div>
             </div>
             <div class="job-details">
                 <div><strong>Model:</strong> ${job.config?.model_name || 'N/A'}</div>
                 <div><strong>Instance:</strong> ${job.config?.instance_type || 'N/A'}</div>
             </div>
+            <div id="sm-job-status-detail-${job.job_name}" class="job-status-detail" style="display:none;"></div>
             <div class="job-actions">
-                <button onclick="checkSageMakerStatus('${job.job_name}')" class="btn btn-secondary">
-                    <i class="fas fa-sync"></i> Refresh Status
+                <button onclick="checkSageMakerStatus('${job.job_name}')" class="btn btn-secondary" id="sm-status-btn-${job.job_name}" ${['Completed','Failed','Stopped'].includes(job.status) ? 'style="display:none"' : ''}>
+                    <i class="fas fa-sync"></i> Fetch Status
                 </button>
                 <button onclick="stopSageMakerJob('${job.job_name}')" class="btn btn-secondary">
                     <i class="fas fa-stop"></i> Stop
@@ -517,15 +688,52 @@ function displaySageMakerJobs(jobs) {
 }
 
 async function checkSageMakerStatus(jobName) {
+    const btn = document.getElementById(`sm-status-btn-${jobName}`);
+    const detail = document.getElementById(`sm-job-status-detail-${jobName}`);
+    const jobEl = document.getElementById(`sm-job-${jobName}`);
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Fetching...';
+    }
+
     try {
         const status = await apiCall(`/api/training/sagemaker/jobs/${jobName}/status`);
-        let msg = `Job: ${status.job_name}\nStatus: ${status.status}`;
-        if (status.model_artifacts) msg += `\nArtifacts: ${status.model_artifacts}`;
-        if (status.failure_reason) msg += `\nFailure: ${status.failure_reason}`;
-        alert(msg);
-        loadSageMakerJobs();
+
+        // Update status badge
+        if (jobEl) {
+            const badge = jobEl.querySelector('.job-status');
+            const statusClass = {
+                'InProgress': 'status-running',
+                'Completed': 'status-completed',
+                'Failed': 'status-failed',
+                'Stopping': 'status-stopping',
+                'Stopped': 'status-stopped',
+            }[status.status] || 'status-unknown';
+            if (badge) { badge.className = `job-status ${statusClass}`; badge.textContent = status.status; }
+        }
+
+        // Show detail panel
+        if (detail) {
+            let html = `<div class="status-detail-row"><span>Status:</span><strong>${status.status}</strong></div>`;
+            if (status.creation_time) html += `<div class="status-detail-row"><span>Created:</span><strong>${status.creation_time}</strong></div>`;
+            if (status.training_end_time) html += `<div class="status-detail-row"><span>Ended:</span><strong>${status.training_end_time}</strong></div>`;
+            if (status.billable_seconds) html += `<div class="status-detail-row"><span>Billable seconds:</span><strong>${status.billable_seconds}s</strong></div>`;
+            if (status.model_artifacts) html += `<div class="status-detail-row"><span>Artifacts:</span><strong>${status.model_artifacts}</strong></div>`;
+            if (status.failure_reason) html += `<div class="status-detail-row status-error"><span>Failure:</span><strong>${status.failure_reason}</strong></div>`;
+            detail.innerHTML = html;
+            detail.style.display = 'block';
+        }
     } catch (error) {
-        alert(`Error: ${error.message}`);
+        if (detail) {
+            detail.innerHTML = `<div class="status-detail-row status-error"><span>Error:</span><strong>${error.message}</strong></div>`;
+            detail.style.display = 'block';
+        }
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-sync"></i> Fetch Status';
+        }
     }
 }
 
@@ -539,3 +747,67 @@ async function stopSageMakerJob(jobName) {
         alert(`Error: ${error.message}`);
     }
 }
+
+// ── Container Image Management ────────────────────────────────────────────────
+
+const DEFAULT_CONTAINERS = [
+    { label: "classification-latest", uri: "575108919340.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-classification:latest" },
+    { label: "segmentation-latest",   uri: "575108919340.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-segmentation:latest" },
+];
+
+function loadContainers() {
+    const stored = localStorage.getItem('sm_containers');
+    return stored ? JSON.parse(stored) : DEFAULT_CONTAINERS;
+}
+
+function saveContainers(containers) {
+    localStorage.setItem('sm_containers', JSON.stringify(containers));
+}
+
+function populateContainerDropdown() {
+    const select = document.getElementById('sm_image_uri');
+    if (!select) return;
+    const containers = loadContainers();
+    select.innerHTML = containers.map(c =>
+        `<option value="${c.uri}">${c.label} — ${c.uri}</option>`
+    ).join('');
+}
+
+function openAddContainerModal() {
+    document.getElementById('new-container-label').value = '';
+    document.getElementById('new-container-uri').value = '';
+    const modal = document.getElementById('add-container-modal');
+    modal.style.display = 'flex';
+}
+
+function closeAddContainerModal() {
+    document.getElementById('add-container-modal').style.display = 'none';
+}
+
+function saveNewContainer() {
+    const label = document.getElementById('new-container-label').value.trim();
+    const uri   = document.getElementById('new-container-uri').value.trim();
+    if (!uri) { alert('Image URI is required.'); return; }
+    const containers = loadContainers();
+    containers.push({ label: label || uri, uri });
+    saveContainers(containers);
+    populateContainerDropdown();
+    // Select the newly added one
+    const select = document.getElementById('sm_image_uri');
+    select.value = uri;
+    closeAddContainerModal();
+}
+
+function removeSelectedContainer() {
+    const select = document.getElementById('sm_image_uri');
+    if (!select || !select.value) return;
+    if (!confirm(`Remove "${select.options[select.selectedIndex].text}"?`)) return;
+    const containers = loadContainers().filter(c => c.uri !== select.value);
+    saveContainers(containers);
+    populateContainerDropdown();
+}
+
+// Initialise on load
+document.addEventListener('DOMContentLoaded', function() {
+    populateContainerDropdown();
+});
