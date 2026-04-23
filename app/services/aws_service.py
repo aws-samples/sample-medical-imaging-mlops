@@ -55,6 +55,11 @@ class AWSService:
         if not self._session:
             raise ValueError("AWS credentials not configured")
         return self._session
+
+    def _get_sagemaker_session(self):
+        """Return a SageMaker SDK Session wrapping the current boto3 session."""
+        from sagemaker.session import Session
+        return Session(boto_session=self._get_boto_session())
     
     def list_s3_buckets(self) -> List[S3Bucket]:
         """List all S3 buckets"""
@@ -126,6 +131,34 @@ class AWSService:
         except ClientError as e:
             logger.error(f"Failed to download from S3: {e}")
             raise
+
+    def get_mlflow_tracking_url(self, tracking_server_arn: str) -> str:
+        """Resolve a SageMaker MLflow ARN to its HTTP URL.
+        Handles both mlflow-tracking-server and mlflow-app ARN formats.
+        """
+        if not self.sagemaker_client:
+            raise ValueError("AWS credentials not configured")
+
+        try:
+            # mlflow-app ARN: arn:aws:sagemaker:region:account:mlflow-app/app-XXXXX
+            if "mlflow-app" in tracking_server_arn:
+                app_name = tracking_server_arn.split("/")[-1].lower()
+                region   = tracking_server_arn.split(":")[3]
+                url = f"https://{app_name}.mlflow.sagemaker.{region}.app.aws/#/experiments"
+            else:
+                # mlflow-tracking-server ARN or plain name
+                server_name = tracking_server_arn.split("/")[-1]
+                response = self.sagemaker_client.describe_mlflow_tracking_server(
+                    TrackingServerName=server_name
+                )
+                url = response.get("TrackingServerUrl")
+        except ClientError as e:
+            logger.error(f"Failed to resolve MLflow ARN '{tracking_server_arn}': {e}")
+            raise
+
+        if not url:
+            raise ValueError(f"No URL found for MLflow ARN: {tracking_server_arn}")
+        return url
 
     def get_s3_object_metadata(self, bucket: str, key: str) -> Dict:
         """Get metadata for an S3 object"""

@@ -5,17 +5,18 @@ document.addEventListener('DOMContentLoaded', function() {
     loadTrainingJobs();
     loadImportedModels();
     loadSageMakerJobs();
-    
+    populateContainerDropdown();
+
     const importForm = document.getElementById('model-import-form');
-    if (importForm) {
-        importForm.addEventListener('submit', importModel);
-    }
+    if (importForm) importForm.addEventListener('submit', importModel);
 
     const smForm = document.getElementById('sagemaker-training-form');
-    if (smForm) {
-        smForm.addEventListener('submit', startSageMakerTraining);
-    }
-    
+    if (smForm) smForm.addEventListener('submit', startSageMakerTraining);
+
+    // Wire task type radios
+    document.querySelectorAll('input[name="sm_task_type"]')
+        .forEach(r => r.addEventListener('change', onTaskTypeChange));
+
     // Refresh training jobs every 10 seconds
     setInterval(loadTrainingJobs, 10000);
 
@@ -198,7 +199,7 @@ function showModelInfo(model) {
     placeholder.style.display = 'none';
     content.style.display = 'block';
 
-    document.getElementById('model-info-title').innerHTML = `<i class="fas fa-info-circle"></i> ${model.name.toUpperCase()}`;
+    document.getElementById('model-info-title').innerHTML = `<i class="fas fa-info-circle"></i> ${getDisplayName(model.name)}`;
     document.getElementById('model-info-blurb').textContent = info.blurb;
 
     const meta = document.getElementById('model-info-meta');
@@ -579,6 +580,7 @@ async function startSageMakerTraining(e) {
     e.preventDefault();
     const fd = new FormData(e.target);
     const payload = {
+        job_name: fd.get('sm_job_name') || null,
         model_name: fd.get('sm_model_name'),
         epochs: parseInt(fd.get('sm_epochs')),
         batch_size: parseInt(fd.get('sm_batch_size')),
@@ -642,49 +644,168 @@ async function loadSageMakerJobs() {
     }
 }
 
+function switchJobsTab(tab) {
+    window._jobsTab = tab;
+    document.getElementById('tab-active').classList.toggle('active', tab === 'active');
+    document.getElementById('tab-archived').classList.toggle('active', tab === 'archived');
+    loadSageMakerJobs();
+}
+
 function displaySageMakerJobs(jobs) {
     const container = document.getElementById('sagemaker-jobs');
     if (!container) return;
 
-    if (!jobs || jobs.length === 0) {
-        container.innerHTML = '<p>No SageMaker training jobs.</p>';
+    const showArchived = window._jobsTab === 'archived';
+    const visible = jobs.filter(j => showArchived ? j.archived : !j.archived);
+
+    if (!visible.length) {
+        container.innerHTML = `<p style="color:#888; padding:0.5rem;">${showArchived ? 'No archived jobs.' : 'No training jobs yet.'}</p>`;
         return;
     }
 
     container.innerHTML = '';
-    jobs.forEach(job => {
+    visible.forEach(job => {
         const statusClass = {
             'InProgress': 'status-running',
-            'Completed': 'status-completed',
-            'Failed': 'status-failed',
-            'Stopping': 'status-stopping',
-            'Stopped': 'status-stopped',
+            'Completed':  'status-completed',
+            'Failed':     'status-failed',
+            'Stopping':   'status-stopping',
+            'Stopped':    'status-stopped',
         }[job.status] || 'status-unknown';
 
+        const terminal = ['Completed', 'Failed', 'Stopped'].includes(job.status);
+        const r = job.result || {};
+
+        // result.json highlight block
+        const resultHtml = r.model_name ? `
+            <div class="result-highlight">
+                <div class="result-row"><span>Model</span><strong>${r.model_name}</strong></div>
+                <div class="result-row"><span>Final epoch</span><strong>${r.final_epoch ?? '—'}</strong></div>
+                <div class="result-row"><span>Train acc</span><strong>${r.train_accuracy != null ? (r.train_accuracy * 100).toFixed(1) + '%' : '—'}</strong></div>
+                <div class="result-row"><span>Val acc</span><strong>${r.val_accuracy != null ? (r.val_accuracy * 100).toFixed(1) + '%' : '—'}</strong></div>
+                <div class="result-row"><span>Best val acc</span><strong>${r.best_val_accuracy != null ? (r.best_val_accuracy * 100).toFixed(1) + '%' : '—'}</strong></div>
+                <div class="result-row"><span>Data</span><code style="font-size:0.75rem;">${r.data_s3_uri || '—'}</code></div>
+            </div>` : '';
+
+        const commentHtml = job.comment
+            ? `<div class="job-comment"><i class="fas fa-comment-alt"></i> ${job.comment}</div>` : '';
+
+        const artifactHtml = job.model_artifacts
+            ? (job.artifacts_deleted
+                ? `<div style="color:#999; font-size:0.8rem;"><i class="fas fa-trash"></i> Artifacts deleted</div>`
+                : `<div style="font-size:0.8rem;"><strong>Artifacts:</strong> <code style="font-size:0.75rem;">${job.model_artifacts}</code></div>`)
+            : '';
+
         const el = document.createElement('div');
-        el.className = 'job-item';
+        el.className = `job-item${job.archived ? ' job-archived' : ''}`;
         el.id = `sm-job-${job.job_name}`;
         el.innerHTML = `
             <div class="job-header">
-                <div class="job-id">Job: ${job.job_name}</div>
+                <div class="job-id">${job.job_name}${job.archived ? ' <span style="color:#aaa;font-size:0.75rem;">[archived]</span>' : ''}</div>
                 <div class="job-status ${statusClass}">${job.status}</div>
             </div>
             <div class="job-details">
-                <div><strong>Model:</strong> ${job.config?.model_name || 'N/A'}</div>
-                <div><strong>Instance:</strong> ${job.config?.instance_type || 'N/A'}</div>
+                <div><strong>Model:</strong> ${job.config?.model_name || 'N/A'} &nbsp;|&nbsp; <strong>Instance:</strong> ${job.config?.instance_type || 'N/A'}</div>
+                ${job.creation_time ? `<div><strong>Started:</strong> ${new Date(job.creation_time).toLocaleString()}</div>` : ''}
+                ${job.training_end_time ? `<div><strong>Ended:</strong> ${new Date(job.training_end_time).toLocaleString()}</div>` : ''}
+                ${job.billable_seconds ? `<div><strong>Training time:</strong> ${formatDuration(job.billable_seconds)}</div>` : ''}
+                ${job.estimated_cost_usd != null ? `<div><strong>Estimated cost:</strong> <span class="cost-badge">$${job.estimated_cost_usd.toFixed(4)} USD</span></div>` : ''}
+                ${artifactHtml}
+                ${resultHtml}
+                ${commentHtml}
+                ${job.failure_reason ? `<div style="color:#c62828; font-size:0.82rem; margin-top:4px;"><strong>Failure:</strong> ${job.failure_reason}</div>` : ''}
             </div>
             <div id="sm-job-status-detail-${job.job_name}" class="job-status-detail" style="display:none;"></div>
             <div class="job-actions">
-                <button onclick="checkSageMakerStatus('${job.job_name}')" class="btn btn-secondary" id="sm-status-btn-${job.job_name}" ${['Completed','Failed','Stopped'].includes(job.status) ? 'style="display:none"' : ''}>
+                ${!terminal ? `
+                <button onclick="checkSageMakerStatus('${job.job_name}')" class="btn btn-secondary" id="sm-status-btn-${job.job_name}">
                     <i class="fas fa-sync"></i> Fetch Status
                 </button>
                 <button onclick="stopSageMakerJob('${job.job_name}')" class="btn btn-secondary">
                     <i class="fas fa-stop"></i> Stop
+                </button>` : ''}
+                ${job.mlflow_tracking_uri && !['Stopped','Failed'].includes(job.status) ? `
+                <button type="button" class="btn btn-mlflow" onclick="openMlflowDashboard('${job.mlflow_tracking_uri}')">
+                    <i class="fas fa-flask"></i> MLflow
+                </button>` : ''}
+                ${terminal ? `
+                <button onclick="openCommentModal('${job.job_name}', \`${(job.comment||'').replace(/`/g,"'")}\`)" class="btn btn-secondary" title="Add comment">
+                    <i class="fas fa-comment-alt"></i> Comment
                 </button>
+                <button onclick="archiveSageMakerJob('${job.job_name}')" class="btn btn-secondary" title="Archive" ${job.archived || showArchived ? 'style="display:none"' : ''}>
+                    <i class="fas fa-archive"></i> Archive
+                </button>
+                ${job.model_artifacts && !job.artifacts_deleted ? `
+                <button onclick="deleteJobArtifacts('${job.job_name}')" class="btn btn-secondary" title="Delete model.tar.gz from S3" style="color:#c62828;">
+                    <i class="fas fa-trash"></i> Delete Artifacts
+                </button>` : ''}
+                <button onclick="removeSageMakerJob('${job.job_name}')" class="btn btn-secondary" style="color:#c62828;" title="Remove from list">
+                    <i class="fas fa-times"></i> Remove
+                </button>` : ''}
             </div>
         `;
         container.appendChild(el);
     });
+}
+
+
+async function removeSageMakerJob(jobName) {
+    if (!confirm(`Remove "${jobName}" from the list? This does not affect AWS.`)) return;
+    try {
+        await apiCall(`/api/training/sagemaker/jobs/${jobName}`, { method: 'DELETE' });
+        loadSageMakerJobs();
+    } catch (err) { alert(`Error: ${err.message}`); }
+}
+
+async function archiveSageMakerJob(jobName) {
+    try {
+        await apiCall(`/api/training/sagemaker/jobs/${jobName}/archive`, { method: 'POST' });
+        loadSageMakerJobs();
+    } catch (err) { alert(`Error: ${err.message}`); }
+}
+
+async function deleteJobArtifacts(jobName) {
+    if (!confirm(`Delete model.tar.gz from S3 for "${jobName}"? This cannot be undone.`)) return;
+    try {
+        const res = await apiCall(`/api/training/sagemaker/jobs/${jobName}/artifacts`, { method: 'DELETE' });
+        // Show inline confirmation on the job card
+        const jobEl = document.getElementById(`sm-job-${jobName}`);
+        if (jobEl) {
+            const banner = document.createElement('div');
+            banner.className = 'sm-status-banner sm-status-success';
+            banner.style.cssText = 'margin:0.5rem 0; font-size:0.85rem;';
+            banner.innerHTML = `<i class="fas fa-check-circle"></i> Artifacts deleted: <code style="font-size:0.78rem;">${res.deleted_uri}</code>`;
+            jobEl.querySelector('.job-details').appendChild(banner);
+            setTimeout(() => loadSageMakerJobs(), 2000);
+        } else {
+            loadSageMakerJobs();
+        }
+    } catch (err) { alert(`Error: ${err.message}`); }
+}
+
+function openCommentModal(jobName, currentComment) {
+    document.getElementById('comment-job-name').value  = jobName;
+    document.getElementById('comment-text').value      = currentComment || '';
+    document.getElementById('comment-modal').style.display = 'flex';
+    document.getElementById('comment-text').focus();
+}
+
+function closeCommentModal() {
+    document.getElementById('comment-modal').style.display = 'none';
+}
+
+async function saveComment() {
+    const jobName = document.getElementById('comment-job-name').value;
+    const comment = document.getElementById('comment-text').value.trim();
+    try {
+        await apiCall(`/api/training/sagemaker/jobs/${jobName}/comment`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ comment }),
+        });
+        closeCommentModal();
+        loadSageMakerJobs();
+    } catch (err) { alert(`Error: ${err.message}`); }
 }
 
 async function checkSageMakerStatus(jobName) {
@@ -748,8 +869,42 @@ async function stopSageMakerJob(jobName) {
     }
 }
 
-// ── Container Image Management ────────────────────────────────────────────────
+// ── Utilities ─────────────────────────────────────────────────────────────────
 
+async function openMlflowDashboard(uri) {
+    if (uri.startsWith('http')) {
+        window.open(uri, '_blank');
+        return;
+    }
+    // It's an ARN — resolve to URL via backend
+    try {
+        const res = await apiCall(`/api/training/sagemaker/mlflow-url?arn=${encodeURIComponent(uri)}`);
+        window.open(res.url, '_blank');
+    } catch (e) {
+        alert(`Could not resolve MLflow URL: ${e.message}`);
+    }
+}
+
+function generateJobName() {
+    const model = document.getElementById('sm_model_name')?.value || 'model';
+    const task  = document.querySelector('input[name="sm_task_type"]:checked')?.value || 'train';
+    const date  = new Date();
+    const ts    = `${date.getFullYear()}${String(date.getMonth()+1).padStart(2,'0')}${String(date.getDate()).padStart(2,'0')}-${String(date.getHours()).padStart(2,'0')}${String(date.getMinutes()).padStart(2,'0')}`;
+    const name  = `${task}-${model}-${ts}`.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 63);
+    document.getElementById('sm_job_name').value = name;
+}
+
+function formatDuration(seconds) {
+    if (!seconds) return 'N/A';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    if (h > 0) return `${h}h ${m}m ${s}s`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
+}
+
+// ── Container Image Management ────────────────────────────────────────────────
 const DEFAULT_CONTAINERS = [
     { label: "classification-latest", uri: "575108919340.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-classification:latest" },
     { label: "segmentation-latest",   uri: "575108919340.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-segmentation:latest" },
@@ -807,7 +962,32 @@ function removeSelectedContainer() {
     populateContainerDropdown();
 }
 
-// Initialise on load
-document.addEventListener('DOMContentLoaded', function() {
-    populateContainerDropdown();
-});
+// ── Task type auto-wiring ─────────────────────────────────────────────────────
+
+function onTaskTypeChange() {
+    const task = document.querySelector('input[name="sm_task_type"]:checked')?.value || 'classification';
+
+    // Auto-set dimension
+    const dim = task === 'segmentation' ? '3D' : '2D';
+    const dimRadio = document.querySelector(`input[name="sm_dimension"][value="${dim}"]`);
+    if (dimRadio) dimRadio.checked = true;
+
+    // Filter model dropdown to matching task
+    const select = document.getElementById('sm_model_name');
+    if (select) {
+        Array.from(select.options).forEach(opt => {
+            opt.hidden = opt.dataset.task && opt.dataset.task !== task;
+        });
+        // Select first visible option
+        const first = Array.from(select.options).find(o => !o.hidden);
+        if (first) select.value = first.value;
+    }
+
+    // Update default batch size for segmentation (smaller due to 3D volumes)
+    const batchInput = document.getElementById('sm_batch_size');
+    if (batchInput) batchInput.value = task === 'segmentation' ? '2' : '16';
+
+    // Update default epochs
+    const epochInput = document.getElementById('sm_epochs');
+    if (epochInput) epochInput.value = task === 'segmentation' ? '10' : '1';
+}

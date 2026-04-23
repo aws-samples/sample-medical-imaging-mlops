@@ -1,219 +1,214 @@
 // Deployment JavaScript
 
-document.addEventListener('DOMContentLoaded', function() {
+const INFERENCE_IMAGE_TEMPLATE = '763104351884.dkr.ecr.{region}.amazonaws.com/pytorch-inference:2.6.0-gpu-py312-cu124-ubuntu22.04-sagemaker';
+
+document.addEventListener('DOMContentLoaded', function () {
     loadDeployments();
-    
-    const deploymentForm = document.getElementById('deployment-form');
-    if (deploymentForm) {
-        deploymentForm.addEventListener('submit', deployModel);
+    const form = document.getElementById('deployment-form');
+    if (form) form.addEventListener('submit', deployModel);
+    setInterval(loadDeployments, 20000);
+
+    // Update inference image URI when region changes
+    const regionSelect = document.getElementById('region');
+    if (regionSelect) {
+        regionSelect.addEventListener('change', updateInferenceImageUri);
+        updateInferenceImageUri();
     }
-    
-    // Refresh deployments every 15 seconds
-    setInterval(loadDeployments, 15000);
 });
+
+function updateInferenceImageUri() {
+    const region  = document.getElementById('region')?.value || 'us-east-1';
+    const imgInput = document.getElementById('dep-image-uri');
+    if (imgInput) {
+        imgInput.value = INFERENCE_IMAGE_TEMPLATE.replace('{region}', region);
+    }
+}
+
+function toggleAsyncFields() {
+    const isAsync = document.getElementById('dep-async')?.checked;
+    const fields  = document.getElementById('async-fields');
+    if (fields) fields.style.display = isAsync ? 'block' : 'none';
+}
 
 async function deployModel(e) {
     e.preventDefault();
-    
-    if (!window.MedMLApp.currentJobId) {
-        alert('Please complete a training job first');
-        return;
-    }
-    
-    const formData = new FormData(e.target);
-    const config = {
-        endpoint_name: formData.get('endpoint_name'),
-        instance_type: formData.get('instance_type'),
-        initial_instance_count: parseInt(formData.get('initial_instance_count')),
-        auto_scaling: formData.get('auto_scaling') === 'on'
+    const fd = new FormData(e.target);
+    const isAsync       = document.getElementById('dep-async')?.checked || false;
+    const modelArtifacts = fd.get('model_artifacts')?.trim() || null;
+    const importOnly    = !modelArtifacts;
+
+    const payload = {
+        endpoint_name:    fd.get('endpoint_name'),
+        model_artifacts:  modelArtifacts,
+        image_uri:        importOnly ? null : fd.get('image_uri'),
+        role_arn:         importOnly ? null : fd.get('role_arn'),
+        instance_type:    fd.get('instance_type'),
+        instance_count:   parseInt(fd.get('instance_count') || '1'),
+        inference_script: fd.get('inference_script') || 'inference.py',
+        async_endpoint:   isAsync,
     };
-    
-    if (!config.endpoint_name) {
-        alert('Please enter an endpoint name');
-        return;
+
+    if (isAsync) {
+        const outputUri = fd.get('output_s3_uri');
+        if (!outputUri) {
+            alert('Output S3 URI is required for async endpoints');
+            return;
+        }
+        payload.output_s3_uri  = outputUri;
+        payload.max_concurrent = parseInt(fd.get('max_concurrent') || '10');
     }
-    
+
+    const btn    = e.target.querySelector('button[type="submit"]');
+    const banner = document.getElementById('dep-status-banner');
+    const action = importOnly ? 'Importing endpoint...' : 'Creating SageMaker endpoint...';
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + (importOnly ? 'Importing...' : 'Deploying...');
+    if (banner) {
+        banner.className = 'sm-status-banner sm-status-submitting';
+        banner.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${action}`;
+        banner.style.display = 'flex';
+    }
+
     try {
-        const response = await apiCall('/api/deployment/deploy', {
+        const result = await apiCall('/api/deployment/deploy', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `model_job_id=${window.MedMLApp.currentJobId}&${new URLSearchParams(config)}`
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
         });
-        
-        alert(`Model deployment started! Deployment ID: ${response.deployment_id}`);
-        
-        // Clear form
-        e.target.reset();
-        
-        // Refresh deployments
+        if (banner) {
+            banner.className = 'sm-status-banner sm-status-success';
+            banner.innerHTML = importOnly
+                ? `<i class="fas fa-check-circle"></i> Endpoint <strong>${result.endpoint_name}</strong> imported (${result.status})`
+                : `<i class="fas fa-check-circle"></i> Endpoint <strong>${result.endpoint_name}</strong> is being created`;
+        }
         loadDeployments();
-        
-    } catch (error) {
-        alert(`Error deploying model: ${error.message}`);
+    } catch (err) {
+        if (banner) {
+            banner.className = 'sm-status-banner sm-status-error';
+            banner.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${err.message}`;
+        }
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-rocket"></i> Deploy Model';
     }
 }
 
 async function loadDeployments() {
     try {
-        const response = await apiCall('/api/deployment/deployments');
-        displayDeployments(response.deployments);
-    } catch (error) {
-        console.error('Error loading deployments:', error);
+        const res = await apiCall('/api/deployment/deployments');
+        displayDeployments(res.deployments);
+    } catch (err) {
+        console.error('Error loading deployments:', err);
     }
 }
 
 function displayDeployments(deployments) {
     const container = document.getElementById('deployments-list');
     if (!container) return;
-    
-    if (deployments.length === 0) {
-        container.innerHTML = '<p>No deployments found.</p>';
+
+    if (!deployments || deployments.length === 0) {
+        container.innerHTML = '<p>No deployments yet.</p>';
         return;
     }
-    
-    container.innerHTML = '';
-    
-    deployments.forEach(deployment => {
-        const deploymentElement = document.createElement('div');
-        deploymentElement.className = 'deployment-item';
-        
-        const statusClass = deployment.status === 'active' ? 'success' : 
-                           deployment.status === 'deploying' ? 'info' : 'error';
-        
-        deploymentElement.innerHTML = `
-            <div class="deployment-header">
-                <h4>${deployment.endpoint_name}</h4>
-                <span class="status-badge ${statusClass}">${deployment.status.toUpperCase()}</span>
+
+    const statusClass = {
+        'Creating':    'status-running',
+        'Updating':    'status-running',
+        'InService':   'status-completed',
+        'Failed':      'status-failed',
+        'Deleting':    'status-stopping',
+        'Deleted':     'status-stopped',
+    };
+
+    container.innerHTML = deployments.map(d => `
+        <div class="job-item">
+            <div class="job-header">
+                <div class="job-id">${d.endpoint_name}</div>
+                <div class="job-status ${statusClass[d.status] || 'status-unknown'}">${d.status}</div>
             </div>
-            <div class="deployment-details">
-                <div><strong>Deployment ID:</strong> ${deployment.deployment_id.substring(0, 8)}...</div>
-                <div><strong>Instance Type:</strong> ${deployment.instance_type}</div>
-                <div><strong>Instance Count:</strong> ${deployment.instance_count}</div>
-                <div><strong>Auto Scaling:</strong> ${deployment.auto_scaling ? 'Enabled' : 'Disabled'}</div>
-                ${deployment.status === 'active' ? 
-                    `<div><strong>Endpoint URL:</strong> <code>${deployment.endpoint_url}</code></div>` : ''
-                }
+            <div class="job-details">
+                <div><strong>Type:</strong> ${d.endpoint_type === 'async' ? '⚡ Async' : '🔄 Real-time'}</div>
+                <div><strong>Instance:</strong> ${d.instance_type} × ${d.instance_count}</div>
+                <div><strong>Created:</strong> ${d.created_at ? new Date(d.created_at).toLocaleString() : 'N/A'}</div>
+                ${d.output_s3_uri ? `<div><strong>Output:</strong> <code style="font-size:0.78rem;">${d.output_s3_uri}</code></div>` : ''}
+                ${d.endpoint_url ? `<div><strong>URL:</strong> <code style="font-size:0.78rem;">${d.endpoint_url}</code></div>` : ''}
+                ${d.failure_reason ? `<div style="color:#c62828;"><strong>Failure:</strong> ${d.failure_reason}</div>` : ''}
             </div>
-            <div class="deployment-actions">
-                ${deployment.status === 'active' ? 
-                    `<button onclick="testEndpoint('${deployment.deployment_id}')" class="btn btn-primary">
-                        <i class="fas fa-vial"></i> Test Endpoint
-                    </button>` : ''
-                }
-                <button onclick="viewDeploymentDetails('${deployment.deployment_id}')" class="btn btn-secondary">
-                    <i class="fas fa-info-circle"></i> Details
-                </button>
-                <button onclick="deleteDeployment('${deployment.deployment_id}')" class="btn btn-secondary" style="background-color: #e74c3c;">
+            <div class="job-actions">
+                ${!['InService', 'Failed', 'Deleting', 'Deleted'].includes(d.status) ? `
+                <button class="btn btn-secondary" onclick="refreshDeployment('${d.endpoint_name}')">
+                    <i class="fas fa-sync"></i> Refresh
+                </button>` : ''}
+                ${!['Deleting','Deleted'].includes(d.status) ? `
+                <button class="btn btn-secondary" onclick="deleteDeployment('${d.endpoint_name}')" style="color:#c62828;">
                     <i class="fas fa-trash"></i> Delete
-                </button>
+                </button>` : ''}
             </div>
-        `;
-        
-        container.appendChild(deploymentElement);
-    });
+        </div>
+    `).join('');
 }
 
-async function testEndpoint(deploymentId) {
+async function refreshDeployment(endpointName) {
     try {
-        const response = await apiCall(`/api/deployment/deployments/${deploymentId}/test`, {
-            method: 'POST'
-        });
-        
-        const resultWindow = window.open('', '_blank', 'width=600,height=400');
-        resultWindow.document.write(`
-            <html>
-                <head>
-                    <title>Endpoint Test Results</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; padding: 20px; }
-                        .result { margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 4px; }
-                        .success { background-color: #d4edda; color: #155724; }
-                        .prediction { background-color: #e7f3ff; padding: 15px; border-radius: 8px; margin-top: 15px; }
-                    </style>
-                </head>
-                <body>
-                    <h1>Endpoint Test Results</h1>
-                    <div class="result success">
-                        <strong>Status:</strong> ${response.test_status}
-                    </div>
-                    <div class="result">
-                        <strong>Response Time:</strong> ${response.response_time_ms}ms
-                    </div>
-                    <div class="prediction">
-                        <h3>Prediction Results</h3>
-                        <div><strong>Predicted Class:</strong> ${response.prediction.class}</div>
-                        <div><strong>Confidence:</strong> ${(response.prediction.confidence * 100).toFixed(2)}%</div>
-                        <h4>Class Probabilities:</h4>
-                        ${Object.entries(response.prediction.probabilities).map(([cls, prob]) => 
-                            `<div>${cls}: ${(prob * 100).toFixed(2)}%</div>`
-                        ).join('')}
-                    </div>
-                </body>
-            </html>
-        `);
-        
-    } catch (error) {
-        alert(`Error testing endpoint: ${error.message}`);
-    }
-}
-
-async function viewDeploymentDetails(deploymentId) {
-    try {
-        const deployment = await apiCall(`/api/deployment/deployments/${deploymentId}`);
-        
-        const detailsWindow = window.open('', '_blank', 'width=600,height=500');
-        detailsWindow.document.write(`
-            <html>
-                <head>
-                    <title>Deployment Details</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; padding: 20px; }
-                        .detail { margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 4px; }
-                        .status { padding: 5px 10px; border-radius: 15px; color: white; }
-                        .active { background-color: #28a745; }
-                        .deploying { background-color: #17a2b8; }
-                    </style>
-                </head>
-                <body>
-                    <h1>Deployment Details</h1>
-                    <div class="detail"><strong>Deployment ID:</strong> ${deployment.deployment_id}</div>
-                    <div class="detail"><strong>Model Job ID:</strong> ${deployment.model_job_id}</div>
-                    <div class="detail"><strong>Endpoint Name:</strong> ${deployment.endpoint_name}</div>
-                    <div class="detail">
-                        <strong>Status:</strong> 
-                        <span class="status ${deployment.status}">${deployment.status.toUpperCase()}</span>
-                    </div>
-                    <div class="detail"><strong>Instance Type:</strong> ${deployment.instance_type}</div>
-                    <div class="detail"><strong>Instance Count:</strong> ${deployment.instance_count}</div>
-                    <div class="detail"><strong>Auto Scaling:</strong> ${deployment.auto_scaling ? 'Enabled' : 'Disabled'}</div>
-                    ${deployment.endpoint_url ? 
-                        `<div class="detail"><strong>Endpoint URL:</strong><br><code>${deployment.endpoint_url}</code></div>` : ''
-                    }
-                </body>
-            </html>
-        `);
-        
-    } catch (error) {
-        alert(`Error loading deployment details: ${error.message}`);
-    }
-}
-
-async function deleteDeployment(deploymentId) {
-    if (!confirm('Are you sure you want to delete this deployment? This action cannot be undone.')) {
-        return;
-    }
-    
-    try {
-        await apiCall(`/api/deployment/deployments/${deploymentId}`, {
-            method: 'DELETE'
-        });
-        
-        alert('Deployment deleted successfully');
+        await apiCall(`/api/deployment/deployments/${endpointName}/status`);
         loadDeployments();
-        
-    } catch (error) {
-        alert(`Error deleting deployment: ${error.message}`);
+    } catch (err) {
+        alert(`Error: ${err.message}`);
     }
+}
+
+async function deleteDeployment(endpointName) {
+    if (!confirm(`Delete endpoint "${endpointName}"? This cannot be undone.`)) return;
+    try {
+        await apiCall(`/api/deployment/deployments/${endpointName}`, { method: 'DELETE' });
+        loadDeployments();
+    } catch (err) {
+        alert(`Error: ${err.message}`);
+    }
+}
+
+async function openFillFromJobModal() {
+    const modal = document.getElementById('fill-from-job-modal');
+    const list  = document.getElementById('fill-job-list');
+    modal.style.display = 'flex';
+    list.innerHTML = '<p style="color:#888; padding:0.5rem;">Loading jobs...</p>';
+
+    try {
+        const res  = await apiCall('/api/training/sagemaker/jobs');
+        const jobs = (res.jobs || []).filter(j => j.status === 'Completed' && j.model_artifacts);
+
+        if (!jobs.length) {
+            list.innerHTML = '<p style="color:#888; padding:0.5rem;">No completed jobs with model artifacts found.</p>';
+            return;
+        }
+
+        list.innerHTML = jobs.map(j => `
+            <div style="padding:0.6rem 0.5rem; border-bottom:1px solid #f0f0f0; cursor:pointer; border-radius:4px;"
+                 onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''"
+                 onclick="fillFromJob('${j.model_artifacts}', '${j.job_name}')">
+                <div style="font-weight:600; font-size:0.9rem;">${j.job_name}</div>
+                <div style="font-size:0.78rem; color:#666; margin-top:2px;">${j.model_artifacts}</div>
+                <div style="font-size:0.75rem; color:#888; margin-top:2px;">
+                    ${j.config?.model_name || ''} · ${j.config?.instance_type || ''} · ${j.config?.epochs || ''} epochs
+                </div>
+            </div>
+        `).join('');
+    } catch (err) {
+        list.innerHTML = `<p style="color:#c62828; padding:0.5rem;">Error loading jobs: ${err.message}</p>`;
+    }
+}
+
+function fillFromJob(modelArtifacts, jobName) {
+    document.getElementById('dep-model-artifacts').value = modelArtifacts;
+    // Auto-suggest endpoint name from job name if empty
+    const epInput = document.getElementById('dep-endpoint-name');
+    if (!epInput.value) {
+        epInput.value = jobName.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 63);
+    }
+    closeFillFromJobModal();
+}
+
+function closeFillFromJobModal() {
+    document.getElementById('fill-from-job-modal').style.display = 'none';
 }

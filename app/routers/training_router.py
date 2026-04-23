@@ -280,6 +280,10 @@ async def list_sagemaker_jobs():
                     job["job_name"], updated["status"],
                     model_artifacts=updated.get("model_artifacts"),
                     failure_reason=updated.get("failure_reason"),
+                    creation_time=updated.get("creation_time"),
+                    training_end_time=updated.get("training_end_time"),
+                    billable_seconds=updated.get("billable_seconds"),
+                    estimated_cost_usd=updated.get("estimated_cost_usd"),
                 )
             except Exception:
                 pass
@@ -308,4 +312,64 @@ async def stop_sagemaker_job(job_name: str):
         return {"job_name": job_name, "status": "Stopping"}
     except Exception as e:
         logger.error(f"Failed to stop SageMaker job: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/sagemaker/jobs/{job_name}")
+async def remove_sagemaker_job(job_name: str):
+    """Remove a terminal job from local tracking."""
+    try:
+        sm_training_service.remove_job(job_name)
+        return {"job_name": job_name, "removed": True}
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/sagemaker/jobs/{job_name}/archive")
+async def archive_sagemaker_job(job_name: str):
+    """Archive a job (hide from default list)."""
+    try:
+        sm_training_service.archive_job(job_name)
+        return {"job_name": job_name, "archived": True}
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.post("/sagemaker/jobs/{job_name}/comment")
+async def set_job_comment(job_name: str, body: dict):
+    """Add or update a comment on a job."""
+    try:
+        sm_training_service.set_comment(job_name, body.get("comment", ""))
+        return {"job_name": job_name, "comment": body.get("comment", "")}
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.delete("/sagemaker/jobs/{job_name}/artifacts")
+async def delete_job_artifacts(job_name: str):
+    """Delete model.tar.gz from S3 for a completed job."""
+    try:
+        if not aws_service.s3_client:
+            raise ValueError("AWS credentials not configured")
+        uri = sm_training_service.delete_model_artifacts(job_name, aws_service.s3_client)
+        return {"job_name": job_name, "deleted_uri": uri}
+    except (KeyError, ValueError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error("Failed to delete artifacts for %s: %s", job_name, e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/sagemaker/mlflow-url")
+async def get_mlflow_url(arn: str):
+    """Resolve a SageMaker MLflow tracking server ARN to its HTTP URL."""
+    try:
+        if not aws_service.sagemaker_client:
+            raise ValueError("AWS credentials not configured")
+        url = aws_service.get_mlflow_tracking_url(arn)
+        return {"url": url}
+    except Exception as e:
+        logger.error(f"Failed to resolve MLflow ARN: {e}")
         raise HTTPException(status_code=500, detail=str(e))

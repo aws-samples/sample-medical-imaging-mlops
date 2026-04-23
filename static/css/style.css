@@ -1044,3 +1044,54 @@ input:focus, select:focus, textarea:focus {
 }
 .model-tag-classification { background: #fef3e2; color: #e8871a; }
 .model-tag-segmentation   { background: #e3f2fd; color: #1a6fa8; }
+
+/* Training cost badge */
+.cost-badge {
+    display: inline-block;
+    background: #e8f5e9;
+    color: #2e7d32;
+    font-weight: 600;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+}
+
+/* MLflow job button */
+.btn-mlflow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: #0194e2;
+    color: #fff;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+.btn-mlflow:hover { background: #0178b8; color: #fff; }
+
+/* Inference result */
+.inf-class-card {
+    text-align: center;
+    padding: 1rem 0;
+}
+.inf-predicted-class {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #1a6fa8;
+    margin-bottom: 0.25rem;
+}
+.inf-confidence {
+    font-size: 1rem;
+    color: #555;
+    margin-bottom: 1.25rem;
+}
+.inf-prob-bars { display: flex; flex-direction: column; gap: 6px; }
+.inf-prob-row  { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; }
+.inf-prob-label { min-width: 140px; text-align: right; color: #444; }
+.inf-prob-bar-wrap { flex: 1; background: #eee; border-radius: 4px; height: 10px; overflow: hidden; }
+.inf-prob-bar { height: 100%; background: #1a6fa8; border-radius: 4px; transition: width 0.4s ease; }
+.inf-prob-value { min-width: 44px; color: #666; }

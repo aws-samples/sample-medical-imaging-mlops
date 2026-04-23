@@ -1,0 +1,247 @@
+"""Service for deploying models to SageMaker endpoints"""
+import json
+import logging
+from datetime import datetime
+from pathlib import Path
+from typing import Dict
+
+logger = logging.getLogger(__name__)
+
+DEPLOYMENTS_FILE = Path("data/deployments.json")
+
+
+class DeploymentService:
+    def __init__(self):
+        self.deployments: Dict[str, dict] = {}
+        self._load()
+
+    def _load(self):
+        if DEPLOYMENTS_FILE.exists():
+            try:
+                data = json.loads(DEPLOYMENTS_FILE.read_text())
+                # Drop any entries that were already marked Deleted
+                self.deployments = {k: v for k, v in data.items() if v.get("status") != "Deleted"}
+                logger.info("Loaded %d persisted deployments", len(self.deployments))
+            except Exception as e:
+                logger.warning("Could not load deployments file: %s", e)
+
+    def _save(self):
+        try:
+            DEPLOYMENTS_FILE.parent.mkdir(parents=True, exist_ok=True)
+            DEPLOYMENTS_FILE.write_text(json.dumps(self.deployments, indent=2, default=str))
+        except Exception as e:
+            logger.warning("Could not save deployments file: %s", e)
+
+    def create_endpoint(self, config: dict, sagemaker_session, role_arn: str) -> dict:
+        """Deploy a model to a SageMaker real-time or async endpoint using boto3 directly."""
+        if config.get("async_endpoint"):
+            return self._create_async_endpoint(config, sagemaker_session, role_arn)
+        return self._create_realtime_endpoint(config, sagemaker_session, role_arn)
+
+    def _create_realtime_endpoint(self, config: dict, sagemaker_session, role_arn: str) -> dict:
+        """Deploy a real-time endpoint."""
+        sagemaker_client = sagemaker_session.boto_session.client("sagemaker")
+        endpoint_name   = config["endpoint_name"]
+        model_artifacts = config["model_artifacts"]
+        image_uri       = config["image_uri"]
+        entry_point     = config.get("inference_script", "inference.py")
+        instance_type   = config.get("instance_type", "ml.m5.xlarge")
+        instance_count  = config.get("instance_count", 1)
+
+        model_name  = f"{endpoint_name}-model"
+        config_name = f"{endpoint_name}-config"
+
+        # model.tar.gz already contains inference.py (copied by train.py at end of training)
+        sagemaker_client.create_model(
+            ModelName=model_name,
+            PrimaryContainer={
+                "Image":        image_uri,
+                "ModelDataUrl": model_artifacts,
+                "Environment": {
+                    "SAGEMAKER_PROGRAM":             entry_point,
+                    "SAGEMAKER_CONTAINER_LOG_LEVEL": "20",
+                },
+            },
+            ExecutionRoleArn=role_arn,
+        )
+        sagemaker_client.create_endpoint_config(
+            EndpointConfigName=config_name,
+            ProductionVariants=[{
+                "VariantName":          "AllTraffic",
+                "ModelName":            model_name,
+                "InstanceType":         instance_type,
+                "InitialInstanceCount": instance_count,
+            }],
+        )
+        sagemaker_client.create_endpoint(EndpointName=endpoint_name, EndpointConfigName=config_name)
+        logger.info("Creating real-time endpoint: %s", endpoint_name)
+
+        record = {
+            "endpoint_name":   endpoint_name,
+            "endpoint_type":   "realtime",
+            "model_artifacts": model_artifacts,
+            "image_uri":       image_uri,
+            "instance_type":   instance_type,
+            "instance_count":  instance_count,
+            "status":          "Creating",
+            "created_at":      datetime.utcnow().isoformat(),
+        }
+        self.deployments[endpoint_name] = record
+        self._save()
+        return record
+
+    def _create_async_endpoint(self, config: dict, sagemaker_session, role_arn: str) -> dict:
+        """Deploy a SageMaker async inference endpoint."""
+        sagemaker_client = sagemaker_session.boto_session.client("sagemaker")
+        endpoint_name   = config["endpoint_name"]
+        model_artifacts = config["model_artifacts"]
+        image_uri       = config["image_uri"]
+        source_dir      = config.get("source_dir", "src/classification")
+        entry_point     = config.get("inference_script", "inference.py")
+        instance_type   = config.get("instance_type", "ml.m5.xlarge")
+        instance_count  = config.get("instance_count", 1)
+        output_s3_uri   = config.get("output_s3_uri")
+        max_concurrent  = config.get("max_concurrent", 10)
+
+        if not output_s3_uri:
+            raise ValueError("output_s3_uri is required for async endpoints")
+
+        model_name  = f"{endpoint_name}-model"
+        config_name = f"{endpoint_name}-config"
+
+        # model.tar.gz already contains inference.py (copied by train.py at end of training)
+        sagemaker_client.create_model(
+            ModelName=model_name,
+            PrimaryContainer={
+                "Image":        image_uri,
+                "ModelDataUrl": model_artifacts,
+                "Environment": {
+                    "SAGEMAKER_PROGRAM":             entry_point,
+                    "SAGEMAKER_CONTAINER_LOG_LEVEL": "20",
+                },
+            },
+            ExecutionRoleArn=role_arn,
+        )
+        sagemaker_client.create_endpoint_config(
+            EndpointConfigName=config_name,
+            ProductionVariants=[{
+                "VariantName":          "AllTraffic",
+                "ModelName":            model_name,
+                "InstanceType":         instance_type,
+                "InitialInstanceCount": instance_count,
+            }],
+            AsyncInferenceConfig={
+                "OutputConfig": {
+                    "S3OutputPath": output_s3_uri,
+                },
+                "ClientConfig": {
+                    "MaxConcurrentInvocationsPerInstance": max_concurrent,
+                },
+            },
+        )
+        sagemaker_client.create_endpoint(EndpointName=endpoint_name, EndpointConfigName=config_name)
+        logger.info("Creating async endpoint: %s", endpoint_name)
+
+        record = {
+            "endpoint_name":   endpoint_name,
+            "endpoint_type":   "async",
+            "model_artifacts": model_artifacts,
+            "image_uri":       image_uri,
+            "instance_type":   instance_type,
+            "instance_count":  instance_count,
+            "output_s3_uri":   output_s3_uri,
+            "status":          "Creating",
+            "created_at":      datetime.utcnow().isoformat(),
+        }
+        self.deployments[endpoint_name] = record
+        self._save()
+        return record
+
+    def invoke_async(self, endpoint_name: str, input_s3_uri: str, output_s3_uri: str, boto_session) -> dict:
+        """Submit an async inference request. Input must be a pre-uploaded S3 object."""
+        client = boto_session.client("sagemaker-runtime")
+        response = client.invoke_endpoint_async(
+            EndpointName=endpoint_name,
+            InputLocation=input_s3_uri,
+            ContentType="application/json",
+            Accept="application/json",
+        )
+        return {
+            "inference_id":    response.get("InferenceId"),
+            "output_location": response.get("OutputLocation"),
+            "status":          "Submitted",
+        }
+
+    def get_endpoint_status(self, endpoint_name: str, sagemaker_client) -> dict:
+        try:
+            response = sagemaker_client.describe_endpoint(EndpointName=endpoint_name)
+            status   = response["EndpointStatus"]
+            record   = self.deployments.get(endpoint_name, {})
+            record["status"] = status
+            record["endpoint_url"] = (
+                f"https://runtime.sagemaker.{response.get('EndpointArn','').split(':')[3]}"
+                f".amazonaws.com/endpoints/{endpoint_name}/invocations"
+                if status == "InService" else None
+            )
+            if status == "Failed":
+                record["failure_reason"] = response.get("FailureReason")
+            self.deployments[endpoint_name] = record
+            self._save()
+            return record
+        except sagemaker_client.exceptions.ClientError as e:
+            if "Could not find endpoint" in str(e) or "ValidationException" in str(e):
+                # Endpoint deleted externally — remove from local store
+                self.deployments.pop(endpoint_name, None)
+                self._save()
+                return {"endpoint_name": endpoint_name, "status": "Deleted"}
+            raise
+
+    def delete_endpoint(self, endpoint_name: str, sagemaker_client):
+        try:
+            try:
+                desc        = sagemaker_client.describe_endpoint(EndpointName=endpoint_name)
+                config_name = desc.get("EndpointConfigName")
+            except Exception:
+                config_name = self.deployments.get(endpoint_name, {}).get("config_name")
+
+            sagemaker_client.delete_endpoint(EndpointName=endpoint_name)
+            logger.info("Deleted endpoint: %s", endpoint_name)
+
+            if config_name:
+                try:
+                    sagemaker_client.delete_endpoint_config(EndpointConfigName=config_name)
+                    logger.info("Deleted endpoint config: %s", config_name)
+                except Exception as e:
+                    logger.warning("Could not delete endpoint config %s: %s", config_name, e)
+        finally:
+            self.deployments.pop(endpoint_name, None)
+            self._save()
+
+    def list_deployments(self) -> list:
+        return list(self.deployments.values())
+
+    def import_endpoint(self, endpoint_name: str, sagemaker_client) -> dict:
+        """Register an existing SageMaker endpoint for tracking without deploying."""
+        response = sagemaker_client.describe_endpoint(EndpointName=endpoint_name)
+        status   = response["EndpointStatus"]
+        record   = self.deployments.get(endpoint_name) or {
+            "endpoint_name":  endpoint_name,
+            "endpoint_type":  "realtime",
+            "model_artifacts": None,
+            "image_uri":      None,
+            "instance_type":  None,
+            "instance_count": None,
+            "created_at":     response.get("CreationTime", "").isoformat()
+                              if response.get("CreationTime") else None,
+        }
+        record["status"] = status
+        if status == "InService":
+            region = sagemaker_client.meta.region_name
+            record["endpoint_url"] = (
+                f"https://runtime.sagemaker.{region}.amazonaws.com"
+                f"/endpoints/{endpoint_name}/invocations"
+            )
+        self.deployments[endpoint_name] = record
+        self._save()
+        logger.info("Imported existing endpoint: %s (%s)", endpoint_name, status)
+        return record

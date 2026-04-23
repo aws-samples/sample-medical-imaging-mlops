@@ -46,7 +46,11 @@ async function apiCall(url, options = {}) {
         
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.detail || 'API call failed');
+            const detail = error.detail;
+            const msg = typeof detail === 'string' ? detail
+                : Array.isArray(detail) ? detail.map(e => e.msg || JSON.stringify(e)).join(', ')
+                : JSON.stringify(detail) || 'API call failed';
+            throw new Error(msg);
         }
         
         return await response.json();

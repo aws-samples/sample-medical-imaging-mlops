@@ -1,0 +1,22 @@
+{
+  "job_name": "classification-densenet121-20260421-2337",
+  "status": "Completed",
+  "creation_time": null,
+  "training_end_time": null,
+  "billable_seconds": null,
+  "estimated_cost_usd": null,
+  "model_artifacts": "s3://public-datasets-imaging-us-east-1/test_upload/vindr-spine-xray/classification-densenet121-20260421-2337/output/model.tar.gz",
+  "failure_reason": null,
+  "hyperparameters": {
+    "model_name": "densenet121",
+    "task_type": "classification",
+    "dimension": "2D",
+    "epochs": 10,
+    "batch_size": 16,
+    "learning_rate": 0.001,
+    "val_interval": 5,
+    "instance_type": "ml.g5.xlarge",
+    "instance_count": 1
+  },
+  "report_generated_at": "2026-04-22T06:53:01.805984"
+}

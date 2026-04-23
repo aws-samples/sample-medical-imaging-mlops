@@ -121,6 +121,18 @@
                 <form id="sagemaker-training-form">
                     <div class="form-row">
                         <div class="form-group">
+                            <label for="sm_job_name">Job Name (optional)</label>
+                            <div style="display:flex; gap:6px; align-items:center;">
+                                <input type="text" id="sm_job_name" name="sm_job_name" placeholder="Auto-generated if empty" style="flex:1;" pattern="[a-zA-Z0-9\-]{1,63}">
+                                <button type="button" class="btn btn-secondary" onclick="generateJobName()" title="Generate name">
+                                    <i class="fas fa-dice"></i>
+                                </button>
+                            </div>
+                            <small style="color:var(--aws-dark-gray)">Letters, numbers, hyphens only. Max 63 chars.</small>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
                             <label for="sm_model_name">Model</label>
                             <select id="sm_model_name" name="sm_model_name">
                                 <option value="" disabled selected>Loading models...</option>
@@ -235,72 +247,22 @@
                     </div>
                     <div id="sm-submission-status" class="sm-status-banner" style="display:none;"></div>
                 </form>
-                <div id="sagemaker-jobs" class="jobs-list" style="margin-top: 15px;"></div>
-            </div>
-        </div>
 
-        <!-- Import Model from S3 -->
-        <div class="card">
-            <div class="card-header">
-                <h3>Import Model from S3</h3>
-            </div>
-            <div class="card-body">
-                <form id="model-import-form">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="model_name">Model Name</label>
-                            <input type="text" id="model_name" name="model_name" placeholder="my-custom-model" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="model_format">Format</label>
-                            <select id="model_format" name="model_format">
-                                <option value="pytorch">PyTorch (.pt/.pth)</option>
-                                <option value="onnx">ONNX (.onnx)</option>
-                                <option value="tensorflow">TensorFlow (.pb/.h5)</option>
-                            </select>
-                        </div>
+                <!-- Jobs tabs -->
+                <div style="margin-top:1.5rem;">
+                    <div class="jobs-tab-bar">
+                        <button class="jobs-tab active" id="tab-active" onclick="switchJobsTab('active')">
+                            <i class="fas fa-running"></i> Active Jobs
+                        </button>
+                        <button class="jobs-tab" id="tab-archived" onclick="switchJobsTab('archived')">
+                            <i class="fas fa-archive"></i> Archived
+                        </button>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="s3_bucket">S3 Bucket</label>
-                            <input type="text" id="s3_bucket" name="s3_bucket" placeholder="my-bucket" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="s3_key">S3 Key (path)</label>
-                            <input type="text" id="s3_key" name="s3_key" placeholder="models/model.pt" required>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="num_classes">Number of Classes</label>
-                            <input type="number" id="num_classes" name="num_classes" value="2" min="2">
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-file-import"></i> Import Model
-                    </button>
-                </form>
-                <div id="imported-models-list" class="models-grid" style="margin-top: 15px;"></div>
-            </div>
-        </div>
-
-        <!-- Training Jobs -->
-        <div class="card">
-            <div class="card-header">
-                <h3>Training Jobs</h3>
-                <div class="monitoring-links">
-                    <a href="http://localhost:6006" target="_blank" class="btn btn-secondary">
-                        <i class="fas fa-chart-area"></i> TensorBoard
-                    </a>
-                    <a href="http://localhost:5000" target="_blank" class="btn btn-secondary">
-                        <i class="fas fa-flask"></i> MLflow
-                    </a>
+                    <div id="sagemaker-jobs" class="jobs-list"></div>
                 </div>
             </div>
-            <div class="card-body">
-                <div id="training-jobs" class="jobs-list"></div>
-            </div>
         </div>
+
     </div>
 </section>
 
@@ -311,45 +273,190 @@
         <div class="deployment-grid">
             <div class="card">
                 <div class="card-header">
-                    <h3>Deploy Model</h3>
+                    <h3>Deploy to SageMaker Endpoint</h3>
                 </div>
                 <div class="card-body">
                     <form id="deployment-form">
-                        <div class="form-group">
-                            <label for="endpoint-name">Endpoint Name</label>
-                            <input type="text" id="endpoint-name" name="endpoint_name" placeholder="medical-imaging-endpoint">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="dep-endpoint-name">Endpoint Name</label>
+                                <input type="text" id="dep-endpoint-name" name="endpoint_name" placeholder="my-model-endpoint" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="dep-role-arn">IAM Role ARN</label>
+                                <input type="text" id="dep-role-arn" name="role_arn" value="arn:aws:iam::575108919340:role/service-role/AmazonSageMaker-ExecutionRole-20240907T181142" required>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="instance-type">Instance Type</label>
-                            <select id="instance-type" name="instance_type">
-                                <option value="ml.t2.medium">ml.t2.medium</option>
-                                <option value="ml.m5.large">ml.m5.large</option>
-                                <option value="ml.c5.xlarge">ml.c5.xlarge</option>
-                            </select>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="dep-model-artifacts">Model Artifacts S3 URI</label>
+                                <div style="display:flex; gap:6px; align-items:center;">
+                                    <input type="text" id="dep-model-artifacts" name="model_artifacts" placeholder="s3://bucket/path/model.tar.gz" style="flex:1;">
+                                    <button type="button" class="btn btn-secondary" onclick="openFillFromJobModal()" title="Fill from training job">
+                                        <i class="fas fa-list"></i>
+                                    </button>
+                                </div>
+                                <small style="color:var(--aws-dark-gray)">Leave empty to import an existing endpoint by name only</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="dep-image-uri">Inference Container Image URI</label>
+                                <input type="text" id="dep-image-uri" name="image_uri" value="763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-inference:2.6.0-gpu-py312-cu124-ubuntu22.04-sagemaker" required>
+                                <small style="color:var(--aws-dark-gray)">AWS pre-built PyTorch inference image</small>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="instance-count">Initial Instance Count</label>
-                            <input type="number" id="instance-count" name="initial_instance_count" value="1" min="1">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="dep-inference-script">Inference Entry Point</label>
+                                <input type="text" id="dep-inference-script" name="inference_script" value="inference.py">
+                                <small style="color:var(--aws-dark-gray)">Must match the filename inside model.tar.gz</small>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="auto-scaling" name="auto_scaling">
-                                Enable Auto Scaling
-                            </label>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="dep-instance-type">Instance Type</label>
+                                <select id="dep-instance-type" name="instance_type">
+                                    <option value="ml.m5.xlarge">ml.m5.xlarge (CPU)</option>
+                                    <option value="ml.m5.2xlarge">ml.m5.2xlarge (CPU)</option>
+                                    <option value="ml.g5.xlarge">ml.g5.xlarge (GPU)</option>
+                                    <option value="ml.g5.2xlarge">ml.g5.2xlarge (GPU)</option>
+                                    <option value="ml.c5.xlarge">ml.c5.xlarge (CPU)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="dep-instance-count">Instance Count</label>
+                                <input type="number" id="dep-instance-count" name="instance_count" value="1" min="1">
+                            </div>
                         </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="checkbox-label" style="margin-top: 8px;">
+                                    <input type="checkbox" id="dep-async" name="async_endpoint" onchange="toggleAsyncFields()">
+                                    <strong>Async Endpoint</strong>
+                                    <small style="color:var(--aws-dark-gray); display:block; margin-top:2px;">Best for large payloads or long-running inference (&gt;60s)</small>
+                                </label>
+                            </div>
+                        </div>
+                        <div id="async-fields" style="display:none;">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="dep-output-s3-uri">Output S3 URI</label>
+                                    <input type="text" id="dep-output-s3-uri" name="output_s3_uri" placeholder="s3://bucket/async-outputs/">
+                                    <small style="color:var(--aws-dark-gray)">SageMaker writes inference results here</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="dep-max-concurrent">Max Concurrent Invocations</label>
+                                    <input type="number" id="dep-max-concurrent" name="max_concurrent" value="10" min="1" max="1000">
+                                </div>
+                            </div>
+                        </div>
+                        <div id="dep-status-banner" class="sm-status-banner" style="display:none;"></div>
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-rocket"></i> Deploy Model
                         </button>
                     </form>
                 </div>
             </div>
-            
+
             <div class="card">
                 <div class="card-header">
                     <h3>Active Deployments</h3>
+                    <button class="btn btn-secondary" onclick="loadDeployments()">
+                        <i class="fas fa-sync"></i> Refresh
+                    </button>
                 </div>
                 <div class="card-body">
                     <div id="deployments-list" class="deployments-grid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Inference Section -->
+<section id="inference" class="section">
+    <div class="container">
+        <h2><i class="fas fa-brain"></i> Run Inference</h2>
+        <div class="deployment-grid">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Invoke Endpoint</h3>
+                </div>
+                <div class="card-body">
+                    <form id="inference-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="inf-endpoint">Endpoint</label>
+                                <div style="display:flex; gap:6px;">
+                                    <select id="inf-endpoint" name="endpoint_name" style="flex:1;">
+                                        <option value="" disabled selected>Loading endpoints...</option>
+                                    </select>
+                                    <button type="button" class="btn btn-secondary" onclick="loadInferenceEndpoints()" title="Refresh">
+                                        <i class="fas fa-sync"></i>
+                                    </button>
+                                </div>
+                                <input type="text" id="inf-endpoint-manual" placeholder="Or type endpoint name manually"
+                                    style="margin-top:6px; width:100%;"
+                                    oninput="document.getElementById('inf-endpoint').value = this.value">
+                            </div>
+                            <div class="form-group">
+                                <label for="inf-task-type">Task Type</label>
+                                <select id="inf-task-type" name="task_type">
+                                    <option value="classification">Classification</option>
+                                    <option value="segmentation">Segmentation</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="inf-input-type">Input Type</label>
+                                <select id="inf-input-type" name="input_type">
+                                    <option value="s3_uri">S3 URI</option>
+                                    <option value="file_path">Local Path</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="inf-input-value">Input Value</label>
+                                <input type="text" id="inf-input-value" name="input_value"
+                                    placeholder="s3://bucket/path/image.dcm" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="inf-output-s3">Output S3 URI (optional)</label>
+                                <input type="text" id="inf-output-s3" name="output_s3_uri"
+                                    placeholder="s3://bucket/inference-results/">
+                                <small style="color:var(--aws-dark-gray)">Result JSON saved here</small>
+                            </div>
+                        </div>
+                        <div id="inf-status-banner" class="sm-status-banner" style="display:none;"></div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-play"></i> Run Inference
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Result</h3>
+                </div>
+                <div class="card-body">
+                    <div id="inference-result-placeholder" style="color:#888; text-align:center; padding:2rem;">
+                        <i class="fas fa-brain" style="font-size:2rem; margin-bottom:0.5rem; display:block;"></i>
+                        Run inference to see results
+                    </div>
+                    <div id="inference-result" style="display:none;">
+                        <div id="inf-class-result" class="inf-class-card" style="display:none;">
+                            <div class="inf-predicted-class"></div>
+                            <div class="inf-confidence"></div>
+                            <div id="inf-probabilities" class="inf-prob-bars"></div>
+                        </div>
+                        <div id="inf-seg-result" style="display:none;">
+                            <p>Segmentation mask saved to S3. Summary:</p>
+                            <div id="inf-seg-stats" class="job-status-detail"></div>
+                        </div>
+                        <div id="inf-saved-to" style="margin-top:0.75rem; font-size:0.85rem; color:#666;"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -375,6 +482,53 @@
     </div>
 </div>
 
+<!-- Fill from Training Job Modal -->
+<div id="fill-from-job-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:8px; padding:1.5rem; width:560px; max-width:90vw; box-shadow:0 8px 32px rgba(0,0,0,0.2); max-height:80vh; display:flex; flex-direction:column;">
+        <h3 style="margin:0 0 1rem;"><i class="fas fa-list"></i> Select Training Job</h3>
+        <p style="margin:0 0 1rem; color:#666; font-size:0.9rem;">Pick a completed job to auto-fill the model artifacts URI.</p>
+        <div id="fill-job-list" style="overflow-y:auto; flex:1; border:1px solid #e0e0e0; border-radius:4px; padding:0.5rem;"></div>
+        <div style="display:flex; justify-content:flex-end; margin-top:1rem;">
+            <button type="button" class="btn btn-secondary" onclick="closeFillFromJobModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Comment Modal -->
+<div id="comment-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:8px; padding:1.5rem; width:440px; max-width:90vw; box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+        <h3 style="margin:0 0 1rem;"><i class="fas fa-comment-alt"></i> Job Comment</h3>
+        <input type="hidden" id="comment-job-name">
+        <textarea id="comment-text" rows="4" placeholder="Add notes about this checkpoint, experiment, or result..."
+            style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:4px; font-size:0.9rem; resize:vertical;"></textarea>
+        <div style="display:flex; gap:0.75rem; justify-content:flex-end; margin-top:1rem;">
+            <button type="button" class="btn btn-secondary" onclick="closeCommentModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveComment()"><i class="fas fa-save"></i> Save</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.result-highlight {
+    background: #f0f7ff;
+    border-left: 3px solid #4B9CD3;
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+    margin-top: 0.5rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px 1rem;
+}
+.result-row { display: flex; gap: 0.4rem; font-size: 0.82rem; align-items: baseline; }
+.result-row span { color: #666; min-width: 80px; }
+.job-comment { font-size: 0.82rem; color: #555; margin-top: 0.4rem; font-style: italic; }
+.job-archived { opacity: 0.65; }
+.jobs-tab-bar { display: flex; gap: 0; border-bottom: 2px solid #e0e0e0; margin-bottom: 1rem; }
+.jobs-tab { background: none; border: none; padding: 0.5rem 1.25rem; font-size: 0.9rem; cursor: pointer; color: #666; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: color 0.15s; }
+.jobs-tab:hover { color: #232f3e; }
+.jobs-tab.active { color: #232f3e; border-bottom-color: #FF9900; font-weight: 600; }
+</style>
+
 {% endblock %}
 
 {% block scripts %}
@@ -382,4 +536,5 @@
 <script src="/static/js/data.js"></script>
 <script src="/static/js/training.js"></script>
 <script src="/static/js/deployment.js"></script>
+<script src="/static/js/inference.js"></script>
 {% endblock %}

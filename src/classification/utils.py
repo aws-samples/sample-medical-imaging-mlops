@@ -74,8 +74,9 @@ def generate_list_labels(data_folder, label_dict=None):
 
 
 def create_data_loaders(data_path, batch_size, label_dict=None):
+    # reader=None lets MONAI auto-detect; pydicom handles .dcm, PIL handles jpg/png
     transforms = Compose([
-        LoadImage(image_only=True),
+        LoadImage(image_only=True, reader=None),
         EnsureChannelFirst(),
         Resize(spatial_size=IMG_SIZE),
         ScaleIntensity(),

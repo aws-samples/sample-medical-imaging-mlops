@@ -3,6 +3,10 @@ torch==2.4.0
 torchvision==0.19.0
 nibabel
 SimpleITK
+pydicom
+itk
 tensorboard
+mlflow
+sagemaker-mlflow
 tqdm
 smdebug

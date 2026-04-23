@@ -38,6 +38,7 @@ class DimensionType(str, Enum):
     THREE_D = "3D"
 
 class SageMakerTrainingConfig(BaseModel):
+    job_name: Optional[str] = None
     model_name: str = "densenet121"
     task_type: TaskType = TaskType.CLASSIFICATION
     dimension: DimensionType = DimensionType.TWO_D
