@@ -264,25 +264,13 @@ async def start_sagemaker_training(config: SageMakerTrainingConfig):
 
 @router.get("/sagemaker/jobs")
 async def list_sagemaker_jobs():
-    """List all SageMaker training jobs, refreshing status from AWS"""
+    """List all SageMaker training jobs from local store, refreshing only active ones from AWS."""
     jobs = sm_training_service.list_jobs()
-    if aws_service.sagemaker_client:
-        terminal_states = {"Completed", "Failed", "Stopped"}
-        for job in jobs:
-            if job.get("status") in terminal_states:
-                # Auto-fetch result.json for completed jobs that don't have it yet
-                if job.get("status") == "Completed" and not job.get("result") and job.get("model_artifacts") and not job.get("artifacts_deleted") and aws_service.s3_client:
-                    try:
-                        result = sm_training_service.fetch_result_json(job["job_name"], aws_service.s3_client)
-                        job["result"] = result
-                    except Exception as e:
-                        logger.debug("Could not fetch result.json for %s: %s", job["job_name"], e)
-                continue
+    active_jobs = [j for j in jobs if j.get("status") in {"InProgress", "Stopping"}]
+    if active_jobs and aws_service.sagemaker_client:
+        for job in active_jobs:
             try:
                 updated = sm_training_service.get_job_status(job["job_name"], aws_service.sagemaker_client)
-                job["status"] = updated["status"]
-                job["model_artifacts"] = updated.get("model_artifacts")
-                job["failure_reason"]  = updated.get("failure_reason")
                 sm_training_service.update_job_status(
                     job["job_name"], updated["status"],
                     model_artifacts=updated.get("model_artifacts"),
@@ -292,6 +280,7 @@ async def list_sagemaker_jobs():
                     billable_seconds=updated.get("billable_seconds"),
                     estimated_cost_usd=updated.get("estimated_cost_usd"),
                 )
+                job.update(updated)
             except Exception:
                 pass
     return {"jobs": jobs}

@@ -46,6 +46,39 @@ class SageMakerTrainingService:
                 logger.info("Loaded %d persisted SageMaker jobs", len(self.jobs))
             except Exception as e:
                 logger.warning("Could not load jobs file: %s", e)
+        else:
+            # Bootstrap from training reports if jobs file is missing
+            self._bootstrap_from_reports()
+
+    def _bootstrap_from_reports(self):
+        """Reconstruct jobs store from training report JSONs when jobs file is absent."""
+        if not REPORTS_DIR.exists():
+            return
+        for report_file in sorted(REPORTS_DIR.glob("*.json")):
+            try:
+                report = json.loads(report_file.read_text())
+                job_name = report.get("job_name")
+                if not job_name:
+                    continue
+                hp = report.get("hyperparameters", {})
+                self.jobs[job_name] = {
+                    "job_name":          job_name,
+                    "status":            report.get("status", "Completed"),
+                    "model_artifacts":   report.get("model_artifacts"),
+                    "failure_reason":    report.get("failure_reason"),
+                    "billable_seconds":  report.get("billable_seconds"),
+                    "estimated_cost_usd":report.get("estimated_cost_usd"),
+                    "creation_time":     report.get("creation_time"),
+                    "training_end_time": report.get("training_end_time"),
+                    "archived":          False,
+                    "config":            hp,
+                    "result":            None,
+                }
+            except Exception as e:
+                logger.warning("Could not parse report %s: %s", report_file, e)
+        if self.jobs:
+            logger.info("Bootstrapped %d jobs from training reports", len(self.jobs))
+            self._save_jobs()
 
     def _save_jobs(self):
         try:
@@ -103,6 +136,7 @@ class SageMakerTrainingService:
             "val_interval":  config.val_interval,
             "task_type":     config.task_type,
             "dimension":     config.dimension,
+            "data_s3_uri":   config.data_s3_uri,
         }
 
         env = {}
@@ -289,6 +323,7 @@ class SageMakerTrainingService:
         if job_name in self.jobs:
             self.jobs[job_name]["result"] = result
             self._save_jobs()
+
 
 
 

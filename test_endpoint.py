@@ -16,7 +16,7 @@ import sagemaker
 from botocore.config import Config
 
 # ── Config ────────────────────────────────────────────────────────────────────
-DEFAULT_ENDPOINT   = "test-endp-class-vindr"
+DEFAULT_ENDPOINT   = "test-endp"
 DEFAULT_SOURCE_IMG = (
     "s3://public-datasets-imaging-us-east-1/vindr-spinexr-subset/test/"
     "Foraminal_stenosis/412cb981a940a9689347c614cb1489dd.dcm"
@@ -57,13 +57,11 @@ class MedicalImagingPredictor:
         return self._parse_response(response)
 
     def _parse_response(self, response):
-        result        = json.loads(response["Body"].read().decode("utf-8"))
-        predictions   = result["predictions"][0]
-        predicted_idx = result["predicted_class"][0]
+        result = json.loads(response["Body"].read().decode("utf-8"))
         return {
-            "probabilities":   dict(zip(self.labels, predictions)),
-            "predicted_class": self.labels[predicted_idx],
-            "confidence":      result["confidence"][0],
+            "predicted_class": result["predicted_class"],
+            "confidence":      result["confidence"],
+            "probabilities":   result["probabilities"],
         }
 
 

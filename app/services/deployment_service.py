@@ -204,6 +204,8 @@ class DeploymentService:
             except Exception:
                 config_name = self.deployments.get(endpoint_name, {}).get("config_name")
 
+            model_name = f"{endpoint_name}-model"
+
             sagemaker_client.delete_endpoint(EndpointName=endpoint_name)
             logger.info("Deleted endpoint: %s", endpoint_name)
 
@@ -213,6 +215,12 @@ class DeploymentService:
                     logger.info("Deleted endpoint config: %s", config_name)
                 except Exception as e:
                     logger.warning("Could not delete endpoint config %s: %s", config_name, e)
+
+            try:
+                sagemaker_client.delete_model(ModelName=model_name)
+                logger.info("Deleted model: %s", model_name)
+            except Exception as e:
+                logger.warning("Could not delete model %s: %s", model_name, e)
         finally:
             self.deployments.pop(endpoint_name, None)
             self._save()

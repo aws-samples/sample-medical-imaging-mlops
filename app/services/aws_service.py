@@ -21,12 +21,9 @@ class AWSService:
             self._session = boto3.Session()
             self.s3_client = self._session.client('s3')
             self.sagemaker_client = self._session.client('sagemaker')
-
-            # Test connection
-            self.s3_client.list_buckets()
             logger.info("AWS configured from environment credentials")
             return True
-        except (ClientError, NoCredentialsError) as e:
+        except Exception as e:
             logger.warning(f"No valid environment AWS credentials found: {e}")
             return False
 

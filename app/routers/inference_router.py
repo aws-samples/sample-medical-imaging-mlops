@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional
 import logging
@@ -35,6 +35,31 @@ async def invoke_endpoint(request: InferenceRequest):
         return result
     except Exception as e:
         logger.error("Inference failed: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/invoke-local")
+async def invoke_endpoint_local(
+    request: Request,
+    endpoint_name: str,
+    task_type: str = "classification",
+):
+    """Invoke endpoint with raw file bytes uploaded from the browser."""
+    try:
+        if not aws_service.sagemaker_client:
+            raise ValueError("AWS credentials not configured")
+        body = await request.body()
+        session = aws_service._get_boto_session()
+        result = inference_service.invoke_endpoint(
+            endpoint_name=endpoint_name,
+            input_data={"bytes": body},
+            task_type=task_type,
+            output_s3_uri=None,
+            boto_session=session,
+        )
+        return result
+    except Exception as e:
+        logger.error("Local file inference failed: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 

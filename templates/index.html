@@ -308,8 +308,14 @@
                 <!-- Jobs tabs -->
                 <div style="margin-top:1.5rem;">
                     <div class="jobs-tab-bar">
-                        <button class="jobs-tab active" id="tab-active" onclick="switchJobsTab('active')">
-                            <i class="fas fa-running"></i> Active Jobs
+                        <button class="jobs-tab" id="tab-active" onclick="switchJobsTab('active')">
+                            <i class="fas fa-running"></i> Active
+                        </button>
+                        <button class="jobs-tab active" id="tab-completed" onclick="switchJobsTab('completed')">
+                            <i class="fas fa-check-circle"></i> Completed
+                        </button>
+                        <button class="jobs-tab" id="tab-failed" onclick="switchJobsTab('failed')">
+                            <i class="fas fa-times-circle"></i> Failed
                         </button>
                         <button class="jobs-tab" id="tab-archived" onclick="switchJobsTab('archived')">
                             <i class="fas fa-archive"></i> Archived
@@ -466,15 +472,24 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="inf-input-type">Input Type</label>
-                                <select id="inf-input-type" name="input_type">
+                                <select id="inf-input-type" name="input_type" onchange="onInfInputTypeChange(this.value)">
                                     <option value="s3_uri">S3 URI</option>
-                                    <option value="file_path">Local Path</option>
+                                    <option value="file_path">Local File</option>
                                 </select>
                             </div>
                             <div class="form-group">
                                 <label for="inf-input-value">Input Value</label>
-                                <input type="text" id="inf-input-value" name="input_value"
-                                    placeholder="s3://bucket/path/image.dcm" required>
+                                <div style="display:flex; gap:6px; align-items:center;">
+                                    <input type="text" id="inf-input-value" name="input_value"
+                                        placeholder="s3://bucket/path/image.dcm" required style="flex:1;">
+                                    <button type="button" id="inf-browse-btn" class="btn btn-secondary" style="display:none; white-space:nowrap;"
+                                        onclick="document.getElementById('inf-file-picker').click()">
+                                        <i class="fas fa-folder-open"></i> Browse
+                                    </button>
+                                    <input type="file" id="inf-file-picker" accept=".dcm,.nii,.nii.gz,.png,.jpg"
+                                        style="display:none;"
+                                        onchange="document.getElementById('inf-input-value').value = this.files[0]?.name || ''">
+                                </div>
                             </div>
                         </div>
                         <div class="form-row">

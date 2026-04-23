@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 const response = await apiCall('/api/aws/configure', {
                     method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(credentials)
                 });
                 

@@ -6,6 +6,19 @@ document.addEventListener('DOMContentLoaded', function () {
     if (form) form.addEventListener('submit', runInference);
 });
 
+function onInfInputTypeChange(val) {
+    const browseBtn = document.getElementById('inf-browse-btn');
+    const inputEl   = document.getElementById('inf-input-value');
+    if (val === 'file_path') {
+        browseBtn.style.display = '';
+        inputEl.placeholder = '/path/to/image.dcm';
+    } else {
+        browseBtn.style.display = 'none';
+        inputEl.placeholder = 's3://bucket/path/image.dcm';
+        document.getElementById('inf-file-picker').value = '';
+    }
+}
+
 async function loadInferenceEndpoints() {
     const select = document.getElementById('inf-endpoint');
     if (!select) return;
@@ -41,13 +54,9 @@ async function loadInferenceEndpoints() {
 async function runInference(e) {
     e.preventDefault();
     const fd = new FormData(e.target);
-    const payload = {
-        endpoint_name: fd.get('endpoint_name'),
-        task_type:     fd.get('task_type'),
-        input_type:    fd.get('input_type'),
-        input_value:   fd.get('input_value'),
-        output_s3_uri: fd.get('output_s3_uri') || null,
-    };
+    const inputType  = fd.get('input_type');
+    const inputValue = fd.get('input_value');
+    const filePicker = document.getElementById('inf-file-picker');
 
     const btn    = e.target.querySelector('button[type="submit"]');
     const banner = document.getElementById('inf-status-banner');
@@ -61,17 +70,35 @@ async function runInference(e) {
     if (placeholder) placeholder.style.display = 'block';
 
     try {
-        const res = await apiCall('/api/inference/invoke', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-        });
+        let res;
+        if (inputType === 'file_path' && filePicker.files.length > 0) {
+            // Send raw file bytes
+            const fileBytes = await filePicker.files[0].arrayBuffer();
+            res = await apiCall(`/api/inference/invoke-local?endpoint_name=${encodeURIComponent(fd.get('endpoint_name'))}&task_type=${encodeURIComponent(fd.get('task_type'))}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/dicom' },
+                body: fileBytes,
+            });
+        } else {
+            const payload = {
+                endpoint_name: fd.get('endpoint_name'),
+                task_type:     fd.get('task_type'),
+                input_type:    inputType,
+                input_value:   inputValue,
+                output_s3_uri: fd.get('output_s3_uri') || null,
+            };
+            res = await apiCall('/api/inference/invoke', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+        }
 
         if (banner) { banner.className = 'sm-status-banner sm-status-success'; banner.innerHTML = '<i class="fas fa-check-circle"></i> Inference complete'; }
         if (placeholder) placeholder.style.display = 'none';
         if (result) result.style.display = 'block';
 
-        if (payload.task_type === 'classification') {
+        if (fd.get('task_type') === 'classification') {
             displayClassificationResult(res);
         } else {
             displaySegmentationResult(res);

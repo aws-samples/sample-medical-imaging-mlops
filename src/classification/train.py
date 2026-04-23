@@ -1,8 +1,10 @@
 """
 Training script for medical image classification on SageMaker BYOC.
 Accepts: --task_type, --dimension, --model_name, --batch_size, --epochs,
-         --learning_rate, --val_interval
+         --learning_rate, --val_interval, --data_s3_uri
 Data channel: SM_CHANNEL_DATA with train/ val/ subfolders
+--data_s3_uri is optional provenance metadata written into result.json;
+it does not affect data loading (data is always read from SM_CHANNEL_DATA).
 """
 import os
 import json
@@ -29,6 +31,7 @@ parser.add_argument("--batch_size",    type=int,   default=16)
 parser.add_argument("--epochs",        type=int,   default=1)
 parser.add_argument("--learning_rate", type=float, default=0.001)
 parser.add_argument("--val_interval",  type=int,   default=1)
+parser.add_argument("--data_s3_uri",   type=str,   default="")
 args, _ = parser.parse_known_args()
 logger.info("Args: %s", args)
 
@@ -185,7 +188,7 @@ result = {
     "train_accuracy":    round(last_train_acc, 4),
     "val_accuracy":      round(last_val_acc,   4),
     "best_val_accuracy": round(best_acc, 4),
-    "data_s3_uri":       os.environ.get("SM_CHANNEL_DATA", data_root),
+    "data_s3_uri":       args.data_s3_uri or os.environ.get("SM_CHANNEL_DATA", data_root),
     "task_type":         args.task_type,
     "dimension":         args.dimension,
     "learning_rate":     args.learning_rate,

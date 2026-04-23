@@ -647,6 +647,8 @@ async function loadSageMakerJobs() {
 function switchJobsTab(tab) {
     window._jobsTab = tab;
     document.getElementById('tab-active').classList.toggle('active', tab === 'active');
+    document.getElementById('tab-completed').classList.toggle('active', tab === 'completed');
+    document.getElementById('tab-failed').classList.toggle('active', tab === 'failed');
     document.getElementById('tab-archived').classList.toggle('active', tab === 'archived');
     loadSageMakerJobs();
 }
@@ -655,11 +657,20 @@ function displaySageMakerJobs(jobs) {
     const container = document.getElementById('sagemaker-jobs');
     if (!container) return;
 
-    const showArchived = window._jobsTab === 'archived';
-    const visible = jobs.filter(j => showArchived ? j.archived : !j.archived);
+    const tab = window._jobsTab || 'completed';
+    const ACTIVE_STATES = new Set(['InProgress', 'Stopping']);
+    const COMPLETED_STATES = new Set(['Completed', 'Stopped']);
+
+    const visible = jobs.filter(j => {
+        if (tab === 'archived')   return j.archived;
+        if (tab === 'failed')     return !j.archived && j.status === 'Failed';
+        if (tab === 'completed')  return !j.archived && COMPLETED_STATES.has(j.status);
+        return !j.archived && ACTIVE_STATES.has(j.status); // 'active'
+    });
 
     if (!visible.length) {
-        container.innerHTML = `<p style="color:#888; padding:0.5rem;">${showArchived ? 'No archived jobs.' : 'No training jobs yet.'}</p>`;
+        const msgs = { active: 'No active jobs.', completed: 'No completed jobs.', failed: 'No failed jobs.', archived: 'No archived jobs.' };
+        container.innerHTML = `<p style="color:#888; padding:0.5rem;">${msgs[tab] || 'No jobs.'}</p>`;
         return;
     }
 
@@ -732,7 +743,7 @@ function displaySageMakerJobs(jobs) {
                 <button onclick="openCommentModal('${job.job_name}', \`${(job.comment||'').replace(/`/g,"'")}\`)" class="btn btn-secondary" title="Add comment">
                     <i class="fas fa-comment-alt"></i> Comment
                 </button>
-                <button onclick="archiveSageMakerJob('${job.job_name}')" class="btn btn-secondary" title="Archive" ${job.archived || showArchived ? 'style="display:none"' : ''}>
+                <button onclick="archiveSageMakerJob('${job.job_name}')" class="btn btn-secondary" title="Archive" ${job.archived || tab !== 'completed' ? 'style="display:none"' : ''}>
                     <i class="fas fa-archive"></i> Archive
                 </button>
                 ${job.status === 'Completed' && !job.result && job.model_artifacts && !job.artifacts_deleted ? `

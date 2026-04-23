@@ -20,14 +20,27 @@ class InferenceService:
         """Invoke a SageMaker real-time endpoint and optionally save result to S3."""
         runtime = boto_session.client("sagemaker-runtime")
 
-        # inference_realtime.py expects "file_path" key
-        body = json.dumps({"file_path": input_data.get("s3_uri") or input_data.get("file_path", "")})
-        response = runtime.invoke_endpoint(
-            EndpointName=endpoint_name,
-            ContentType="application/json",
-            Accept="application/json",
-            Body=body,
-        )
+        # Handle raw bytes (local file upload) vs JSON payload
+        if "bytes" in input_data:
+            response = runtime.invoke_endpoint(
+                EndpointName=endpoint_name,
+                ContentType="application/dicom",
+                Accept="application/json",
+                Body=input_data["bytes"],
+            )
+        else:
+            s3_uri    = input_data.get("s3_uri")
+            file_path = input_data.get("file_path")
+            if s3_uri:
+                body = json.dumps({"s3_uri": s3_uri})
+            else:
+                body = json.dumps({"file_path": file_path or ""})
+            response = runtime.invoke_endpoint(
+                EndpointName=endpoint_name,
+                ContentType="application/json",
+                Accept="application/json",
+                Body=body,
+            )
         result_str = response["Body"].read().decode("utf-8")
         result     = json.loads(result_str)
 
