@@ -735,6 +735,10 @@ function displaySageMakerJobs(jobs) {
                 <button onclick="archiveSageMakerJob('${job.job_name}')" class="btn btn-secondary" title="Archive" ${job.archived || showArchived ? 'style="display:none"' : ''}>
                     <i class="fas fa-archive"></i> Archive
                 </button>
+                ${job.status === 'Completed' && !job.result && job.model_artifacts && !job.artifacts_deleted ? `
+                <button onclick="loadJobResult('${job.job_name}')" class="btn btn-secondary" title="Load result.json from model artifacts">
+                    <i class="fas fa-download"></i> Load Results
+                </button>` : ''}
                 ${job.model_artifacts && !job.artifacts_deleted ? `
                 <button onclick="deleteJobArtifacts('${job.job_name}')" class="btn btn-secondary" title="Delete model.tar.gz from S3" style="color:#c62828;">
                     <i class="fas fa-trash"></i> Delete Artifacts
@@ -748,6 +752,13 @@ function displaySageMakerJobs(jobs) {
     });
 }
 
+
+async function loadJobResult(jobName) {
+    try {
+        const res = await apiCall(`/api/training/sagemaker/jobs/${jobName}/result`);
+        loadSageMakerJobs();
+    } catch (err) { alert(`Could not load result.json: ${err.message}`); }
+}
 
 async function removeSageMakerJob(jobName) {
     if (!confirm(`Remove "${jobName}" from the list? This does not affect AWS.`)) return;

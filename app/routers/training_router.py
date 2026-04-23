@@ -270,7 +270,14 @@ async def list_sagemaker_jobs():
         terminal_states = {"Completed", "Failed", "Stopped"}
         for job in jobs:
             if job.get("status") in terminal_states:
-                continue  # already final — skip AWS call
+                # Auto-fetch result.json for completed jobs that don't have it yet
+                if job.get("status") == "Completed" and not job.get("result") and job.get("model_artifacts") and not job.get("artifacts_deleted") and aws_service.s3_client:
+                    try:
+                        result = sm_training_service.fetch_result_json(job["job_name"], aws_service.s3_client)
+                        job["result"] = result
+                    except Exception as e:
+                        logger.debug("Could not fetch result.json for %s: %s", job["job_name"], e)
+                continue
             try:
                 updated = sm_training_service.get_job_status(job["job_name"], aws_service.sagemaker_client)
                 job["status"] = updated["status"]
@@ -312,6 +319,21 @@ async def stop_sagemaker_job(job_name: str):
         return {"job_name": job_name, "status": "Stopping"}
     except Exception as e:
         logger.error(f"Failed to stop SageMaker job: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/sagemaker/jobs/{job_name}/result")
+async def get_job_result(job_name: str):
+    """Fetch result.json from model.tar.gz for a completed job."""
+    try:
+        if not aws_service.s3_client:
+            raise ValueError("AWS credentials not configured")
+        result = sm_training_service.fetch_result_json(job_name, aws_service.s3_client)
+        return {"job_name": job_name, "result": result}
+    except (KeyError, ValueError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error("Failed to fetch result.json for %s: %s", job_name, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 

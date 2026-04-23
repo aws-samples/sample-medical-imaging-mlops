@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 
 from app.routers import aws_router, training_router, deployment_router
 from app.routers import inference_router
+from app.routers import fairness_router
 from app.services.aws_service import AWSService
 
 load_dotenv()
@@ -26,6 +27,7 @@ app.include_router(aws_router.router, prefix="/api/aws", tags=["AWS"])
 app.include_router(training_router.router, prefix="/api/training", tags=["Training"])
 app.include_router(deployment_router.router, prefix="/api/deployment", tags=["Deployment"])
 app.include_router(inference_router.router, prefix="/api/inference", tags=["Inference"])
+app.include_router(fairness_router.router, prefix="/api/fairness", tags=["Fairness"])
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):

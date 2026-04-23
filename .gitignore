@@ -23,9 +23,7 @@ env/
 # Logs & Data
 logs/
 *.log
-data/raw/
-data/processed/
-data/models/
+data/
 mlflow.db
 
 # OS
@@ -40,3 +38,6 @@ htmlcov/
 # Kiro
 .kiro/
 context
+
+# Reference notebooks (separate repo)
+sample-migration-of-training-medical-imaging-modes-from-ec2-to-sagemaker/

@@ -79,6 +79,63 @@
     </div>
 </section>
 
+<!-- Fairness Section -->
+<section id="fairness" class="section">
+    <div class="container">
+        <h2><i class="fas fa-balance-scale"></i> Fairness &amp; Demographics</h2>
+        <div class="card">
+            <div class="card-header">
+                <h3>Demographic Analysis</h3>
+                <p style="margin:0; font-size:0.88rem; color:#666;">Scan DICOM files in an S3 bucket to extract and visualise patient demographic distributions for fairness assessment.</p>
+            </div>
+            <div class="card-body">
+                <form id="fairness-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fairness-s3-uri">S3 URI (bucket or prefix)</label>
+                            <input type="text" id="fairness-s3-uri" placeholder="s3://your-bucket/dataset/" required>
+                            <small style="color:var(--aws-dark-gray)">Must contain DICOM (.dcm) files</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="fairness-max-files">Max Files to Scan</label>
+                            <input type="number" id="fairness-max-files" value="200" min="1" max="2000">
+                            <small style="color:var(--aws-dark-gray)">Larger values take longer</small>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Scan Demographics
+                    </button>
+                </form>
+                <div id="fairness-status" class="sm-status-banner" style="display:none; margin-top:1rem;"></div>
+            </div>
+        </div>
+
+        <div id="fairness-results" style="display:none; margin-top:1.5rem;">
+            <div id="fairness-summary-cards" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:1rem; margin-bottom:1.5rem;"></div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+                <div class="card"><div class="card-body"><canvas id="fairness-sex-chart"></canvas></div></div>
+                <div class="card"><div class="card-body"><canvas id="fairness-age-chart"></canvas></div></div>
+                <div class="card"><div class="card-body"><canvas id="fairness-ethnicity-chart"></canvas></div></div>
+                <div class="card"><div class="card-body"><canvas id="fairness-modality-chart"></canvas></div></div>
+            </div>
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header"><h3>Demographic Tag Completeness</h3></div>
+                <div class="card-body" id="fairness-missing-rates"></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3>File Sample (up to 50)</h3></div>
+                <div class="card-body" id="fairness-sample-table"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.fairness-card { background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:1rem; text-align:center; }
+.fairness-card-value { font-size:2rem; font-weight:700; color:#232f3e; }
+.fairness-card-label { font-size:0.82rem; color:#666; margin-top:0.25rem; }
+</style>
+
 <!-- Training Section -->
 <section id="training" class="section">
     <div class="container">
@@ -300,8 +357,8 @@
                             </div>
                             <div class="form-group">
                                 <label for="dep-image-uri">Inference Container Image URI</label>
-                                <input type="text" id="dep-image-uri" name="image_uri" value="763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-inference:2.6.0-gpu-py312-cu124-ubuntu22.04-sagemaker" required>
-                                <small style="color:var(--aws-dark-gray)">AWS pre-built PyTorch inference image</small>
+                                <input type="text" id="dep-image-uri" name="image_uri" value="575108919340.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest" required>
+                                <small style="color:var(--aws-dark-gray)">Pre-built inference image with monai, pydicom, torch — no cold-start install delay</small>
                             </div>
                         </div>
                         <div class="form-row">
@@ -537,4 +594,5 @@
 <script src="/static/js/training.js"></script>
 <script src="/static/js/deployment.js"></script>
 <script src="/static/js/inference.js"></script>
+<script src="/static/js/fairness.js"></script>
 {% endblock %}

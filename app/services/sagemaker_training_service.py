@@ -175,9 +175,45 @@ class SageMakerTrainingService:
             self.jobs[job_name]["status"] = status
             self.jobs[job_name].update(kwargs)
             self._save_jobs()
-            # Write report when job reaches terminal state
             if status == "Completed":
                 self._write_training_report(job_name)
+
+    def fetch_result_json(self, job_name: str, s3_client) -> dict:
+        """Download model.tar.gz, extract result.json, store on job record.
+        Safe to call multiple times — skips if already fetched."""
+        job = self.jobs.get(job_name)
+        if not job:
+            raise KeyError(f"Job not found: {job_name}")
+        if job.get("result"):
+            return job["result"]   # already fetched
+
+        uri = job.get("model_artifacts")
+        if not uri:
+            raise ValueError("No model_artifacts URI for this job")
+
+        import io, tarfile, tempfile, os
+        path   = uri.replace("s3://", "")
+        bucket = path.split("/")[0]
+        key    = "/".join(path.split("/")[1:])
+
+        with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as tmp:
+            tmp_path = tmp.name
+
+        try:
+            s3_client.download_file(bucket, key, tmp_path)
+            with tarfile.open(tmp_path, "r:gz") as tar:
+                try:
+                    member = tar.getmember("result.json")
+                    f      = tar.extractfile(member)
+                    result = json.loads(f.read().decode("utf-8"))
+                except KeyError:
+                    raise ValueError("result.json not found in model.tar.gz — was the model trained with the updated train.py?")
+        finally:
+            os.unlink(tmp_path)
+
+        self.store_result(job_name, result)
+        logger.info("Fetched result.json for job %s: %s", job_name, result)
+        return result
 
     def list_jobs(self) -> list:
         return [

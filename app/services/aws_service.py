@@ -133,32 +133,29 @@ class AWSService:
             raise
 
     def get_mlflow_tracking_url(self, tracking_server_arn: str) -> str:
-        """Resolve a SageMaker MLflow ARN to its HTTP URL.
-        Handles both mlflow-tracking-server and mlflow-app ARN formats.
+        """Generate a presigned URL for a SageMaker MLflow tracking server.
+        Works for both mlflow-tracking-server and mlflow-app ARN formats.
+        Presigned URLs expire after 5 minutes — always generate a fresh one.
         """
         if not self.sagemaker_client:
             raise ValueError("AWS credentials not configured")
 
+        # Extract the tracking server name from the ARN or use as-is
+        server_name = tracking_server_arn.split("/")[-1]
+
         try:
-            # mlflow-app ARN: arn:aws:sagemaker:region:account:mlflow-app/app-XXXXX
-            if "mlflow-app" in tracking_server_arn:
-                app_name = tracking_server_arn.split("/")[-1].lower()
-                region   = tracking_server_arn.split(":")[3]
-                url = f"https://{app_name}.mlflow.sagemaker.{region}.app.aws/#/experiments"
-            else:
-                # mlflow-tracking-server ARN or plain name
-                server_name = tracking_server_arn.split("/")[-1]
-                response = self.sagemaker_client.describe_mlflow_tracking_server(
-                    TrackingServerName=server_name
-                )
-                url = response.get("TrackingServerUrl")
+            response = self.sagemaker_client.create_presigned_mlflow_tracking_server_url(
+                TrackingServerName=server_name,
+            )
+            url = response.get("AuthorizedUrl")
         except ClientError as e:
-            logger.error(f"Failed to resolve MLflow ARN '{tracking_server_arn}': {e}")
+            logger.error(f"Failed to generate presigned MLflow URL for '{tracking_server_arn}': {e}")
             raise
 
         if not url:
-            raise ValueError(f"No URL found for MLflow ARN: {tracking_server_arn}")
+            raise ValueError(f"No presigned URL returned for MLflow server: {server_name}")
         return url
+
 
     def get_s3_object_metadata(self, bucket: str, key: str) -> Dict:
         """Get metadata for an S3 object"""

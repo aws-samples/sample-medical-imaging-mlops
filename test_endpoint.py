@@ -16,7 +16,7 @@ import sagemaker
 from botocore.config import Config
 
 # ── Config ────────────────────────────────────────────────────────────────────
-DEFAULT_ENDPOINT   = "test-endp-vin"
+DEFAULT_ENDPOINT   = "test-endp-class-vindr"
 DEFAULT_SOURCE_IMG = (
     "s3://public-datasets-imaging-us-east-1/vindr-spinexr-subset/test/"
     "Foraminal_stenosis/412cb981a940a9689347c614cb1489dd.dcm"
