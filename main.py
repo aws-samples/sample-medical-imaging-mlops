@@ -20,6 +20,11 @@ app = FastAPI(title="MedML Training Platform", version="1.0.0")
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# Mount evaluation results cache as static
+EVAL_RESULTS_DIR = Path("data/evaluation_results")
+EVAL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/evaluation-results", StaticFiles(directory=str(EVAL_RESULTS_DIR)), name="evaluation-results")
+
 # Templates
 templates = Jinja2Templates(directory="templates")
 

@@ -3,3 +3,4 @@ matplotlib>=3.8
 seaborn>=0.13
 numpy>=1.24
 boto3>=1.34
+pydicom>=2.4

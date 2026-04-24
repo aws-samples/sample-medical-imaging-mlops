@@ -166,6 +166,88 @@ class EvaluationService:
         self._save()
         return record
 
+    RESULTS_DIR = Path("data/evaluation_results")
+    PLOT_FILES  = {"confusion_matrix.png", "roc_auc.png", "subgroup_accuracy.png", "dice_distribution.png"}
+
+    def download_results(self, job_name: str, s3_client, plots_only: bool = False) -> dict:
+        """
+        Download output files for a completed job from S3 into
+        data/evaluation_results/<job_name>/.
+        If plots_only=True, only downloads PNG files (fast).
+        Returns a dict of { filename: local_url_path }.
+        """
+        self._load()
+        logger.info("download_results called for %r, known jobs: %s", job_name, list(self.jobs.keys()))
+        if job_name not in self.jobs:
+            raise ValueError(f"Job {job_name!r} not found")
+
+        record     = self.jobs[job_name]
+        output_uri = record.get("output_s3_uri", "")
+        if not output_uri:
+            raise ValueError("No output S3 URI on this job record")
+
+        bucket, prefix = output_uri.replace("s3://", "").split("/", 1)
+        prefix = prefix.rstrip("/")
+
+        local_dir = self.RESULTS_DIR / job_name
+        local_dir.mkdir(parents=True, exist_ok=True)
+
+        # List all objects at the output prefix
+        paginator  = s3_client.get_paginator("list_objects_v2")
+        downloaded = dict(record.get("cached_results", {}))  # preserve existing
+
+        for page in paginator.paginate(Bucket=bucket, Prefix=prefix + "/"):
+            for obj in page.get("Contents", []):
+                key      = obj["Key"]
+                filename = key.split("/")[-1]
+                if not filename:
+                    continue
+                if plots_only and filename not in self.PLOT_FILES:
+                    continue
+                local_path = local_dir / filename
+                try:
+                    s3_client.download_file(bucket, key, str(local_path))
+                    downloaded[filename] = f"/evaluation-results/{job_name}/{filename}"
+                    logger.info("Cached %s → %s", key, local_path)
+                except Exception as e:
+                    logger.warning("Could not download %s: %s", key, e)
+
+        record["cached_results"] = downloaded
+        self._save()
+        return downloaded
+
+    def delete_job(self, job_name: str) -> dict:
+        """Remove a job record and its local cache."""
+        import shutil
+        self._load()
+        if job_name not in self.jobs:
+            raise ValueError(f"Job {job_name!r} not found")
+        local_dir = self.RESULTS_DIR / job_name
+        if local_dir.exists():
+            shutil.rmtree(local_dir)
+        del self.jobs[job_name]
+        self._save()
+        return {"deleted": job_name}
+
+    def clear_cache(self, job_name: str) -> dict:
+        """Delete locally cached result files for a job."""
+        local_dir = self.RESULTS_DIR / job_name
+        removed = []
+        if local_dir.exists():
+            import shutil
+            for f in local_dir.iterdir():
+                removed.append(f.name)
+            shutil.rmtree(local_dir)
+            logger.info("Cleared cache for %s", job_name)
+
+        # Remove cached_results from the job record
+        self._load()
+        if job_name in self.jobs:
+            self.jobs[job_name].pop("cached_results", None)
+            self._save()
+
+        return {"removed": removed}
+
     def _fetch_metrics(self, output_s3_uri: str) -> Optional[dict]:
         """Download metrics.json from the job output prefix."""
         try:
@@ -182,9 +264,10 @@ class EvaluationService:
     # ── List ──────────────────────────────────────────────────────────────────
 
     def list_jobs(self, sagemaker_client=None) -> list:
-        """Return all jobs, refreshing status for any that are still in-progress."""
+        """Return all jobs, refreshing status only for in-progress ones."""
+        self._load()
         if sagemaker_client:
-            for job_name, record in self.jobs.items():
+            for job_name, record in list(self.jobs.items()):
                 if record.get("status") in ("InProgress", "Stopping"):
                     try:
                         self.get_status(job_name, sagemaker_client)

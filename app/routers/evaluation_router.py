@@ -2,6 +2,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
+import json
 import logging
 
 from app.routers.aws_router import aws_service
@@ -59,44 +60,35 @@ async def list_evaluation_jobs():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/jobs/{job_name}/plots")
-async def get_evaluation_plots(job_name: str):
-    """Return presigned S3 URLs for the plot files of a completed evaluation job."""
+@router.get("/jobs/{job_name}/subgroup-metrics")
+async def get_subgroup_metrics(job_name: str):
+    """Fetch and return subgroup_metrics.json from the job's S3 output."""
     try:
         if not aws_service.s3_client:
             raise ValueError("AWS credentials not configured")
-        evaluation_service._load()   # re-sync from disk
+        evaluation_service._load()
         if job_name not in evaluation_service.jobs:
             raise ValueError(f"Job {job_name!r} not found")
 
         record     = evaluation_service.jobs[job_name]
         output_uri = record.get("output_s3_uri", "")
-        task_type  = record.get("task_type", "classification")
-
         if not output_uri:
             raise ValueError("No output S3 URI on this job record")
 
         bucket, prefix = output_uri.replace("s3://", "").split("/", 1)
-        prefix = prefix.rstrip("/")
+        key = prefix.rstrip("/") + "/subgroup_metrics.json"
 
-        plot_files = (
-            ["confusion_matrix.png", "roc_auc.png"]
-            if task_type == "classification"
-            else ["dice_distribution.png"]
-        )
-
-        urls = {}
-        for fname in plot_files:
-            key = f"{prefix}/{fname}"
-            url = aws_service.generate_presigned_url(bucket, key)
-            if url:
-                urls[fname] = url
-
-        return {"plots": urls, "task_type": task_type, "output_s3_uri": output_uri}
+        obj  = aws_service.s3_client.get_object(Bucket=bucket, Key=key)
+        data = json.loads(obj["Body"].read().decode("utf-8"))
+        return data
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        logger.error("Failed to generate plot URLs: %s", e)
+        from botocore.exceptions import ClientError
+        if isinstance(e, ClientError) and e.response["Error"]["Code"] in ("NoSuchKey", "404"):
+            raise HTTPException(status_code=404,
+                detail="subgroup_metrics.json not found — job may not have DICOM files with demographic tags")
+        logger.error("Failed to fetch subgroup metrics: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -104,10 +96,84 @@ async def get_evaluation_plots(job_name: str):
 async def get_evaluation_job(job_name: str):
     """Get status and metrics for a specific evaluation job."""
     try:
-        if not aws_service.sagemaker_client:
-            raise ValueError("AWS credentials not configured")
-        return evaluation_service.get_status(job_name, aws_service.sagemaker_client)
+        evaluation_service._load()
+        if job_name not in evaluation_service.jobs:
+            raise ValueError(f"Job {job_name!r} not found")
+        record = evaluation_service.jobs[job_name]
+        if record.get("status") in ("Completed", "Failed", "Stopped"):
+            return record
+        if aws_service.sagemaker_client:
+            return evaluation_service.get_status(job_name, aws_service.sagemaker_client)
+        return record
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/jobs/{job_name}")
+async def delete_evaluation_job(job_name: str):
+    """Remove a job record and its local cache. Does not delete S3 outputs."""
+    try:
+        return evaluation_service.delete_job(job_name)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/jobs/{job_name}/cache")
+async def clear_evaluation_cache(job_name: str):
+    """Delete locally cached result files for a job."""
+    try:
+        return evaluation_service.clear_cache(job_name)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/jobs/{job_name}/download-results")
+async def download_evaluation_results(job_name: str, plots_only: bool = False):
+    """Download output files for a job into the local cache.
+    plots_only=true downloads only PNGs (fast); omit for full download."""
+    import asyncio
+    from functools import partial
+    try:
+        if not aws_service.s3_client:
+            raise ValueError("AWS credentials not configured")
+        loop   = asyncio.get_event_loop()
+        cached = await loop.run_in_executor(
+            None,
+            partial(evaluation_service.download_results,
+                    job_name, aws_service.s3_client, plots_only),
+        )
+        return {"cached": cached, "job_name": job_name}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error("Failed to download results: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/jobs/{job_name}/plots")
+async def get_evaluation_plots(job_name: str):
+    """Return local cache URLs for plot files. Returns empty if not yet downloaded."""
+    try:
+        evaluation_service._load()
+        if job_name not in evaluation_service.jobs:
+            raise ValueError(f"Job {job_name!r} not found")
+        record    = evaluation_service.jobs[job_name]
+        task_type = record.get("task_type", "classification")
+        plot_files = (
+            ["confusion_matrix.png", "roc_auc.png", "subgroup_accuracy.png"]
+            if task_type == "classification"
+            else ["dice_distribution.png"]
+        )
+        cached = record.get("cached_results", {})
+        urls   = {f: cached[f] for f in plot_files if f in cached}
+        return {"plots": urls, "task_type": task_type,
+                "output_s3_uri": record.get("output_s3_uri"), "source": "cache"}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error("Failed to get plot URLs: %s", e)
         raise HTTPException(status_code=500, detail=str(e))

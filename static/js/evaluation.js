@@ -119,6 +119,17 @@ function renderEvalJobs(jobs) {
                 <button class="btn btn-secondary" onclick="refreshEvalJob('${j.job_name}')">
                     <i class="fas fa-sync"></i> Refresh
                 </button>` : ''}
+                ${j.status === 'Completed' ? `
+                <button class="btn btn-secondary" onclick="downloadEvalResults('${j.job_name}', this)">
+                    <i class="fas fa-download"></i> ${j.cached_results ? 'Re-download' : 'Download Results'}
+                </button>` : ''}
+                ${j.cached_results ? `
+                <button class="btn btn-secondary" onclick="clearEvalCache('${j.job_name}', this)" style="color:#c62828;" title="Remove locally cached files">
+                    <i class="fas fa-trash"></i> Clear Cache
+                </button>` : ''}
+                <button class="btn btn-secondary" onclick="deleteEvalJob('${j.job_name}', this)" style="color:#c62828;" title="Delete this job record">
+                    <i class="fas fa-times-circle"></i> Delete
+                </button>
                 ${j.metrics ? `
                 <button class="btn btn-secondary" onclick="showEvalResults('${j.job_name}')">
                     <i class="fas fa-chart-bar"></i> View Results
@@ -146,6 +157,42 @@ function renderInlineMetrics(m, taskType) {
     </div>`;
 }
 
+async function deleteEvalJob(jobName, btn) {
+    if (!confirm(`Delete job "${jobName}" from tracking?\n\nThis removes the local record and cached files. S3 outputs are not affected.`)) return;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+    try {
+        await apiCall(`/api/evaluation/jobs/${jobName}`, { method: 'DELETE' });
+        loadEvalJobs();
+    } catch (err) {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-times-circle"></i> Delete'; }
+        alert(`Error: ${err.message}`);
+    }
+}
+
+async function clearEvalCache(jobName, btn) {
+    if (!confirm(`Remove locally cached files for "${jobName}"? The results remain in S3.`)) return;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Clearing...'; }
+    try {
+        await apiCall(`/api/evaluation/jobs/${jobName}/cache`, { method: 'DELETE' });
+        loadEvalJobs();
+    } catch (err) {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash"></i> Clear Cache'; }
+        alert(`Error: ${err.message}`);
+    }
+}
+
+async function downloadEvalResults(jobName, btn) {
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...'; }
+    try {
+        await apiCall(`/api/evaluation/jobs/${jobName}/download-results`, { method: 'POST' });
+        if (btn) { btn.innerHTML = '<i class="fas fa-check"></i> Downloaded'; }
+        loadEvalJobs();
+    } catch (err) {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-download"></i> Download Results'; }
+        alert(`Download failed: ${err.message}`);
+    }
+}
+
 async function refreshEvalJob(jobName) {
     try {
         await apiCall(`/api/evaluation/jobs/${jobName}`);
@@ -168,7 +215,42 @@ function showEvalResults(jobName) {
         renderMetricCards(job.metrics, job.task_type);
         renderPerClassTable(job.metrics);
         renderOutputLinks(job.output_s3_uri, job.task_type);
-        loadEvalPlots(jobName);
+        loadSubgroupMetrics(jobName);
+
+        // If already cached, show plots immediately
+        if (job.cached_results && Object.keys(job.cached_results).length > 0) {
+            loadEvalPlots(jobName);
+            return;
+        }
+
+        // Otherwise kick off plots-only download first (fast), render, then full download in background
+        const grid = document.getElementById('eval-plots-grid');
+        const wrap = document.getElementById('eval-plots-wrap');
+        if (wrap) wrap.style.display = 'block';
+        if (grid) grid.innerHTML = '<p style="color:#888;"><i class="fas fa-spinner fa-spin"></i> Fetching plots...</p>';
+
+        apiCall(`/api/evaluation/jobs/${jobName}/download-results?plots_only=true`, { method: 'POST' })
+            .then(res => {
+                const hasPlots = res.cached && Object.keys(res.cached).some(f => f.endsWith('.png'));
+                if (!hasPlots) {
+                    if (grid) grid.innerHTML = `
+                        <p style="color:#888;">
+                            <i class="fas fa-exclamation-circle"></i>
+                            No plot files found at <code>${job.output_s3_uri}</code>.<br>
+                            The output S3 bucket must be writable by the Processing Job.
+                        </p>`;
+                    return;
+                }
+                loadEvalPlots(jobName);
+                // Full download (CSV, JSON) in background
+                apiCall(`/api/evaluation/jobs/${jobName}/download-results`, { method: 'POST' })
+                    .then(() => loadEvalJobs())
+                    .catch(() => {});
+            })
+            .catch(err => {
+                if (grid) grid.innerHTML = `<p style="color:#c62828;">Download failed: ${err.message}</p>`;
+            });
+
     }).catch(err => alert(`Error: ${err.message}`));
 }
 
@@ -219,6 +301,60 @@ function renderPerClassTable(m) {
     `).join('');
 }
 
+async function loadSubgroupMetrics(jobName) {
+    const wrap   = document.getElementById('eval-subgroup-wrap');
+    const tables = document.getElementById('eval-subgroup-tables');
+    if (!wrap || !tables) return;
+
+    try {
+        // Fetch subgroup_metrics.json via a presigned URL from the plots endpoint
+        // We piggyback on the job record's output_s3_uri
+        const job = await apiCall(`/api/evaluation/jobs/${jobName}`);
+        if (!job.output_s3_uri) return;
+
+        const res = await fetch(`/api/evaluation/jobs/${jobName}/subgroup-metrics`);
+        if (!res.ok) return;   // silently skip if not available
+        const subgroups = await res.json();
+
+        const attrLabels = { sex: 'Sex', age_bucket: 'Age Group', ethnicity: 'Ethnicity' };
+        const attrs = Object.keys(subgroups).filter(a => Object.keys(subgroups[a]).length > 0);
+        if (!attrs.length) return;
+
+        wrap.style.display = 'block';
+        tables.innerHTML = attrs.map(attr => {
+            const groups = subgroups[attr];
+            const rows   = Object.entries(groups)
+                .sort((a, b) => b[1].accuracy - a[1].accuracy)
+                .map(([grp, v]) => `
+                    <tr style="border-bottom:1px solid #f0f0f0;">
+                        <td style="padding:0.45rem 0.75rem;">${grp}</td>
+                        <td style="padding:0.45rem 0.75rem;">${(v.accuracy * 100).toFixed(1)}%</td>
+                        <td style="padding:0.45rem 0.75rem;">${v.macro_f1.toFixed(3)}</td>
+                        <td style="padding:0.45rem 0.75rem;">${v.n}</td>
+                    </tr>`).join('');
+            return `
+                <div style="margin-bottom:1.25rem;">
+                    <h5 style="margin:0 0 0.5rem; color:#444;">${attrLabels[attr] || attr}</h5>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%; border-collapse:collapse; font-size:0.88rem;">
+                            <thead>
+                                <tr style="background:#f5f5f5; text-align:left;">
+                                    <th style="padding:0.45rem 0.75rem; border-bottom:2px solid #e0e0e0;">Group</th>
+                                    <th style="padding:0.45rem 0.75rem; border-bottom:2px solid #e0e0e0;">Accuracy</th>
+                                    <th style="padding:0.45rem 0.75rem; border-bottom:2px solid #e0e0e0;">Macro F1</th>
+                                    <th style="padding:0.45rem 0.75rem; border-bottom:2px solid #e0e0e0;">N</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                </div>`;
+        }).join('');
+    } catch (_) {
+        // Subgroup data is optional — fail silently
+    }
+}
+
 function renderOutputLinks(outputS3Uri, taskType) {
     const el = document.getElementById('eval-output-links');
     if (!el || !outputS3Uri) return;
@@ -226,7 +362,7 @@ function renderOutputLinks(outputS3Uri, taskType) {
     const prefix = outputS3Uri.replace(/\/$/, '');
     const files = taskType === 'segmentation'
         ? ['metrics.json', 'predictions.csv', 'dice_distribution.png']
-        : ['metrics.json', 'predictions.csv', 'confusion_matrix.png', 'roc_auc.png'];
+        : ['metrics.json', 'subgroup_metrics.json', 'predictions.csv', 'confusion_matrix.png', 'roc_auc.png', 'subgroup_accuracy.png'];
 
     el.innerHTML = `
         <strong>Output files at:</strong> <code>${prefix}/</code>
@@ -251,14 +387,15 @@ async function loadEvalPlots(jobName) {
         const plots = res.plots || {};
 
         if (!Object.keys(plots).length) {
-            grid.innerHTML = `<p style="color:#888;">No plots found at <code>${res.output_s3_uri || 'output URI'}</code> — ensure the output bucket is writable and the job completed successfully.</p>`;
+            grid.innerHTML = `<p style="color:#888;">No plots in cache yet — click "Download Results" to fetch from S3.</p>`;
             return;
         }
 
         const labels = {
-            'confusion_matrix.png':  'Confusion Matrix',
-            'roc_auc.png':           'ROC-AUC Curves',
-            'dice_distribution.png': 'Dice Score Distribution',
+            'confusion_matrix.png':   'Confusion Matrix',
+            'roc_auc.png':            'ROC-AUC Curves',
+            'subgroup_accuracy.png':  'Accuracy by Demographic Group',
+            'dice_distribution.png':  'Dice Score Distribution',
         };
 
         grid.innerHTML = Object.entries(plots).map(([fname, url]) => `
@@ -270,7 +407,7 @@ async function loadEvalPlots(jobName) {
                     <img src="${url}" alt="${fname}"
                          style="max-width:100%; height:auto; border-radius:4px; cursor:pointer;"
                          onclick="openPlotLightbox('${url}', '${labels[fname] || fname}')"
-                         onerror="this.parentElement.innerHTML='<p style=color:#888>Plot not found at S3 output URI — check the bucket is writable and the job completed successfully</p>'">
+                         onerror="this.parentElement.innerHTML='<p style=color:#c62828>Image file missing from local cache — try re-downloading</p>'">
                 </div>
                 <div style="padding:0.4rem 1rem 0.75rem; text-align:right;">
                     <a href="${url}" target="_blank" class="btn btn-secondary" style="font-size:0.8rem; padding:0.3rem 0.75rem;">
