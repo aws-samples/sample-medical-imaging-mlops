@@ -154,6 +154,21 @@ class AWSService:
         return url
 
 
+    def generate_presigned_url(self, bucket: str, key: str, expiry: int = 3600) -> Optional[str]:
+        """Generate a presigned GET URL for an S3 object. Returns None if the object doesn't exist."""
+        if not self.s3_client:
+            raise ValueError("AWS credentials not configured")
+        try:
+            url = self.s3_client.generate_presigned_url(
+                "get_object",
+                Params={"Bucket": bucket, "Key": key},
+                ExpiresIn=expiry,
+            )
+            return url
+        except ClientError as e:
+            logger.warning("Could not generate presigned URL for s3://%s/%s: %s", bucket, key, e)
+            return None
+
     def get_s3_object_metadata(self, bucket: str, key: str) -> Dict:
         """Get metadata for an S3 object"""
         if not self.s3_client:

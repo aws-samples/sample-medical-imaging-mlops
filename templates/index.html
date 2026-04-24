@@ -535,6 +535,155 @@
     </div>
 </section>
 
+<!-- Evaluation Section -->
+<section id="evaluation" class="section">
+    <div class="container">
+        <h2><i class="fas fa-chart-bar"></i> Model Evaluation</h2>
+
+        <!-- Submit Job -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Run Evaluation Job</h3>
+                <p style="margin:0; font-size:0.88rem; color:#666;">
+                    Submits a SageMaker Processing Job that invokes a deployed endpoint on a labeled test set and generates metrics, ROC-AUC, and confusion matrix.
+                </p>
+            </div>
+            <div class="card-body">
+                <form id="evaluation-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="eval-task-type">Task Type</label>
+                            <select id="eval-task-type" name="task_type">
+                                <option value="classification">Classification</option>
+                                <option value="segmentation">Segmentation</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="eval-endpoint">Endpoint Name</label>
+                            <div style="display:flex; gap:6px;">
+                                <select id="eval-endpoint" name="endpoint_name" style="flex:1;">
+                                    <option value="" disabled selected>Loading endpoints...</option>
+                                </select>
+                                <button type="button" class="btn btn-secondary" onclick="loadEvalEndpoints()" title="Refresh">
+                                    <i class="fas fa-sync"></i>
+                                </button>
+                            </div>
+                            <input type="text" id="eval-endpoint-manual" placeholder="Or type endpoint name manually"
+                                style="margin-top:6px; width:100%;"
+                                oninput="document.getElementById('eval-endpoint').value = this.value">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="eval-data-s3-uri">Test Data S3 URI</label>
+                            <input type="text" id="eval-data-s3-uri" name="data_s3_uri"
+                                placeholder="s3://bucket/test-data/" required>
+                            <small style="color:var(--aws-dark-gray)">
+                                Classification: subfolders = class names, each containing DICOM files.<br>
+                                Segmentation: subfolders = subjects, each with img.nii.gz + mask.nii.gz.
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label for="eval-output-s3-uri">Output S3 URI</label>
+                            <input type="text" id="eval-output-s3-uri" name="output_s3_uri"
+                                placeholder="s3://bucket/eval-results/run-1/" required>
+                            <small style="color:var(--aws-dark-gray)">metrics.json, confusion_matrix.png, roc_auc.png saved here</small>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="eval-image-uri">Container Image URI</label>
+                            <input type="text" id="eval-image-uri" name="image_uri"
+                                placeholder="123456789.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest" required>
+                            <small style="color:var(--aws-dark-gray)">Reuse your inference container — eval deps installed at runtime</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="eval-role-arn">IAM Role ARN</label>
+                            <input type="text" id="eval-role-arn" name="role_arn"
+                                value="arn:aws:iam::575108919340:role/service-role/AmazonSageMaker-ExecutionRole-20240907T181142" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="eval-instance-type">Instance Type</label>
+                            <select id="eval-instance-type" name="instance_type">
+                                <option value="ml.m5.xlarge">ml.m5.xlarge (CPU, recommended)</option>
+                                <option value="ml.m5.2xlarge">ml.m5.2xlarge (CPU)</option>
+                                <option value="ml.c5.xlarge">ml.c5.xlarge (CPU)</option>
+                                <option value="ml.g5.xlarge">ml.g5.xlarge (GPU)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="eval-submit-banner" class="sm-status-banner" style="display:none;"></div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-play-circle"></i> Submit Evaluation Job
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Jobs List -->
+        <div class="card" style="margin-top:1.5rem;">
+            <div class="card-header">
+                <h3>Evaluation Jobs</h3>
+                <button class="btn btn-secondary" onclick="loadEvalJobs()">
+                    <i class="fas fa-sync"></i> Refresh
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="eval-jobs-list"></div>
+            </div>
+        </div>
+
+        <!-- Results Panel -->
+        <div id="eval-results-panel" style="display:none; margin-top:1.5rem;">
+            <div class="card">
+                <div class="card-header">
+                    <h3 id="eval-results-title">Evaluation Results</h3>
+                </div>
+                <div class="card-body">
+                    <!-- Summary metrics -->
+                    <div id="eval-metrics-cards" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:1rem; margin-bottom:1.5rem;"></div>
+
+                    <!-- Per-class table -->
+                    <div id="eval-per-class-wrap" style="margin-bottom:1.5rem; display:none;">
+                        <h4 style="margin:0 0 0.75rem;">Per-Class Metrics</h4>
+                        <div style="overflow-x:auto;">
+                            <table id="eval-per-class-table" style="width:100%; border-collapse:collapse; font-size:0.88rem;">
+                                <thead>
+                                    <tr style="background:#f5f5f5; text-align:left;">
+                                        <th style="padding:0.5rem 0.75rem; border-bottom:2px solid #e0e0e0;">Class</th>
+                                        <th style="padding:0.5rem 0.75rem; border-bottom:2px solid #e0e0e0;">Precision</th>
+                                        <th style="padding:0.5rem 0.75rem; border-bottom:2px solid #e0e0e0;">Recall</th>
+                                        <th style="padding:0.5rem 0.75rem; border-bottom:2px solid #e0e0e0;">F1</th>
+                                        <th style="padding:0.5rem 0.75rem; border-bottom:2px solid #e0e0e0;">Support</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="eval-per-class-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Output links -->
+                    <div id="eval-output-links" style="font-size:0.88rem; color:#555;"></div>
+
+                    <!-- Plots -->
+                    <div id="eval-plots-wrap" style="display:none; margin-top:1.5rem;">
+                        <h4 style="margin:0 0 0.75rem;">Plots</h4>
+                        <div id="eval-plots-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(420px, 1fr)); gap:1.5rem;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.eval-metric-card { background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:1rem; text-align:center; }
+.eval-metric-value { font-size:1.8rem; font-weight:700; color:#232f3e; }
+.eval-metric-label { font-size:0.8rem; color:#666; margin-top:0.25rem; }
+</style>
+
 <!-- Add Container Modal -->
 <div id="add-container-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
     <div style="background:#fff; border-radius:8px; padding:1.5rem; width:480px; max-width:90vw; box-shadow:0 8px 32px rgba(0,0,0,0.2);">
@@ -610,4 +759,5 @@
 <script src="/static/js/deployment.js"></script>
 <script src="/static/js/inference.js"></script>
 <script src="/static/js/fairness.js"></script>
+<script src="/static/js/evaluation.js"></script>
 {% endblock %}

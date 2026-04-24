@@ -120,6 +120,53 @@ Dynamically imports `model_def.py` from the model artifact directory and falls b
 }
 ```
 
+## SageMaker Endpoint Evaluation
+
+`src/evaluation/evaluate.py` is a SageMaker Processing Job script that evaluates a deployed classification endpoint against a labeled test set in S3.
+
+### How it works
+
+1. Discovers class folders under the provided S3 data URI (each subfolder name is treated as a class label)
+2. Invokes the endpoint for every file and collects predictions and probability scores
+3. Computes accuracy, per-class precision/recall/F1, and macro AUC (OvR)
+4. Writes four output artifacts to `/opt/ml/processing/output` and uploads them to the specified S3 output URI
+
+### Output artifacts
+
+| File | Description |
+|---|---|
+| `metrics.json` | Accuracy, macro AUC, per-class P/R/F1, and support counts |
+| `predictions.csv` | Per-file ground truth vs predicted class + per-class probabilities |
+| `confusion_matrix.png` | Confusion matrix heatmap |
+| `roc_auc.png` | ROC-AUC curves (one per class, one-vs-rest) |
+
+### Expected S3 input structure
+
+```
+s3://bucket/prefix/
+    class_a/
+        image1.dcm
+        image2.dcm
+    class_b/
+        image3.dcm
+```
+
+### CLI arguments
+
+| Argument | Required | Description |
+|---|---|---|
+| `--endpoint-name` | yes | Name of the `InService` SageMaker endpoint |
+| `--data-s3-uri` | yes | S3 URI of the test dataset root (class subfolders) |
+| `--output-s3-uri` | yes | S3 URI prefix where result artifacts are uploaded |
+| `--region` | no | AWS region (default: `AWS_DEFAULT_REGION` env var or `us-east-1`) |
+
+### Endpoint response formats
+
+The script handles two response formats from the endpoint:
+
+- **Format A** (batched arrays): `{"predictions": [[p0, p1, ...]], "predicted_class": [idx], "confidence": [c]}`
+- **Format B** (named probabilities): `{"probabilities": {"class_a": 0.3, ...}, "predicted_class": "class_a"}`
+
 ## Getting Started
 
 ### Prerequisites
@@ -204,6 +251,8 @@ This starts MLflow, TensorBoard, and the FastAPI app together.
 ├── src/
 │   ├── classification/ # SageMaker BYOC training scripts (classification)
 │   ├── segmentation/   # SageMaker BYOC training scripts (segmentation)
+│   ├── evaluation/
+│   │   └── evaluate.py             # SageMaker Processing Job script for endpoint evaluation
 │   └── inference/      # SageMaker serving hooks
 │       ├── classification/
 │       │   └── inference.py        # Classification endpoint (DICOM → batched predictions array)
