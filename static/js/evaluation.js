@@ -1,6 +1,6 @@
 // Evaluation JavaScript
 
-document.addEventListener('DOMContentLoaded', function () {
+registerTabInit('evaluation', function () {
     loadEvalEndpoints();
     loadEvalJobs();
     const form = document.getElementById('evaluation-form');

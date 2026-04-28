@@ -1,0 +1,769 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero-content">
+        <h1>Medical Imaging ML Training Platform</h1>
+        <p>Train and deploy machine learning models for medical imaging with AWS integration</p>
+        <div class="hero-features">
+            <div class="feature">
+                <i class="fas fa-cloud"></i>
+                <span>AWS Integration</span>
+            </div>
+            <div class="feature">
+                <i class="fas fa-chart-line"></i>
+                <span>MLflow & TensorBoard</span>
+            </div>
+            <div class="feature">
+                <i class="fas fa-rocket"></i>
+                <span>One-Click Deployment</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- AWS Configuration Section -->
+<section id="aws-config" class="section">
+    <div class="container">
+        <h2><i class="fab fa-aws"></i> AWS Configuration</h2>
+        <div class="card">
+            <div class="card-header">
+                <h3>Connect to AWS</h3>
+                <span id="aws-connection-indicator" class="aws-disconnected">● Disconnected</span>
+                <p>Configure your AWS credentials to access S3 and SageMaker services</p>
+            </div>
+            <div class="card-body">
+                <form id="aws-config-form" method="post" action="javascript:void(0)">
+                    <div class="form-group">
+                        <label for="access-key">Access Key ID</label>
+                        <input type="text" id="access-key" name="access_key_id" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="secret-key">Secret Access Key</label>
+                        <input type="password" id="secret-key" name="secret_access_key" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="region">Region</label>
+                        <select id="region" name="region">
+                            <option value="us-east-1">US East (N. Virginia)</option>
+                            <option value="us-west-2">US West (Oregon)</option>
+                            <option value="eu-west-1">Europe (Ireland)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plug"></i> Connect to AWS
+                    </button>
+                </form>
+                <div id="aws-status" class="status-indicator"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Data Section -->
+<section id="data-import" class="section">
+    <div class="container">
+        <h2><i class="fas fa-database"></i> Data</h2>
+        <div class="card" style="margin-top: 16px;">
+            <div class="card-header">
+                <h3>S3 Buckets</h3>
+            </div>
+            <div class="card-body">
+                <button id="load-buckets" class="btn btn-secondary">
+                    <i class="fas fa-sync"></i> Load S3 Buckets
+                </button>
+                <div id="all-buckets-list" class="buckets-grid"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Fairness Section -->
+<section id="fairness" class="section">
+    <div class="container">
+        <h2><i class="fas fa-balance-scale"></i> Fairness &amp; Demographics</h2>
+        <div class="card">
+            <div class="card-header">
+                <h3>Demographic Analysis</h3>
+                <p style="margin:0; font-size:0.88rem; color:#666;">Scan DICOM files in an S3 bucket to extract and visualise patient demographic distributions for fairness assessment.</p>
+            </div>
+            <div class="card-body">
+                <form id="fairness-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fairness-s3-uri">S3 URI (bucket or prefix)</label>
+                            <input type="text" id="fairness-s3-uri" placeholder="s3://your-bucket/dataset/" required>
+                            <small style="color:var(--aws-dark-gray)">Must contain DICOM (.dcm) files</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="fairness-max-files">Max Files to Scan</label>
+                            <input type="number" id="fairness-max-files" value="200" min="1" max="2000">
+                            <small style="color:var(--aws-dark-gray)">Larger values take longer</small>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Scan Demographics
+                    </button>
+                </form>
+                <div id="fairness-status" class="sm-status-banner" style="display:none; margin-top:1rem;"></div>
+            </div>
+        </div>
+
+        <div id="fairness-results" style="display:none; margin-top:1.5rem;">
+            <div id="fairness-summary-cards" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:1rem; margin-bottom:1.5rem;"></div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+                <div class="card"><div class="card-body"><canvas id="fairness-sex-chart"></canvas></div></div>
+                <div class="card"><div class="card-body"><canvas id="fairness-age-chart"></canvas></div></div>
+                <div class="card"><div class="card-body"><canvas id="fairness-ethnicity-chart"></canvas></div></div>
+                <div class="card"><div class="card-body"><canvas id="fairness-modality-chart"></canvas></div></div>
+            </div>
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header"><h3>Demographic Tag Completeness</h3></div>
+                <div class="card-body" id="fairness-missing-rates"></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3>File Sample (up to 50)</h3></div>
+                <div class="card-body" id="fairness-sample-table"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.fairness-card { background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:1rem; text-align:center; }
+.fairness-card-value { font-size:2rem; font-weight:700; color:#232f3e; }
+.fairness-card-label { font-size:0.82rem; color:#666; margin-top:0.25rem; }
+</style>
+
+<!-- Training Section -->
+<section id="training" class="section">
+    <div class="container">
+        <h2><i class="fas fa-brain"></i> Model Training</h2>
+        <div class="training-grid">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Model Selection</h3>
+                </div>
+                <div class="card-body">
+                    <div id="models-list" class="models-grid"></div>
+                </div>
+            </div>
+
+            <div class="card" id="model-info-card">
+                <div class="card-header">
+                    <h3 id="model-info-title"><i class="fas fa-info-circle"></i> Model Info</h3>
+                </div>
+                <div class="card-body">
+                    <div id="model-info-placeholder" class="model-info-placeholder">
+                        <i class="fas fa-hand-pointer"></i>
+                        <p>Select a model on the left to see details and related papers.</p>
+                    </div>
+                    <div id="model-info-content" style="display:none;">
+                        <p id="model-info-blurb" class="model-info-blurb"></p>
+                        <div class="model-info-meta" id="model-info-meta"></div>
+                        <h4 class="model-papers-heading"><i class="fas fa-book-open"></i> Key Papers</h4>
+                        <ul id="model-papers-list" class="model-papers-list"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SageMaker BYOC Training -->
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-cloud"></i> SageMaker Training (BYOC)</h3>
+            </div>
+            <div class="card-body">
+                <form id="sagemaker-training-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="sm_job_name">Job Name (optional)</label>
+                            <div style="display:flex; gap:6px; align-items:center;">
+                                <input type="text" id="sm_job_name" name="sm_job_name" placeholder="Auto-generated if empty" style="flex:1;" pattern="[a-zA-Z0-9\-]{1,63}">
+                                <button type="button" class="btn btn-secondary" onclick="generateJobName()" title="Generate name">
+                                    <i class="fas fa-dice"></i>
+                                </button>
+                            </div>
+                            <small style="color:var(--aws-dark-gray)">Letters, numbers, hyphens only. Max 63 chars.</small>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="sm_model_name">Model</label>
+                            <select id="sm_model_name" name="sm_model_name">
+                                <option value="" disabled selected>Loading models...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="sm_image_uri">Container Image URI</label>
+                            <div style="display:flex; gap:6px; align-items:center;">
+                                <select id="sm_image_uri" name="sm_image_uri" style="flex:1;" required></select>
+                                <button type="button" class="btn btn-secondary" onclick="openAddContainerModal()" title="Add container">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="removeSelectedContainer()" title="Remove selected">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="sm_data_s3_uri">Data S3 URI</label>
+                            <input type="text" id="sm_data_s3_uri" name="sm_data_s3_uri" value="s3://public-datasets-imaging-us-east-1/mednist-processed/" required>
+                            <small style="color:var(--aws-dark-gray)">Must contain train/, val/ subfolders (test/ optional)</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="sm_output_s3_uri">Output Model S3 URI</label>
+                            <input type="text" id="sm_output_s3_uri" name="sm_output_s3_uri" placeholder="s3://your-bucket/models/output/">
+                            <small style="color:var(--aws-dark-gray)">Where SageMaker uploads model.tar.gz (optional)</small>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="sm_role_arn">IAM Role ARN</label>
+                            <input type="text" id="sm_role_arn" name="sm_role_arn" value="arn:aws:iam::575108919340:role/service-role/AmazonSageMaker-ExecutionRole-20240907T181142" required>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:1rem;">
+                        <button type="button" id="sm-validate-btn" class="btn btn-secondary" onclick="validateSageMakerConfig()">
+                            <i class="fas fa-check-circle"></i> Validate
+                        </button>
+                    </div>
+                    <div id="sm-validation-results" style="display:none; margin-bottom:1.5rem;"></div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Task Type</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="radio" name="sm_task_type" value="classification" checked> Classification
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="radio" name="sm_task_type" value="segmentation"> Segmentation
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Dimension</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="radio" name="sm_dimension" value="2D" checked> 2D
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="radio" name="sm_dimension" value="3D"> 3D
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="sm_instance_type">Instance Type</label>
+                            <select id="sm_instance_type" name="sm_instance_type">
+                                <option value="ml.g5.xlarge">ml.g5.xlarge (GPU)</option>
+                                <option value="ml.g5.2xlarge">ml.g5.2xlarge (GPU)</option>
+                                <option value="ml.p3.2xlarge">ml.p3.2xlarge (GPU)</option>
+                                <option value="ml.m5.xlarge">ml.m5.xlarge (CPU)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="sm_epochs">Epochs</label>
+                            <input type="number" id="sm_epochs" name="sm_epochs" value="1" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="sm_batch_size">Batch Size</label>
+                            <input type="number" id="sm_batch_size" name="sm_batch_size" value="16" min="1">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="sm_learning_rate">Learning Rate</label>
+                            <input type="number" id="sm_learning_rate" name="sm_learning_rate" value="0.001" step="0.0001">
+                        </div>
+                        <div class="form-group">
+                            <label for="sm_val_interval">Validation Interval (epochs)</label>
+                            <input type="number" id="sm_val_interval" name="sm_val_interval" value="1" min="1">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="sm_entry_point">Entry Point</label>
+                            <input type="text" id="sm_entry_point" name="sm_entry_point" value="train.py">
+                        </div>
+                        <div class="form-group">
+                            <label for="sm_mlflow_tracking_uri">MLflow Tracking URI (optional)</label>
+                            <input type="text" id="sm_mlflow_tracking_uri" name="sm_mlflow_tracking_uri" placeholder="http://mlflow-server:5000">
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:1rem; align-items:center; flex-wrap:wrap;">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-cloud-upload-alt"></i> Start SageMaker Training
+                        </button>
+                    </div>
+                    <div id="sm-submission-status" class="sm-status-banner" style="display:none;"></div>
+                </form>
+
+                <!-- Jobs tabs -->
+                <div style="margin-top:1.5rem;">
+                    <div class="jobs-tab-bar">
+                        <button class="jobs-tab" id="tab-active" onclick="switchJobsTab('active')">
+                            <i class="fas fa-running"></i> Active
+                        </button>
+                        <button class="jobs-tab active" id="tab-completed" onclick="switchJobsTab('completed')">
+                            <i class="fas fa-check-circle"></i> Completed
+                        </button>
+                        <button class="jobs-tab" id="tab-failed" onclick="switchJobsTab('failed')">
+                            <i class="fas fa-times-circle"></i> Failed
+                        </button>
+                        <button class="jobs-tab" id="tab-archived" onclick="switchJobsTab('archived')">
+                            <i class="fas fa-archive"></i> Archived
+                        </button>
+                    </div>
+                    <div id="sagemaker-jobs" class="jobs-list"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- Deployment Section -->
+<section id="deployment" class="section">
+    <div class="container">
+        <h2><i class="fas fa-rocket"></i> Model Deployment</h2>
+        <div class="deployment-grid">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Deploy to SageMaker Endpoint</h3>
+                </div>
+                <div class="card-body">
+                    <form id="deployment-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="dep-endpoint-name">Endpoint Name</label>
+                                <input type="text" id="dep-endpoint-name" name="endpoint_name" placeholder="my-model-endpoint" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="dep-role-arn">IAM Role ARN</label>
+                                <input type="text" id="dep-role-arn" name="role_arn" value="arn:aws:iam::575108919340:role/service-role/AmazonSageMaker-ExecutionRole-20240907T181142" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="dep-model-artifacts">Model Artifacts S3 URI</label>
+                                <div style="display:flex; gap:6px; align-items:center;">
+                                    <input type="text" id="dep-model-artifacts" name="model_artifacts" placeholder="s3://bucket/path/model.tar.gz" style="flex:1;">
+                                    <button type="button" class="btn btn-secondary" onclick="openFillFromJobModal()" title="Fill from training job">
+                                        <i class="fas fa-list"></i>
+                                    </button>
+                                </div>
+                                <small style="color:var(--aws-dark-gray)">Leave empty to import an existing endpoint by name only</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="dep-image-uri">Inference Container Image URI</label>
+                                <input type="text" id="dep-image-uri" name="image_uri" value="575108919340.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest" required>
+                                <small style="color:var(--aws-dark-gray)">Pre-built inference image with monai, pydicom, torch — no cold-start install delay</small>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="dep-inference-script">Inference Entry Point</label>
+                                <input type="text" id="dep-inference-script" name="inference_script" value="inference.py">
+                                <small style="color:var(--aws-dark-gray)">Must match the filename inside model.tar.gz</small>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="dep-instance-type">Instance Type</label>
+                                <select id="dep-instance-type" name="instance_type">
+                                    <option value="ml.m5.xlarge">ml.m5.xlarge (CPU)</option>
+                                    <option value="ml.m5.2xlarge">ml.m5.2xlarge (CPU)</option>
+                                    <option value="ml.g5.xlarge">ml.g5.xlarge (GPU)</option>
+                                    <option value="ml.g5.2xlarge">ml.g5.2xlarge (GPU)</option>
+                                    <option value="ml.c5.xlarge">ml.c5.xlarge (CPU)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="dep-instance-count">Instance Count</label>
+                                <input type="number" id="dep-instance-count" name="instance_count" value="1" min="1">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="checkbox-label" style="margin-top: 8px;">
+                                    <input type="checkbox" id="dep-async" name="async_endpoint" onchange="toggleAsyncFields()">
+                                    <strong>Async Endpoint</strong>
+                                    <small style="color:var(--aws-dark-gray); display:block; margin-top:2px;">Best for large payloads or long-running inference (&gt;60s)</small>
+                                </label>
+                            </div>
+                        </div>
+                        <div id="async-fields" style="display:none;">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="dep-output-s3-uri">Output S3 URI</label>
+                                    <input type="text" id="dep-output-s3-uri" name="output_s3_uri" placeholder="s3://bucket/async-outputs/">
+                                    <small style="color:var(--aws-dark-gray)">SageMaker writes inference results here</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="dep-max-concurrent">Max Concurrent Invocations</label>
+                                    <input type="number" id="dep-max-concurrent" name="max_concurrent" value="10" min="1" max="1000">
+                                </div>
+                            </div>
+                        </div>
+                        <div id="dep-status-banner" class="sm-status-banner" style="display:none;"></div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-rocket"></i> Deploy Model
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Active Deployments</h3>
+                    <button class="btn btn-secondary" onclick="loadDeployments()">
+                        <i class="fas fa-sync"></i> Refresh
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="deployments-list" class="deployments-grid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Inference Section -->
+<section id="inference" class="section">
+    <div class="container">
+        <h2><i class="fas fa-brain"></i> Run Inference</h2>
+        <div class="deployment-grid">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Invoke Endpoint</h3>
+                </div>
+                <div class="card-body">
+                    <form id="inference-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="inf-endpoint">Endpoint</label>
+                                <div style="display:flex; gap:6px;">
+                                    <select id="inf-endpoint" name="endpoint_name" style="flex:1;">
+                                        <option value="" disabled selected>Loading endpoints...</option>
+                                    </select>
+                                    <button type="button" class="btn btn-secondary" onclick="loadInferenceEndpoints()" title="Refresh">
+                                        <i class="fas fa-sync"></i>
+                                    </button>
+                                </div>
+                                <input type="text" id="inf-endpoint-manual" placeholder="Or type endpoint name manually"
+                                    style="margin-top:6px; width:100%;"
+                                    oninput="document.getElementById('inf-endpoint').value = this.value">
+                            </div>
+                            <div class="form-group">
+                                <label for="inf-task-type">Task Type</label>
+                                <select id="inf-task-type" name="task_type">
+                                    <option value="classification">Classification</option>
+                                    <option value="segmentation">Segmentation</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="inf-input-type">Input Type</label>
+                                <select id="inf-input-type" name="input_type" onchange="onInfInputTypeChange(this.value)">
+                                    <option value="s3_uri">S3 URI</option>
+                                    <option value="file_path">Local File</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="inf-input-value">Input Value</label>
+                                <div style="display:flex; gap:6px; align-items:center;">
+                                    <input type="text" id="inf-input-value" name="input_value"
+                                        placeholder="s3://bucket/path/image.dcm" required style="flex:1;">
+                                    <button type="button" id="inf-browse-btn" class="btn btn-secondary" style="display:none; white-space:nowrap;"
+                                        onclick="document.getElementById('inf-file-picker').click()">
+                                        <i class="fas fa-folder-open"></i> Browse
+                                    </button>
+                                    <input type="file" id="inf-file-picker" accept=".dcm,.nii,.nii.gz,.png,.jpg"
+                                        style="display:none;"
+                                        onchange="document.getElementById('inf-input-value').value = this.files[0]?.name || ''">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="inf-output-s3">Output S3 URI (optional)</label>
+                                <input type="text" id="inf-output-s3" name="output_s3_uri"
+                                    placeholder="s3://bucket/inference-results/">
+                                <small style="color:var(--aws-dark-gray)">Result JSON saved here</small>
+                            </div>
+                        </div>
+                        <div id="inf-status-banner" class="sm-status-banner" style="display:none;"></div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-play"></i> Run Inference
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Result</h3>
+                </div>
+                <div class="card-body">
+                    <div id="inference-result-placeholder" style="color:#888; text-align:center; padding:2rem;">
+                        <i class="fas fa-brain" style="font-size:2rem; margin-bottom:0.5rem; display:block;"></i>
+                        Run inference to see results
+                    </div>
+                    <div id="inference-result" style="display:none;">
+                        <div id="inf-class-result" class="inf-class-card" style="display:none;">
+                            <div class="inf-predicted-class"></div>
+                            <div class="inf-confidence"></div>
+                            <div id="inf-probabilities" class="inf-prob-bars"></div>
+                        </div>
+                        <div id="inf-seg-result" style="display:none;">
+                            <p>Segmentation mask saved to S3. Summary:</p>
+                            <div id="inf-seg-stats" class="job-status-detail"></div>
+                        </div>
+                        <div id="inf-saved-to" style="margin-top:0.75rem; font-size:0.85rem; color:#666;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Evaluation Section -->
+<section id="evaluation" class="section">
+    <div class="container">
+        <h2><i class="fas fa-chart-bar"></i> Model Evaluation</h2>
+
+        <!-- Submit Job -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Run Evaluation Job</h3>
+                <p style="margin:0; font-size:0.88rem; color:#666;">
+                    Submits a SageMaker Processing Job that invokes a deployed endpoint on a labeled test set and generates metrics, ROC-AUC, and confusion matrix.
+                </p>
+            </div>
+            <div class="card-body">
+                <form id="evaluation-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="eval-task-type">Task Type</label>
+                            <select id="eval-task-type" name="task_type">
+                                <option value="classification">Classification</option>
+                                <option value="segmentation">Segmentation</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="eval-endpoint">Endpoint Name</label>
+                            <div style="display:flex; gap:6px;">
+                                <select id="eval-endpoint" name="endpoint_name" style="flex:1;">
+                                    <option value="" disabled selected>Loading endpoints...</option>
+                                </select>
+                                <button type="button" class="btn btn-secondary" onclick="loadEvalEndpoints()" title="Refresh">
+                                    <i class="fas fa-sync"></i>
+                                </button>
+                            </div>
+                            <input type="text" id="eval-endpoint-manual" placeholder="Or type endpoint name manually"
+                                style="margin-top:6px; width:100%;"
+                                oninput="document.getElementById('eval-endpoint').value = this.value">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="eval-data-s3-uri">Test Data S3 URI</label>
+                            <input type="text" id="eval-data-s3-uri" name="data_s3_uri"
+                                placeholder="s3://bucket/test-data/" required>
+                            <small style="color:var(--aws-dark-gray)">
+                                Classification: subfolders = class names, each containing DICOM files.<br>
+                                Segmentation: subfolders = subjects, each with img.nii.gz + mask.nii.gz.
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label for="eval-output-s3-uri">Output S3 URI</label>
+                            <input type="text" id="eval-output-s3-uri" name="output_s3_uri"
+                                placeholder="s3://bucket/eval-results/run-1/" required>
+                            <small style="color:var(--aws-dark-gray)">metrics.json, confusion_matrix.png, roc_auc.png saved here</small>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="eval-image-uri">Container Image URI</label>
+                            <input type="text" id="eval-image-uri" name="image_uri"
+                                placeholder="123456789.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest" required>
+                            <small style="color:var(--aws-dark-gray)">Reuse your inference container — eval deps installed at runtime</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="eval-role-arn">IAM Role ARN</label>
+                            <input type="text" id="eval-role-arn" name="role_arn"
+                                value="arn:aws:iam::575108919340:role/service-role/AmazonSageMaker-ExecutionRole-20240907T181142" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="eval-instance-type">Instance Type</label>
+                            <select id="eval-instance-type" name="instance_type">
+                                <option value="ml.m5.xlarge">ml.m5.xlarge (CPU, recommended)</option>
+                                <option value="ml.m5.2xlarge">ml.m5.2xlarge (CPU)</option>
+                                <option value="ml.c5.xlarge">ml.c5.xlarge (CPU)</option>
+                                <option value="ml.g5.xlarge">ml.g5.xlarge (GPU)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="eval-submit-banner" class="sm-status-banner" style="display:none;"></div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-play-circle"></i> Submit Evaluation Job
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Jobs List -->
+        <div class="card" style="margin-top:1.5rem;">
+            <div class="card-header">
+                <h3>Evaluation Jobs</h3>
+                <button class="btn btn-secondary" onclick="loadEvalJobs()">
+                    <i class="fas fa-sync"></i> Refresh
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="eval-jobs-list"></div>
+            </div>
+        </div>
+
+        <!-- Results Panel -->
+        <div id="eval-results-panel" style="display:none; margin-top:1.5rem;">
+            <div class="card">
+                <div class="card-header">
+                    <h3 id="eval-results-title">Evaluation Results</h3>
+                </div>
+                <div class="card-body">
+                    <!-- Summary metrics -->
+                    <div id="eval-metrics-cards" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:1rem; margin-bottom:1.5rem;"></div>
+
+                    <!-- Per-class table -->
+                    <div id="eval-per-class-wrap" style="margin-bottom:1.5rem; display:none;">
+                        <h4 style="margin:0 0 0.75rem;">Per-Class Metrics</h4>
+                        <div style="overflow-x:auto;">
+                            <table id="eval-per-class-table" style="width:100%; border-collapse:collapse; font-size:0.88rem;">
+                                <thead>
+                                    <tr style="background:#f5f5f5; text-align:left;">
+                                        <th style="padding:0.5rem 0.75rem; border-bottom:2px solid #e0e0e0;">Class</th>
+                                        <th style="padding:0.5rem 0.75rem; border-bottom:2px solid #e0e0e0;">Precision</th>
+                                        <th style="padding:0.5rem 0.75rem; border-bottom:2px solid #e0e0e0;">Recall</th>
+                                        <th style="padding:0.5rem 0.75rem; border-bottom:2px solid #e0e0e0;">F1</th>
+                                        <th style="padding:0.5rem 0.75rem; border-bottom:2px solid #e0e0e0;">Support</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="eval-per-class-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Output links -->
+                    <div id="eval-output-links" style="font-size:0.88rem; color:#555;"></div>
+
+                    <!-- Subgroup metrics -->
+                    <div id="eval-subgroup-wrap" style="display:none; margin-top:1.5rem;">
+                        <h4 style="margin:0 0 0.75rem;"><i class="fas fa-users"></i> Subgroup Performance (by Demographic)</h4>
+                        <div id="eval-subgroup-tables"></div>
+                    </div>
+
+                    <!-- Plots -->
+                    <div id="eval-plots-wrap" style="display:none; margin-top:1.5rem;">
+                        <h4 style="margin:0 0 0.75rem;">Plots</h4>
+                        <div id="eval-plots-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(420px, 1fr)); gap:1.5rem;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.eval-metric-card { background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:1rem; text-align:center; }
+.eval-metric-value { font-size:1.8rem; font-weight:700; color:#232f3e; }
+.eval-metric-label { font-size:0.8rem; color:#666; margin-top:0.25rem; }
+</style>
+
+<!-- Add Container Modal -->
+<div id="add-container-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:8px; padding:1.5rem; width:480px; max-width:90vw; box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+        <h3 style="margin:0 0 1rem;"><i class="fas fa-plus-circle"></i> Add Container Image</h3>
+        <div class="form-group">
+            <label for="new-container-label">Label (e.g. classification-v2)</label>
+            <input type="text" id="new-container-label" placeholder="classification-latest" style="width:100%;">
+        </div>
+        <div class="form-group" style="margin-top:0.75rem;">
+            <label for="new-container-uri">Image URI</label>
+            <input type="text" id="new-container-uri" placeholder="123456789.dkr.ecr.us-east-1.amazonaws.com/repo:tag" style="width:100%;">
+        </div>
+        <div style="display:flex; gap:0.75rem; justify-content:flex-end; margin-top:1.25rem;">
+            <button type="button" class="btn btn-secondary" onclick="closeAddContainerModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveNewContainer()"><i class="fas fa-save"></i> Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Fill from Training Job Modal -->
+<div id="fill-from-job-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:8px; padding:1.5rem; width:560px; max-width:90vw; box-shadow:0 8px 32px rgba(0,0,0,0.2); max-height:80vh; display:flex; flex-direction:column;">
+        <h3 style="margin:0 0 1rem;"><i class="fas fa-list"></i> Select Training Job</h3>
+        <p style="margin:0 0 1rem; color:#666; font-size:0.9rem;">Pick a completed job to auto-fill the model artifacts URI.</p>
+        <div id="fill-job-list" style="overflow-y:auto; flex:1; border:1px solid #e0e0e0; border-radius:4px; padding:0.5rem;"></div>
+        <div style="display:flex; justify-content:flex-end; margin-top:1rem;">
+            <button type="button" class="btn btn-secondary" onclick="closeFillFromJobModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Comment Modal -->
+<div id="comment-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:8px; padding:1.5rem; width:440px; max-width:90vw; box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+        <h3 style="margin:0 0 1rem;"><i class="fas fa-comment-alt"></i> Job Comment</h3>
+        <input type="hidden" id="comment-job-name">
+        <textarea id="comment-text" rows="4" placeholder="Add notes about this checkpoint, experiment, or result..."
+            style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:4px; font-size:0.9rem; resize:vertical;"></textarea>
+        <div style="display:flex; gap:0.75rem; justify-content:flex-end; margin-top:1rem;">
+            <button type="button" class="btn btn-secondary" onclick="closeCommentModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveComment()"><i class="fas fa-save"></i> Save</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.result-highlight {
+    background: #f0f7ff;
+    border-left: 3px solid #4B9CD3;
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+    margin-top: 0.5rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px 1rem;
+}
+.result-row { display: flex; gap: 0.4rem; font-size: 0.82rem; align-items: baseline; }
+.result-row span { color: #666; min-width: 80px; }
+.job-comment { font-size: 0.82rem; color: #555; margin-top: 0.4rem; font-style: italic; }
+.job-archived { opacity: 0.65; }
+.jobs-tab-bar { display: flex; gap: 0; border-bottom: 2px solid #e0e0e0; margin-bottom: 1rem; }
+.jobs-tab { background: none; border: none; padding: 0.5rem 1.25rem; font-size: 0.9rem; cursor: pointer; color: #666; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: color 0.15s; }
+.jobs-tab:hover { color: #232f3e; }
+.jobs-tab.active { color: #232f3e; border-bottom-color: #FF9900; font-weight: 600; }
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/aws.js"></script>
+<script src="/static/js/data.js"></script>
+<script src="/static/js/training.js"></script>
+<script src="/static/js/deployment.js"></script>
+<script src="/static/js/inference.js"></script>
+<script src="/static/js/fairness.js"></script>
+<script src="/static/js/evaluation.js"></script>
+{% endblock %}

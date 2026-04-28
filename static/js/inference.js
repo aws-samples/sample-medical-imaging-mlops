@@ -1,6 +1,6 @@
 // Inference JavaScript
 
-document.addEventListener('DOMContentLoaded', function () {
+registerTabInit('inference', function () {
     loadInferenceEndpoints();
     const form = document.getElementById('inference-form');
     if (form) form.addEventListener('submit', runInference);
@@ -22,8 +22,21 @@ function onInfInputTypeChange(val) {
 async function loadInferenceEndpoints() {
     const select = document.getElementById('inf-endpoint');
     if (!select) return;
+
+    // Load from local deployments cache immediately (fast, no AWS call)
     try {
-        // Try live AWS list first
+        const dep    = await apiCall('/api/deployment/deployments?local_only=true');
+        const active = (dep.deployments || []).filter(d => d.status === 'InService');
+        if (active.length > 0) {
+            select.innerHTML = active.map(d =>
+                `<option value="${d.endpoint_name}">${d.endpoint_name}</option>`
+            ).join('');
+            return;
+        }
+    } catch (_) {}
+
+    // Fallback: try live AWS endpoint list
+    try {
         const res = await apiCall('/api/inference/endpoints');
         if (res.endpoints && res.endpoints.length > 0) {
             select.innerHTML = res.endpoints.map(e =>
@@ -35,20 +48,7 @@ async function loadInferenceEndpoints() {
         console.warn('Could not load live endpoints:', err.message);
     }
 
-    // Fallback: use locally tracked deployments
-    try {
-        const dep = await apiCall('/api/deployment/deployments');
-        const active = (dep.deployments || []).filter(d => d.status === 'InService');
-        if (active.length > 0) {
-            select.innerHTML = active.map(d =>
-                `<option value="${d.endpoint_name}">${d.endpoint_name}</option>`
-            ).join('');
-        } else {
-            select.innerHTML = '<option value="" disabled selected>No InService endpoints found</option>';
-        }
-    } catch (err) {
-        select.innerHTML = '<option value="" disabled selected>Could not load endpoints</option>';
-    }
+    select.innerHTML = '<option value="" disabled selected>No InService endpoints found</option>';
 }
 
 async function runInference(e) {

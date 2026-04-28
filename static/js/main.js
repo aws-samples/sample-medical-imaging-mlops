@@ -1,5 +1,37 @@
 // Main JavaScript file for MedML Training Platform
 
+// ── Tab system ────────────────────────────────────────────────────────────────
+const _tabInits   = {};
+const _tabVisited = {};
+
+function registerTabInit(tabId, fn) { _tabInits[tabId] = fn; }
+
+function switchTab(tabId, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
+    const panel = document.getElementById('tab-' + tabId);
+    if (panel) panel.classList.add('active');
+    if (btn) btn.classList.add('active');
+    localStorage.setItem('activeTab', tabId);
+    if (_tabInits[tabId] && !_tabVisited[tabId]) {
+        _tabVisited[tabId] = true;
+        _tabInits[tabId]();
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Activate saved tab (default: aws)
+    const saved = localStorage.getItem('activeTab') || 'home';
+    const btn   = document.querySelector(`.sidebar-item[data-tab="${saved}"]`);
+    switchTab(saved, btn);
+
+    // Load local-cache data immediately for key sections
+    apiCall('/api/training/sagemaker/jobs?local_only=true').then(r => { if(typeof displaySageMakerJobs==='function') displaySageMakerJobs(r.jobs||[]); }).catch(()=>{});
+    apiCall('/api/training/models').then(r => { if(typeof displayModels==='function'){ displayModels(r.models||[]); if(typeof populateSageMakerModelDropdown==='function') populateSageMakerModelDropdown(r.models||[]); }}).catch(()=>{});
+    apiCall('/api/deployment/deployments?local_only=true').then(r => { if(typeof displayDeployments==='function') displayDeployments(r.deployments||[]); }).catch(()=>{});
+    apiCall('/api/evaluation/jobs?local_only=true').then(r => { if(typeof renderEvalJobs==='function') renderEvalJobs(r.jobs||[]); }).catch(()=>{});
+});
+
 // Global state
 window.MedMLApp = {
     awsConnected: false,
@@ -59,26 +91,6 @@ async function apiCall(url, options = {}) {
         throw error;
     }
 }
-
-// Smooth scrolling for navigation links
-document.addEventListener('DOMContentLoaded', function() {
-    const navLinks = document.querySelectorAll('.nav-link');
-    
-    navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const targetId = this.getAttribute('href');
-            const targetElement = document.querySelector(targetId);
-            
-            if (targetElement) {
-                targetElement.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            }
-        });
-    });
-});
 
 // Format file size
 function formatFileSize(bytes) {

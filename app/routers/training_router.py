@@ -263,26 +263,27 @@ async def start_sagemaker_training(config: SageMakerTrainingConfig):
 
 
 @router.get("/sagemaker/jobs")
-async def list_sagemaker_jobs():
+async def list_sagemaker_jobs(local_only: bool = False):
     """List all SageMaker training jobs from local store, refreshing only active ones from AWS."""
     jobs = sm_training_service.list_jobs()
-    active_jobs = [j for j in jobs if j.get("status") in {"InProgress", "Stopping"}]
-    if active_jobs and aws_service.sagemaker_client:
-        for job in active_jobs:
-            try:
-                updated = sm_training_service.get_job_status(job["job_name"], aws_service.sagemaker_client)
-                sm_training_service.update_job_status(
-                    job["job_name"], updated["status"],
-                    model_artifacts=updated.get("model_artifacts"),
-                    failure_reason=updated.get("failure_reason"),
-                    creation_time=updated.get("creation_time"),
-                    training_end_time=updated.get("training_end_time"),
-                    billable_seconds=updated.get("billable_seconds"),
-                    estimated_cost_usd=updated.get("estimated_cost_usd"),
-                )
-                job.update(updated)
-            except Exception:
-                pass
+    if not local_only:
+        active_jobs = [j for j in jobs if j.get("status") in {"InProgress", "Stopping"}]
+        if active_jobs and aws_service.sagemaker_client:
+            for job in active_jobs:
+                try:
+                    updated = sm_training_service.get_job_status(job["job_name"], aws_service.sagemaker_client)
+                    sm_training_service.update_job_status(
+                        job["job_name"], updated["status"],
+                        model_artifacts=updated.get("model_artifacts"),
+                        failure_reason=updated.get("failure_reason"),
+                        creation_time=updated.get("creation_time"),
+                        training_end_time=updated.get("training_end_time"),
+                        billable_seconds=updated.get("billable_seconds"),
+                        estimated_cost_usd=updated.get("estimated_cost_usd"),
+                    )
+                    job.update(updated)
+                except Exception:
+                    pass
     return {"jobs": jobs}
 
 

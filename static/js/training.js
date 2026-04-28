@@ -1,35 +1,25 @@
 // Training JavaScript
 
-document.addEventListener('DOMContentLoaded', function() {
+registerTabInit('training', function() {
     loadAvailableModels();
-    loadTrainingJobs();
-    loadImportedModels();
-    loadSageMakerJobs();
     populateContainerDropdown();
-
-    const importForm = document.getElementById('model-import-form');
-    if (importForm) importForm.addEventListener('submit', importModel);
 
     const smForm = document.getElementById('sagemaker-training-form');
     if (smForm) smForm.addEventListener('submit', startSageMakerTraining);
 
-    // Wire task type radios
     document.querySelectorAll('input[name="sm_task_type"]')
         .forEach(r => r.addEventListener('change', onTaskTypeChange));
 
-    // Refresh training jobs every 10 seconds
-    setInterval(loadTrainingJobs, 10000);
-
-    // Poll SageMaker jobs every 15s, stop when all are in terminal state
-    const TERMINAL = new Set(["Completed", "Failed", "Stopped"]);
-    const smPollInterval = setInterval(async () => {
-        const response = await apiCall('/api/training/sagemaker/jobs').catch(() => null);
-        if (!response) return;
-        displaySageMakerJobs(response.jobs);
-        const allDone = response.jobs.length > 0 &&
-            response.jobs.every(j => TERMINAL.has(j.status));
-        if (allDone) clearInterval(smPollInterval);
+    // Refresh jobs every 15s for active ones
+    setInterval(async () => {
+        const r = await apiCall('/api/training/sagemaker/jobs').catch(() => null);
+        if (r) displaySageMakerJobs(r.jobs);
     }, 15000);
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const importForm = document.getElementById('model-import-form');
+    if (importForm) importForm.addEventListener('submit', importModel);
 });
 
 async function loadAvailableModels() {

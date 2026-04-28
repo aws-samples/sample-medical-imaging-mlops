@@ -8,7 +8,7 @@ const FAIRNESS_COLORS = [
 
 let _fairnessCharts = {};
 
-document.addEventListener('DOMContentLoaded', () => {
+registerTabInit('fairness', () => {
     const form = document.getElementById('fairness-form');
     if (form) form.addEventListener('submit', runFairnessScan);
 });

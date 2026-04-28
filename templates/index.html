@@ -1,88 +1,173 @@
 {% extends "base.html" %}
 
 {% block content %}
-<!-- Hero Section -->
-<section class="hero">
-    <div class="hero-content">
-        <h1>Medical Imaging ML Training Platform</h1>
-        <p>Train and deploy machine learning models for medical imaging with AWS integration</p>
-        <div class="hero-features">
-            <div class="feature">
-                <i class="fas fa-cloud"></i>
-                <span>AWS Integration</span>
+
+<!-- ── Home Tab ── -->
+<div id="tab-home" class="tab-panel">
+<div style="padding:2.5rem 2rem; max-width:900px;">
+
+    <div style="display:flex; align-items:center; gap:1rem; margin-bottom:2rem;">
+        <img src="/static/favicon.svg" style="width:48px; height:48px;">
+        <div>
+            <h1 style="margin:0; font-size:1.6rem; color:#232f3e;">MedML Training Dashboard</h1>
+            <p style="margin:0.25rem 0 0; color:#666; font-size:0.95rem;">A managed interface for medical image ML workflows on AWS</p>
+        </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:1.25rem; margin-bottom:2.5rem;">
+
+        <div class="home-feature-card" onclick="switchTab('aws', document.querySelector('[data-tab=aws]'))">
+            <div class="home-feature-icon" style="background:#e8f4fd;"><i class="fab fa-aws" style="color:#1a6fa0;"></i></div>
+            <div>
+                <div class="home-feature-title">AWS Configuration</div>
+                <div class="home-feature-desc">Connect via environment credentials or explicit keys. Browse S3 buckets and manage access to SageMaker.</div>
             </div>
-            <div class="feature">
-                <i class="fas fa-chart-line"></i>
-                <span>MLflow & TensorBoard</span>
+        </div>
+
+        <div class="home-feature-card" onclick="switchTab('data', document.querySelector('[data-tab=data]'))">
+            <div class="home-feature-icon" style="background:#e8f8f0;"><i class="fas fa-database" style="color:#16a085;"></i></div>
+            <div>
+                <div class="home-feature-title">Data</div>
+                <div class="home-feature-desc">Browse S3 buckets and explore your raw and processed medical imaging datasets.</div>
             </div>
-            <div class="feature">
-                <i class="fas fa-rocket"></i>
-                <span>One-Click Deployment</span>
+        </div>
+
+        <div class="home-feature-card" onclick="switchTab('fairness', document.querySelector('[data-tab=fairness]'))">
+            <div class="home-feature-icon" style="background:#fef9e7;"><i class="fas fa-balance-scale" style="color:#d4ac0d;"></i></div>
+            <div>
+                <div class="home-feature-title">Fairness &amp; Demographics</div>
+                <div class="home-feature-desc">Scan DICOM files to extract patient demographics — sex, age, ethnicity — and visualise distribution for bias auditing.</div>
+            </div>
+        </div>
+
+        <div class="home-feature-card" onclick="switchTab('training', document.querySelector('[data-tab=training]'))">
+            <div class="home-feature-icon" style="background:#f4ecf7;"><i class="fas fa-brain" style="color:#8e44ad;"></i></div>
+            <div>
+                <div class="home-feature-title">Model Training</div>
+                <div class="home-feature-desc">Launch SageMaker BYOC training jobs for classification (ResNet50, DenseNet121, ViT, EfficientNet) and segmentation (SegResNet, SwinUNETR, UNet) with MLflow and TensorBoard tracking.</div>
+            </div>
+        </div>
+
+        <div class="home-feature-card" onclick="switchTab('deployment', document.querySelector('[data-tab=deployment]'))">
+            <div class="home-feature-icon" style="background:#fef0e7;"><i class="fas fa-rocket" style="color:#e67e22;"></i></div>
+            <div>
+                <div class="home-feature-title">Deployment</div>
+                <div class="home-feature-desc">Deploy trained models to SageMaker real-time or async endpoints. Track endpoint status and manage the full lifecycle from the dashboard.</div>
+            </div>
+        </div>
+
+        <div class="home-feature-card" onclick="switchTab('inference', document.querySelector('[data-tab=inference]'))">
+            <div class="home-feature-icon" style="background:#eafaf1;"><i class="fas fa-play-circle" style="color:#1e8449;"></i></div>
+            <div>
+                <div class="home-feature-title">Inference</div>
+                <div class="home-feature-desc">Invoke deployed endpoints with DICOM or NIfTI inputs via S3 URI or direct file upload. View classification probabilities and segmentation mask statistics.</div>
+            </div>
+        </div>
+
+        <div class="home-feature-card" onclick="switchTab('evaluation', document.querySelector('[data-tab=evaluation]'))">
+            <div class="home-feature-icon" style="background:#fdecea;"><i class="fas fa-chart-bar" style="color:#c0392b;"></i></div>
+            <div>
+                <div class="home-feature-title">Evaluation</div>
+                <div class="home-feature-desc">Run SageMaker Processing Jobs to evaluate endpoints on labeled test sets. Generates ROC-AUC, confusion matrix, per-class metrics, and demographic subgroup performance.</div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card-header"><h3><i class="fas fa-layer-group"></i> Supported Tasks</h3></div>
+        <div class="card-body" style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+            <div>
+                <div style="font-weight:600; margin-bottom:0.5rem; color:#232f3e;"><i class="fas fa-tag" style="color:#4B9CD3;"></i> Classification</div>
+                <ul style="margin:0; padding-left:1.25rem; font-size:0.88rem; color:#555; line-height:1.8;">
+                    <li>2D DICOM / PNG / JPEG inputs</li>
+                    <li>Class-named subfolders (train/ val/ test/)</li>
+                    <li>ResNet50, VGG16, EfficientNet, DenseNet121, ViT</li>
+                    <li>Outputs: model.tar.gz with inference.py bundled</li>
+                </ul>
+            </div>
+            <div>
+                <div style="font-weight:600; margin-bottom:0.5rem; color:#232f3e;"><i class="fas fa-draw-polygon" style="color:#FF9900;"></i> Segmentation</div>
+                <ul style="margin:0; padding-left:1.25rem; font-size:0.88rem; color:#555; line-height:1.8;">
+                    <li>3D NIfTI volumes (img.nii.gz + mask.nii.gz)</li>
+                    <li>Binary segmentation (0/1 masks)</li>
+                    <li>SegResNet, SwinUNETR, UNet</li>
+                    <li>HU clipping [-100, 500] for CT</li>
+                </ul>
             </div>
         </div>
     </div>
-</section>
 
-<!-- AWS Configuration Section -->
-<section id="aws-config" class="section">
-    <div class="container">
-        <h2><i class="fab fa-aws"></i> AWS Configuration</h2>
-        <div class="card">
-            <div class="card-header">
-                <h3>Connect to AWS</h3>
-                <span id="aws-connection-indicator" class="aws-disconnected">● Disconnected</span>
-                <p>Configure your AWS credentials to access S3 and SageMaker services</p>
-            </div>
-            <div class="card-body">
-                <form id="aws-config-form">
-                    <div class="form-group">
-                        <label for="access-key">Access Key ID</label>
-                        <input type="text" id="access-key" name="access_key_id" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="secret-key">Secret Access Key</label>
-                        <input type="password" id="secret-key" name="secret_access_key" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="region">Region</label>
-                        <select id="region" name="region">
-                            <option value="us-east-1">US East (N. Virginia)</option>
-                            <option value="us-west-2">US West (Oregon)</option>
-                            <option value="eu-west-1">Europe (Ireland)</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-plug"></i> Connect to AWS
-                    </button>
-                </form>
-                <div id="aws-status" class="status-indicator"></div>
-            </div>
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-bolt"></i> Quick Start</h3></div>
+        <div class="card-body">
+            <ol style="margin:0; padding-left:1.25rem; font-size:0.88rem; color:#555; line-height:2;">
+                <li>Go to <strong>AWS</strong> — connect with your credentials or use <code>~/.aws/credentials</code></li>
+                <li>Go to <strong>Fairness</strong> — scan your dataset for demographic distributions</li>
+                <li>Go to <strong>Training</strong> — select a model, configure a SageMaker job, and launch</li>
+                <li>Go to <strong>Deployment</strong> — deploy the trained model to a SageMaker endpoint</li>
+                <li>Go to <strong>Inference</strong> — test the endpoint with a sample DICOM</li>
+                <li>Go to <strong>Evaluation</strong> — run a full evaluation job with metrics and plots</li>
+            </ol>
         </div>
     </div>
-</section>
 
-<!-- Data Section -->
-<section id="data-import" class="section">
-    <div class="container">
-        <h2><i class="fas fa-database"></i> Data</h2>
-        <div class="card" style="margin-top: 16px;">
-            <div class="card-header">
-                <h3>S3 Buckets</h3>
-            </div>
-            <div class="card-body">
-                <button id="load-buckets" class="btn btn-secondary">
-                    <i class="fas fa-sync"></i> Load S3 Buckets
-                </button>
-                <div id="all-buckets-list" class="buckets-grid"></div>
-            </div>
-        </div>
+</div>
+</div>
+
+<!-- ── AWS Tab ── -->
+<div id="tab-aws" class="tab-panel">
+<div class="panel-header"><h2><i class="fab fa-aws"></i> AWS Configuration</h2></div>
+<div class="panel-body">
+<div class="card">
+    <div class="card-header">
+        <h3>Connect to AWS</h3>
+        <p>Configure your AWS credentials to access S3 and SageMaker services</p>
     </div>
-</section>
+    <div class="card-body">
+        <form id="aws-config-form" method="post" action="javascript:void(0)">
+            <div class="form-group">
+                <label for="access-key">Access Key ID</label>
+                <input type="text" id="access-key" name="access_key_id">
+            </div>
+            <div class="form-group">
+                <label for="secret-key">Secret Access Key</label>
+                <input type="password" id="secret-key" name="secret_access_key">
+            </div>
+            <div class="form-group">
+                <label for="region">Region</label>
+                <select id="region" name="region">
+                    <option value="us-east-1">US East (N. Virginia)</option>
+                    <option value="us-west-2">US West (Oregon)</option>
+                    <option value="eu-west-1">Europe (Ireland)</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-plug"></i> Connect to AWS</button>
+        </form>
+        <div id="aws-status" class="status-indicator"></div>
+    </div>
+</div>
+</div>
+</div>
 
-<!-- Fairness Section -->
-<section id="fairness" class="section">
-    <div class="container">
-        <h2><i class="fas fa-balance-scale"></i> Fairness &amp; Demographics</h2>
+<!-- ── Data Tab ── -->
+<div id="tab-data" class="tab-panel">
+<div class="panel-header"><h2><i class="fas fa-database"></i> Data</h2></div>
+<div class="panel-body">
+<div class="card">
+    <div class="card-header"><h3>S3 Buckets</h3></div>
+    <div class="card-body">
+        <button id="load-buckets" class="btn btn-secondary"><i class="fas fa-sync"></i> Load S3 Buckets</button>
+        <div id="all-buckets-list" class="buckets-grid"></div>
+    </div>
+</div>
+</div>
+</div>
+
+<!-- ── Fairness Tab ── -->
+<div id="tab-fairness" class="tab-panel">
+<div class="panel-header"><h2><i class="fas fa-balance-scale"></i> Fairness &amp; Demographics</h2></div>
+<div class="panel-body">
         <div class="card">
             <div class="card-header">
                 <h3>Demographic Analysis</h3>
@@ -127,19 +212,13 @@
                 <div class="card-body" id="fairness-sample-table"></div>
             </div>
         </div>
-    </div>
-</section>
+    </div><!-- /panel-body -->
+</div><!-- /tab-fairness -->
 
-<style>
-.fairness-card { background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:1rem; text-align:center; }
-.fairness-card-value { font-size:2rem; font-weight:700; color:#232f3e; }
-.fairness-card-label { font-size:0.82rem; color:#666; margin-top:0.25rem; }
-</style>
-
-<!-- Training Section -->
-<section id="training" class="section">
-    <div class="container">
-        <h2><i class="fas fa-brain"></i> Model Training</h2>
+<!-- ── Training Tab ── -->
+<div id="tab-training" class="tab-panel">
+<div class="panel-header"><h2><i class="fas fa-brain"></i> Model Training</h2></div>
+<div class="panel-body">
         <div class="training-grid">
             <div class="card">
                 <div class="card-header">
@@ -325,14 +404,13 @@
                 </div>
             </div>
         </div>
+    </div><!-- /panel-body -->
+</div><!-- /tab-training -->
 
-    </div>
-</section>
-
-<!-- Deployment Section -->
-<section id="deployment" class="section">
-    <div class="container">
-        <h2><i class="fas fa-rocket"></i> Model Deployment</h2>
+<!-- ── Deployment Tab ── -->
+<div id="tab-deployment" class="tab-panel">
+<div class="panel-header"><h2><i class="fas fa-rocket"></i> Model Deployment</h2></div>
+<div class="panel-body">
         <div class="deployment-grid">
             <div class="card">
                 <div class="card-header">
@@ -432,13 +510,13 @@
                 </div>
             </div>
         </div>
-    </div>
-</section>
+    </div><!-- /panel-body -->
+</div><!-- /tab-deployment -->
 
-<!-- Inference Section -->
-<section id="inference" class="section">
-    <div class="container">
-        <h2><i class="fas fa-brain"></i> Run Inference</h2>
+<!-- ── Inference Tab ── -->
+<div id="tab-inference" class="tab-panel">
+<div class="panel-header"><h2><i class="fas fa-play-circle"></i> Run Inference</h2></div>
+<div class="panel-body">
         <div class="deployment-grid">
             <div class="card">
                 <div class="card-header">
@@ -532,13 +610,13 @@
                 </div>
             </div>
         </div>
-    </div>
-</section>
+    </div><!-- /panel-body -->
+</div><!-- /tab-inference -->
 
-<!-- Evaluation Section -->
-<section id="evaluation" class="section">
-    <div class="container">
-        <h2><i class="fas fa-chart-bar"></i> Model Evaluation</h2>
+<!-- ── Evaluation Tab ── -->
+<div id="tab-evaluation" class="tab-panel">
+<div class="panel-header"><h2><i class="fas fa-chart-bar"></i> Model Evaluation</h2></div>
+<div class="panel-body">
 
         <!-- Submit Job -->
         <div class="card">
@@ -681,16 +759,10 @@
                 </div>
             </div>
         </div>
-    </div>
-</section>
+    </div><!-- /panel-body -->
+</div><!-- /tab-evaluation -->
 
-<style>
-.eval-metric-card { background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:1rem; text-align:center; }
-.eval-metric-value { font-size:1.8rem; font-weight:700; color:#232f3e; }
-.eval-metric-label { font-size:0.8rem; color:#666; margin-top:0.25rem; }
-</style>
-
-<!-- Add Container Modal -->
+<!-- Modals -->
 <div id="add-container-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
     <div style="background:#fff; border-radius:8px; padding:1.5rem; width:480px; max-width:90vw; box-shadow:0 8px 32px rgba(0,0,0,0.2);">
         <h3 style="margin:0 0 1rem;"><i class="fas fa-plus-circle"></i> Add Container Image</h3>
@@ -736,24 +808,26 @@
 </div>
 
 <style>
-.result-highlight {
-    background: #f0f7ff;
-    border-left: 3px solid #4B9CD3;
-    border-radius: 4px;
-    padding: 0.5rem 0.75rem;
-    margin-top: 0.5rem;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2px 1rem;
-}
-.result-row { display: flex; gap: 0.4rem; font-size: 0.82rem; align-items: baseline; }
-.result-row span { color: #666; min-width: 80px; }
-.job-comment { font-size: 0.82rem; color: #555; margin-top: 0.4rem; font-style: italic; }
-.job-archived { opacity: 0.65; }
-.jobs-tab-bar { display: flex; gap: 0; border-bottom: 2px solid #e0e0e0; margin-bottom: 1rem; }
-.jobs-tab { background: none; border: none; padding: 0.5rem 1.25rem; font-size: 0.9rem; cursor: pointer; color: #666; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: color 0.15s; }
-.jobs-tab:hover { color: #232f3e; }
-.jobs-tab.active { color: #232f3e; border-bottom-color: #FF9900; font-weight: 600; }
+.home-feature-card { background:#fff; border:1px solid #e0e0e0; border-radius:10px; padding:1.1rem 1.25rem; display:flex; gap:1rem; align-items:flex-start; cursor:pointer; transition:box-shadow 0.15s, border-color 0.15s; }
+.home-feature-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.08); border-color:#4B9CD3; }
+.home-feature-icon { width:40px; height:40px; min-width:40px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; }
+.home-feature-title { font-weight:600; font-size:0.9rem; color:#232f3e; margin-bottom:0.3rem; }
+.home-feature-desc { font-size:0.8rem; color:#666; line-height:1.5; }
+.fairness-card { background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:1rem; text-align:center; }
+.fairness-card-value { font-size:2rem; font-weight:700; color:#232f3e; }
+.fairness-card-label { font-size:0.82rem; color:#666; margin-top:0.25rem; }
+.eval-metric-card { background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:1rem; text-align:center; }
+.eval-metric-value { font-size:1.8rem; font-weight:700; color:#232f3e; }
+.eval-metric-label { font-size:0.8rem; color:#666; margin-top:0.25rem; }
+.result-highlight { background:#f0f7ff; border-left:3px solid #4B9CD3; border-radius:4px; padding:0.5rem 0.75rem; margin-top:0.5rem; display:grid; grid-template-columns:1fr 1fr; gap:2px 1rem; }
+.result-row { display:flex; gap:0.4rem; font-size:0.82rem; align-items:baseline; }
+.result-row span { color:#666; min-width:80px; }
+.job-comment { font-size:0.82rem; color:#555; margin-top:0.4rem; font-style:italic; }
+.job-archived { opacity:0.65; }
+.jobs-tab-bar { display:flex; gap:0; border-bottom:2px solid #e0e0e0; margin-bottom:1rem; }
+.jobs-tab { background:none; border:none; padding:0.5rem 1.25rem; font-size:0.9rem; cursor:pointer; color:#666; border-bottom:2px solid transparent; margin-bottom:-2px; transition:color 0.15s; }
+.jobs-tab:hover { color:#232f3e; }
+.jobs-tab.active { color:#232f3e; border-bottom-color:#FF9900; font-weight:600; }
 </style>
 
 {% endblock %}

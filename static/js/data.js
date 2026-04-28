@@ -1,15 +1,10 @@
 // Data - S3 Bucket Browser
 
-document.addEventListener('DOMContentLoaded', function() {
+registerTabInit('data', function() {
     const loadBucketsBtn = document.getElementById('load-buckets');
-    if (loadBucketsBtn) {
-        loadBucketsBtn.addEventListener('click', loadS3Buckets);
-    }
-
+    if (loadBucketsBtn) loadBucketsBtn.addEventListener('click', loadS3Buckets);
     const loadUriBtn = document.getElementById('load-s3-uri');
-    if (loadUriBtn) {
-        loadUriBtn.addEventListener('click', browseS3Uri);
-    }
+    if (loadUriBtn) loadUriBtn.addEventListener('click', browseS3Uri);
 });
 
 async function browseS3Uri() {

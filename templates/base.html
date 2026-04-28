@@ -6,42 +6,65 @@
     <title>{% block title %}MedML Training Platform{% endblock %}</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="/static/css/style.css" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <style>
+        /* ── App shell ── */
+        body { margin:0; overflow:hidden; }
+        .app-shell { display:flex; height:100vh; }
+
+        /* ── Sidebar ── */
+        .sidebar { width:190px; min-width:190px; background:#232f3e; display:flex; flex-direction:column; }
+        .sidebar-brand { display:flex; align-items:center; gap:10px; padding:1rem 1.25rem; border-bottom:1px solid rgba(255,255,255,0.08); }
+        .sidebar-brand img { width:26px; height:26px; }
+        .sidebar-brand-text { color:#fff; font-weight:700; font-size:0.95rem; }
+        .sidebar-nav { flex:1; padding:0.5rem 0; overflow-y:auto; }
+        .sidebar-item { display:flex; align-items:center; gap:10px; width:100%; padding:0.6rem 1.25rem; background:none; border:none; border-left:3px solid transparent; color:rgba(255,255,255,0.6); font-size:0.85rem; cursor:pointer; text-align:left; transition:background 0.15s,color 0.15s; }
+        .sidebar-item:hover { background:rgba(255,255,255,0.07); color:#fff; }
+        .sidebar-item.active { background:rgba(255,153,0,0.15); color:#FF9900; border-left-color:#FF9900; font-weight:600; }
+        .sidebar-item i { width:15px; text-align:center; font-size:0.85rem; }
+        .sidebar-footer { padding:0.75rem 1.25rem; border-top:1px solid rgba(255,255,255,0.08); font-size:0.75rem; }
+
+        /* ── Tab content ── */
+        .tab-content { flex:1; overflow-y:auto; background:#f5f7fa; }
+        .tab-panel { display:none; }
+        .tab-panel.active { display:block; }
+        .panel-header { padding:1.5rem 2rem 0; }
+        .panel-header h2 { margin:0 0 1.25rem; font-size:1.25rem; color:#232f3e; }
+        .panel-body { padding:0 2rem 2rem; }
+    </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-brand">
-                <i class="fas fa-brain"></i>
-                <span>MedML Training Platform</span>
-            </div>
-            <div class="nav-links">
-                <a href="#aws-config" class="nav-link">AWS Configuration</a>
-                <a href="#data-import" class="nav-link">Data Import</a>
-                <a href="#fairness" class="nav-link"><i class="fas fa-balance-scale"></i> Fairness</a>
-                <a href="#training" class="nav-link">Training</a>
-                <a href="#deployment" class="nav-link">Deployment</a>
-                <a href="#inference" class="nav-link">Inference</a>
-                <a href="#evaluation" class="nav-link">Evaluation</a>
-            </div>
+<div class="app-shell">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-brand">
+            <img src="/static/favicon.svg" alt="logo">
+            <span class="sidebar-brand-text">MedML</span>
+        </div>
+        <div class="sidebar-nav">
+            <button class="sidebar-item" data-tab="home"       onclick="switchTab('home',this)">       <i class="fas fa-home"></i>         <span>Home</span></button>
+            <button class="sidebar-item" data-tab="aws"        onclick="switchTab('aws',this)">        <i class="fab fa-aws"></i>          <span>AWS</span></button>
+            <button class="sidebar-item" data-tab="data"       onclick="switchTab('data',this)">       <i class="fas fa-database"></i>     <span>Data</span></button>
+            <button class="sidebar-item" data-tab="fairness"   onclick="switchTab('fairness',this)">   <i class="fas fa-balance-scale"></i><span>Fairness</span></button>
+            <button class="sidebar-item" data-tab="training"   onclick="switchTab('training',this)">   <i class="fas fa-brain"></i>        <span>Training</span></button>
+            <button class="sidebar-item" data-tab="deployment" onclick="switchTab('deployment',this)"> <i class="fas fa-rocket"></i>       <span>Deployment</span></button>
+            <button class="sidebar-item" data-tab="inference"  onclick="switchTab('inference',this)">  <i class="fas fa-play-circle"></i>  <span>Inference</span></button>
+            <button class="sidebar-item" data-tab="evaluation" onclick="switchTab('evaluation',this)"> <i class="fas fa-chart-bar"></i>    <span>Evaluation</span></button>
+        </div>
+        <div class="sidebar-footer">
+            <span id="aws-connection-indicator" class="aws-disconnected">● Disconnected</span>
         </div>
     </nav>
 
-    <!-- Main Content -->
-    <main class="main-content">
+    <!-- Main content -->
+    <main class="tab-content">
         {% block content %}{% endblock %}
     </main>
+</div>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="footer-content">
-            <p>&copy; 2024 MedML Training Platform. Built with AWS services.</p>
-        </div>
-    </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="/static/js/modelNames.js"></script>
-    <script src="/static/js/main.js"></script>
-    {% block scripts %}{% endblock %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="/static/js/modelNames.js"></script>
+<script src="/static/js/main.js"></script>
+{% block scripts %}{% endblock %}
 </body>
 </html>

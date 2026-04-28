@@ -2,13 +2,12 @@
 
 const INFERENCE_IMAGE_TEMPLATE = '763104351884.dkr.ecr.{region}.amazonaws.com/pytorch-inference:2.6.0-gpu-py312-cu124-ubuntu22.04-sagemaker';
 
-document.addEventListener('DOMContentLoaded', function () {
+registerTabInit('deployment', function () {
     loadDeployments();
     const form = document.getElementById('deployment-form');
     if (form) form.addEventListener('submit', deployModel);
     setInterval(loadDeployments, 20000);
 
-    // Update inference image URI when region changes
     const regionSelect = document.getElementById('region');
     if (regionSelect) {
         regionSelect.addEventListener('change', updateInferenceImageUri);

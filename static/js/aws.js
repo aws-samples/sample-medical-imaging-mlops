@@ -1,6 +1,6 @@
 // AWS Configuration JavaScript
 
-document.addEventListener('DOMContentLoaded', function() {
+registerTabInit('aws', function() {
     const awsForm = document.getElementById('aws-config-form');
     
     if (awsForm) {
@@ -78,14 +78,8 @@ function disableSection(sectionId) {
     }
 }
 
-// Initialize sections as disabled
+// Initialize — check AWS status on page load
 document.addEventListener('DOMContentLoaded', function() {
-    disableSection('data-import');
-    disableSection('preprocessing');
-    disableSection('training');
-    disableSection('deployment');
-
-    // Check if already connected via environment credentials
     checkAwsStatus();
 });
 
