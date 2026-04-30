@@ -40,6 +40,8 @@
 
 - [ ] **Grad-CAM in SageMaker Processing Job** — Run Grad-CAM at scale on a test set via a SageMaker Processing Job using the inference container; save heatmap overlays to S3.
 
+- [ ] **SageMaker Clarify — image classification explainability** — Use `SageMakerClarifyProcessor.run_explainability()` with `ImageConfig(model_type="IMAGE_CLASSIFICATION")` and KernelSHAP to generate super-pixel heatmaps for classification predictions. Requires a SageMaker Model resource (stored as `{endpoint_name}-model` in deployments). Clarify spins up a temporary endpoint, runs ~100 inference calls per image to compute SHAP values, then tears it down. Output: per-image heatmap PNGs in S3 showing which image regions drove the prediction. Add a Clarify job form to the Monitoring tab alongside the existing Model Monitor schedules.
+
 ## Model Evaluation
 
 - [ ] **SageMaker Processing Job for endpoint evaluation** — Submit a Processing Job using the inference container image to evaluate a deployed endpoint against a labeled test set in S3. Compute accuracy, AUC, per-class precision/recall/F1, and confusion matrix. Save a JSON report to S3 and persist results in the dashboard.

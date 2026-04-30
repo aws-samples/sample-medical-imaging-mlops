@@ -13,17 +13,21 @@ deployment_service = DeploymentService()
 
 
 class EndpointDeployRequest(BaseModel):
-    endpoint_name:    str
-    model_artifacts:  Optional[str] = None   # omit to import/track an existing endpoint
-    image_uri:        Optional[str] = None
-    role_arn:         Optional[str] = None
-    instance_type:    str = "ml.m5.xlarge"
-    instance_count:   int = 1
-    inference_script: str = "inference.py"
-    environment:      dict = {}
-    async_endpoint:   bool = False
-    output_s3_uri:    Optional[str] = None   # required when async_endpoint=True
-    max_concurrent:   int = 10
+    endpoint_name:        str
+    model_artifacts:      Optional[str] = None
+    image_uri:            Optional[str] = None
+    role_arn:             Optional[str] = None
+    instance_type:        str = "ml.m5.xlarge"
+    instance_count:       int = 1
+    inference_script:     str = "inference.py"
+    environment:          dict = {}
+    async_endpoint:       bool = False
+    output_s3_uri:        Optional[str] = None
+    max_concurrent:       int = 10
+    # Data capture
+    enable_data_capture:  bool = False
+    capture_s3_uri:       Optional[str] = None
+    capture_sampling_pct: int = 100
 
 
 @router.post("/deploy")

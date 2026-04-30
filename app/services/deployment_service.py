@@ -64,27 +64,46 @@ class DeploymentService:
             },
             ExecutionRoleArn=role_arn,
         )
-        sagemaker_client.create_endpoint_config(
-            EndpointConfigName=config_name,
-            ProductionVariants=[{
+        endpoint_config_kwargs: dict = {
+            "EndpointConfigName": config_name,
+            "ProductionVariants": [{
                 "VariantName":          "AllTraffic",
                 "ModelName":            model_name,
                 "InstanceType":         instance_type,
                 "InitialInstanceCount": instance_count,
             }],
-        )
+        }
+
+        # Optional data capture
+        if config.get("enable_data_capture") and config.get("capture_s3_uri"):
+            endpoint_config_kwargs["DataCaptureConfig"] = {
+                "EnableCapture":             True,
+                "InitialSamplingPercentage": config.get("capture_sampling_pct", 100),
+                "DestinationS3Uri":          config["capture_s3_uri"],
+                "CaptureOptions": [
+                    {"CaptureMode": "Input"},
+                    {"CaptureMode": "Output"},
+                ],
+                "CaptureContentTypeHeader": {
+                    "JsonContentTypes": ["application/json"],
+                },
+            }
+
+        sagemaker_client.create_endpoint_config(**endpoint_config_kwargs)
         sagemaker_client.create_endpoint(EndpointName=endpoint_name, EndpointConfigName=config_name)
         logger.info("Creating real-time endpoint: %s", endpoint_name)
 
         record = {
-            "endpoint_name":   endpoint_name,
-            "endpoint_type":   "realtime",
-            "model_artifacts": model_artifacts,
-            "image_uri":       image_uri,
-            "instance_type":   instance_type,
-            "instance_count":  instance_count,
-            "status":          "Creating",
-            "created_at":      datetime.utcnow().isoformat(),
+            "endpoint_name":        endpoint_name,
+            "endpoint_type":        "realtime",
+            "model_artifacts":      model_artifacts,
+            "image_uri":            image_uri,
+            "instance_type":        instance_type,
+            "instance_count":       instance_count,
+            "data_capture_enabled": bool(config.get("enable_data_capture") and config.get("capture_s3_uri")),
+            "capture_s3_uri":       config.get("capture_s3_uri"),
+            "status":               "Creating",
+            "created_at":           datetime.utcnow().isoformat(),
         }
         self.deployments[endpoint_name] = record
         self._save()

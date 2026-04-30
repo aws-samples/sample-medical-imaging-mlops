@@ -29,6 +29,12 @@ function toggleAsyncFields() {
     if (fields) fields.style.display = isAsync ? 'block' : 'none';
 }
 
+function toggleCaptureFields() {
+    const enabled = document.getElementById('dep-capture')?.checked;
+    const fields  = document.getElementById('capture-fields');
+    if (fields) fields.style.display = enabled ? 'block' : 'none';
+}
+
 async function deployModel(e) {
     e.preventDefault();
     const fd = new FormData(e.target);
@@ -37,14 +43,17 @@ async function deployModel(e) {
     const importOnly    = !modelArtifacts;
 
     const payload = {
-        endpoint_name:    fd.get('endpoint_name'),
-        model_artifacts:  modelArtifacts,
-        image_uri:        importOnly ? null : fd.get('image_uri'),
-        role_arn:         importOnly ? null : fd.get('role_arn'),
-        instance_type:    fd.get('instance_type'),
-        instance_count:   parseInt(fd.get('instance_count') || '1'),
-        inference_script: fd.get('inference_script') || 'inference.py',
-        async_endpoint:   isAsync,
+        endpoint_name:        fd.get('endpoint_name'),
+        model_artifacts:      modelArtifacts,
+        image_uri:            importOnly ? null : fd.get('image_uri'),
+        role_arn:             importOnly ? null : fd.get('role_arn'),
+        instance_type:        fd.get('instance_type'),
+        instance_count:       parseInt(fd.get('instance_count') || '1'),
+        inference_script:     fd.get('inference_script') || 'inference.py',
+        async_endpoint:       isAsync,
+        enable_data_capture:  document.getElementById('dep-capture')?.checked || false,
+        capture_s3_uri:       fd.get('capture_s3_uri') || null,
+        capture_sampling_pct: parseInt(fd.get('capture_sampling_pct') || '100'),
     };
 
     if (isAsync) {
@@ -131,6 +140,7 @@ function displayDeployments(deployments) {
                 <div><strong>Instance:</strong> ${d.instance_type} × ${d.instance_count}</div>
                 <div><strong>Created:</strong> ${d.created_at ? new Date(d.created_at).toLocaleString() : 'N/A'}</div>
                 ${d.output_s3_uri ? `<div><strong>Output:</strong> <code style="font-size:0.78rem;">${d.output_s3_uri}</code></div>` : ''}
+                ${d.data_capture_enabled ? `<div><strong>Data Capture:</strong> <span style="color:#1e8449;"><i class="fas fa-circle" style="font-size:0.6rem;"></i> Enabled</span> → <code style="font-size:0.78rem;">${d.capture_s3_uri}</code></div>` : ''}
                 ${d.endpoint_url ? `<div><strong>URL:</strong> <code style="font-size:0.78rem;">${d.endpoint_url}</code></div>` : ''}
                 ${d.failure_reason ? `<div style="color:#c62828;"><strong>Failure:</strong> ${d.failure_reason}</div>` : ''}
             </div>

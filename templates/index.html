@@ -72,6 +72,14 @@
             </div>
         </div>
 
+        <div class="home-feature-card" onclick="switchTab('monitoring', document.querySelector('[data-tab=monitoring]'))">
+            <div class="home-feature-icon" style="background:#e8f8f0;"><i class="fas fa-heartbeat" style="color:#1e8449;"></i></div>
+            <div>
+                <div class="home-feature-title">Monitoring</div>
+                <div class="home-feature-desc">Enable data capture on endpoints, create data quality baselines, and schedule automated monitoring jobs to detect data and model quality drift in production.</div>
+            </div>
+        </div>
+
     </div>
 
     <div class="card" style="margin-bottom:1.5rem;">
@@ -490,6 +498,29 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="checkbox-label" style="margin-top: 8px;">
+                                    <input type="checkbox" id="dep-capture" name="enable_data_capture" onchange="toggleCaptureFields()">
+                                    <strong>Enable Data Capture</strong>
+                                    <small style="color:var(--aws-dark-gray); display:block; margin-top:2px;">Save inference inputs &amp; outputs to S3 for monitoring</small>
+                                </label>
+                            </div>
+                        </div>
+                        <div id="capture-fields" style="display:none;">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="dep-capture-s3">Capture S3 URI</label>
+                                    <input type="text" id="dep-capture-s3" name="capture_s3_uri" placeholder="s3://bucket/capture-data/">
+                                    <small style="color:var(--aws-dark-gray)">Captured requests saved here by date/hour</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="dep-capture-pct">Sampling Percentage</label>
+                                    <input type="number" id="dep-capture-pct" name="capture_sampling_pct" value="100" min="1" max="100">
+                                    <small style="color:var(--aws-dark-gray)">% of requests to capture</small>
+                                </div>
+                            </div>
+                        </div>
                         <div id="dep-status-banner" class="sm-status-banner" style="display:none;"></div>
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-rocket"></i> Deploy Model
@@ -762,6 +793,269 @@
     </div><!-- /panel-body -->
 </div><!-- /tab-evaluation -->
 
+<!-- ── Monitoring Tab ── -->
+<div id="tab-monitoring" class="tab-panel">
+<div class="panel-header"><h2><i class="fas fa-heartbeat"></i> Model Monitoring</h2></div>
+<div class="panel-body">
+
+    <!-- Step 1: Data Capture -->
+    <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card-header">
+            <h3><i class="fas fa-camera"></i> Step 1 — Enable Data Capture</h3>
+            <p style="margin:0; font-size:0.88rem; color:#666;">Capture inference inputs and outputs from a deployed endpoint to S3.</p>
+        </div>
+        <div class="card-body">
+            <form id="data-capture-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="dc-endpoint">Endpoint Name</label>
+                        <div style="display:flex; gap:6px;">
+                            <select id="dc-endpoint" style="flex:1;"><option value="" disabled selected>Loading...</option></select>
+                            <button type="button" class="btn btn-secondary" onclick="loadMonitorEndpoints()" title="Refresh"><i class="fas fa-sync"></i></button>
+                        </div>
+                        <input type="text" id="dc-endpoint-manual" placeholder="Or type endpoint name manually" style="margin-top:6px; width:100%;" oninput="document.getElementById('dc-endpoint').value=this.value">
+                    </div>
+                    <div class="form-group">
+                        <label for="dc-capture-s3">Capture S3 URI</label>
+                        <input type="text" id="dc-capture-s3" placeholder="s3://bucket/capture-data/" required>
+                        <small style="color:var(--aws-dark-gray)">Inference inputs and outputs will be saved here</small>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="dc-sampling">Sampling Percentage</label>
+                        <input type="number" id="dc-sampling" value="100" min="1" max="100">
+                        <small style="color:var(--aws-dark-gray)">% of requests to capture</small>
+                    </div>
+                </div>
+                <div id="dc-status-banner" class="sm-status-banner" style="display:none;"></div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-camera"></i> Enable Data Capture</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Capture Viewer -->
+    <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card-header">
+            <h3><i class="fas fa-eye"></i> Capture Viewer</h3>
+            <p style="margin:0; font-size:0.88rem; color:#666;">Visualise prediction distributions from captured inference data.</p>
+        </div>
+        <div class="card-body">
+            <div style="display:flex; gap:0.75rem; align-items:flex-end; flex-wrap:wrap; margin-bottom:1rem;">
+                <div class="form-group" style="flex:1; min-width:200px; margin:0;">
+                    <label for="cv-endpoint">Endpoint Name</label>
+                    <input type="text" id="cv-endpoint" placeholder="my-endpoint">
+                </div>
+                <div class="form-group" style="flex:2; min-width:280px; margin:0;">
+                    <label for="cv-capture-s3">Capture S3 URI</label>
+                    <input type="text" id="cv-capture-s3" placeholder="s3://bucket/capture-data/">
+                </div>
+                <div class="form-group" style="width:100px; margin:0;">
+                    <label for="cv-max-files">Max Files</label>
+                    <input type="number" id="cv-max-files" value="20" min="1" max="100">
+                </div>
+                <button class="btn btn-primary" onclick="loadCaptureViewer()" style="margin-bottom:0;">
+                    <i class="fas fa-chart-bar"></i> Analyse
+                </button>
+            </div>
+            <div id="cv-status-banner" class="sm-status-banner" style="display:none;"></div>
+
+            <div id="cv-results" style="display:none;">
+                <!-- Summary cards -->
+                <div id="cv-summary-cards" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:1rem; margin-bottom:1.5rem;"></div>
+
+                <!-- Charts -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+                    <div class="card">
+                        <div class="card-header"><h3 style="font-size:0.95rem;">Prediction Class Distribution</h3></div>
+                        <div class="card-body"><canvas id="cv-class-chart"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><h3 style="font-size:0.95rem;">Confidence Score Distribution</h3></div>
+                        <div class="card-body"><canvas id="cv-conf-chart"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- Recent records table -->
+                <div class="card">
+                    <div class="card-header"><h3 style="font-size:0.95rem;">Recent Captures (up to 50)</h3></div>
+                    <div class="card-body" id="cv-records-table"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 2: Baseline -->
+    <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card-header">
+            <h3><i class="fas fa-ruler"></i> Step 2 — Create Data Quality Baseline</h3>
+            <p style="margin:0; font-size:0.88rem; color:#666;">Run a baseline job on your training data to compute statistics and constraints.</p>
+        </div>
+        <div class="card-body">
+            <form id="baseline-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="bl-data-s3">Baseline Data S3 URI</label>
+                        <input type="text" id="bl-data-s3" placeholder="s3://bucket/training-data/" required>
+                        <small style="color:var(--aws-dark-gray)">CSV with header — the dataset used to train the model</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="bl-output-s3">Output S3 URI</label>
+                        <input type="text" id="bl-output-s3" placeholder="s3://bucket/baseline-output/" required>
+                        <small style="color:var(--aws-dark-gray)">statistics.json and constraints.json saved here</small>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="bl-role-arn">IAM Role ARN</label>
+                        <input type="text" id="bl-role-arn" value="arn:aws:iam::575108919340:role/service-role/AmazonSageMaker-ExecutionRole-20240907T181142" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bl-instance-type">Instance Type</label>
+                        <select id="bl-instance-type">
+                            <option value="ml.m5.xlarge">ml.m5.xlarge (CPU)</option>
+                            <option value="ml.m5.2xlarge">ml.m5.2xlarge (CPU)</option>
+                            <option value="ml.c5.xlarge">ml.c5.xlarge (CPU)</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="bl-status-banner" class="sm-status-banner" style="display:none;"></div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-play"></i> Run Baseline Job</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Step 3: Schedules -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+
+        <!-- Data Quality Schedule -->
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-database"></i> Data Quality Schedule</h3>
+                <p style="margin:0; font-size:0.85rem; color:#666;">Monitor drift in input data distribution.</p>
+            </div>
+            <div class="card-body">
+                <form id="dq-schedule-form">
+                    <div class="form-group">
+                        <label for="dq-schedule-name">Schedule Name</label>
+                        <input type="text" id="dq-schedule-name" placeholder="my-dq-monitor" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="dq-endpoint">Endpoint Name</label>
+                        <input type="text" id="dq-endpoint" placeholder="my-endpoint" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="dq-constraints-s3">Constraints S3 URI</label>
+                        <input type="text" id="dq-constraints-s3" placeholder="s3://bucket/baseline-output/constraints.json" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="dq-statistics-s3">Statistics S3 URI</label>
+                        <input type="text" id="dq-statistics-s3" placeholder="s3://bucket/baseline-output/statistics.json" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="dq-output-s3">Output S3 URI</label>
+                        <input type="text" id="dq-output-s3" placeholder="s3://bucket/monitor-output/" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="dq-role-arn">IAM Role ARN</label>
+                        <input type="text" id="dq-role-arn" value="arn:aws:iam::575108919340:role/service-role/AmazonSageMaker-ExecutionRole-20240907T181142" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="dq-schedule-expr">Schedule</label>
+                        <select id="dq-schedule-expr">
+                            <option value="cron(0 * ? * * *)">Hourly</option>
+                            <option value="cron(0 0 ? * * *)">Daily</option>
+                            <option value="cron(0 0 ? * 1 *)">Weekly</option>
+                        </select>
+                    </div>
+                    <div id="dq-status-banner" class="sm-status-banner" style="display:none;"></div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-clock"></i> Create Schedule</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Model Quality Schedule -->
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-tachometer-alt"></i> Model Quality Schedule</h3>
+                <p style="margin:0; font-size:0.85rem; color:#666;">Monitor accuracy drift against ground truth labels.</p>
+            </div>
+            <div class="card-body">
+                <form id="mq-schedule-form">
+                    <div class="form-group">
+                        <label for="mq-schedule-name">Schedule Name</label>
+                        <input type="text" id="mq-schedule-name" placeholder="my-mq-monitor" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="mq-endpoint">Endpoint Name</label>
+                        <input type="text" id="mq-endpoint" placeholder="my-endpoint" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="mq-gt-s3">Ground Truth S3 URI</label>
+                        <input type="text" id="mq-gt-s3" placeholder="s3://bucket/ground-truth/" required>
+                        <small style="color:var(--aws-dark-gray)">Actual labels to compare against predictions</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="mq-output-s3">Output S3 URI</label>
+                        <input type="text" id="mq-output-s3" placeholder="s3://bucket/monitor-output/" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="mq-role-arn">IAM Role ARN</label>
+                        <input type="text" id="mq-role-arn" value="arn:aws:iam::575108919340:role/service-role/AmazonSageMaker-ExecutionRole-20240907T181142" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="mq-problem-type">Problem Type</label>
+                        <select id="mq-problem-type">
+                            <option value="MulticlassClassification">Multiclass Classification</option>
+                            <option value="BinaryClassification">Binary Classification</option>
+                            <option value="Regression">Regression</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="mq-inference-attr">Inference Attribute</label>
+                        <input type="text" id="mq-inference-attr" value="predicted_label">
+                        <small style="color:var(--aws-dark-gray)">Key in captured output JSON</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="mq-schedule-expr">Schedule</label>
+                        <select id="mq-schedule-expr">
+                            <option value="cron(0 * ? * * *)">Hourly</option>
+                            <option value="cron(0 0 ? * * *)">Daily</option>
+                            <option value="cron(0 0 ? * 1 *)">Weekly</option>
+                        </select>
+                    </div>
+                    <div id="mq-status-banner" class="sm-status-banner" style="display:none;"></div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-clock"></i> Create Schedule</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Schedules -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Active Monitoring Schedules</h3>
+            <button class="btn btn-secondary" onclick="loadMonitorSchedules()"><i class="fas fa-sync"></i> Refresh</button>
+        </div>
+        <div class="card-body">
+            <div id="monitor-schedules-list"></div>
+        </div>
+    </div>
+
+    <!-- Baseline Jobs -->
+    <div class="card" style="margin-top:1.5rem;">
+        <div class="card-header">
+            <h3>Baseline Jobs</h3>
+            <button class="btn btn-secondary" onclick="loadBaselineJobs()"><i class="fas fa-sync"></i> Refresh</button>
+        </div>
+        <div class="card-body">
+            <div id="monitor-baseline-list"></div>
+        </div>
+    </div>
+
+</div>
+</div>
+
 <!-- Modals -->
 <div id="add-container-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
     <div style="background:#fff; border-radius:8px; padding:1.5rem; width:480px; max-width:90vw; box-shadow:0 8px 32px rgba(0,0,0,0.2);">
@@ -840,4 +1134,5 @@
 <script src="/static/js/inference.js"></script>
 <script src="/static/js/fairness.js"></script>
 <script src="/static/js/evaluation.js"></script>
+<script src="/static/js/monitoring.js"></script>
 {% endblock %}
