@@ -74,11 +74,51 @@ function populateSageMakerModelDropdown(models) {
     }).join('');
 }
 
+// Data folder structures per task type
+const FOLDER_STRUCTURE = {
+    classification: {
+        label: "s3://your-bucket/dataset/",
+        children: [
+            { label: "train/", children: [
+                { label: "<class_name>/", children: [{ label: "*.dcm / *.png / *.jpg" }] }
+            ]},
+            { label: "val/", children: [
+                { label: "<class_name>/", children: [{ label: "*.dcm / *.png / *.jpg" }] }
+            ]},
+            { label: "test/", note: "optional", children: [
+                { label: "<class_name>/", children: [{ label: "*.dcm / *.png / *.jpg" }] }
+            ]},
+        ]
+    },
+    segmentation: {
+        label: "s3://your-bucket/dataset/",
+        children: [
+            { label: "train/", children: [
+                { label: "img/", children: [{ label: "*.nii.gz" }] },
+                { label: "mask/", children: [{ label: "*.nii.gz" }] },
+            ]},
+            { label: "val/", children: [
+                { label: "img/", children: [{ label: "*.nii.gz" }] },
+                { label: "mask/", children: [{ label: "*.nii.gz" }] },
+            ]},
+        ]
+    },
+    custom: {
+        label: "s3://your-bucket/",
+        children: [
+            { label: "<weights>.pt / .pth", note: "PyTorch checkpoint" },
+            { label: "<weights>.onnx", note: "ONNX export (optional)" },
+            { label: "<weights>.pb / .h5", note: "TensorFlow (optional)" },
+        ]
+    }
+};
+
 const MODEL_INFO = {
     resnet50: {
         blurb: "ResNet-50 is a 50-layer deep residual network that introduced skip connections to solve the vanishing gradient problem, enabling training of much deeper networks. It remains a strong baseline for medical image classification tasks due to its balance of accuracy and computational efficiency.",
         specs: { Parameters: "25.6M", "Input Size": "224×224" },
         dimensions: ["2D"],
+        folderStructure: FOLDER_STRUCTURE.classification,
         papers: [
             { title: "Deep Residual Learning for Image Recognition", authors: "He et al., 2016", url: "https://arxiv.org/abs/1512.03385" },
             { title: "Identity Mappings in Deep Residual Networks", authors: "He et al., 2016", url: "https://arxiv.org/abs/1603.05027" },
@@ -88,6 +128,7 @@ const MODEL_INFO = {
         blurb: "VGG-16 is a 16-layer convolutional network known for its simplicity — using only 3×3 convolutions throughout. Despite its large parameter count, it has been widely used as a feature extractor in medical imaging, particularly for transfer learning on small datasets.",
         specs: { Parameters: "138M", "Input Size": "224×224" },
         dimensions: ["2D"],
+        folderStructure: FOLDER_STRUCTURE.classification,
         papers: [
             { title: "Very Deep Convolutional Networks for Large-Scale Image Recognition", authors: "Simonyan & Zisserman, 2015", url: "https://arxiv.org/abs/1409.1556" },
             { title: "How transferable are features in deep neural networks?", authors: "Yosinski et al., 2014", url: "https://arxiv.org/abs/1411.1792" },
@@ -97,6 +138,7 @@ const MODEL_INFO = {
         blurb: "EfficientNet-B0 uses compound scaling to uniformly scale network depth, width, and resolution. It achieves state-of-the-art accuracy with significantly fewer parameters than comparable models, making it well-suited for resource-constrained medical imaging deployments.",
         specs: { Parameters: "5.3M", "Input Size": "224×224" },
         dimensions: ["2D"],
+        folderStructure: FOLDER_STRUCTURE.classification,
         papers: [
             { title: "EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks", authors: "Tan & Le, 2019", url: "https://arxiv.org/abs/1905.11946" },
             { title: "EfficientNetV2: Smaller Models and Faster Training", authors: "Tan & Le, 2021", url: "https://arxiv.org/abs/2104.00298" },
@@ -106,6 +148,7 @@ const MODEL_INFO = {
         blurb: "DenseNet-121 connects each layer to every other layer in a feed-forward fashion, encouraging feature reuse and reducing the number of parameters. It has become a standard architecture in medical imaging, most notably used in CheXNet for chest X-ray pathology detection.",
         specs: { Parameters: "8M", "Input Size": "224×224" },
         dimensions: ["2D", "3D"],
+        folderStructure: FOLDER_STRUCTURE.classification,
         papers: [
             { title: "Densely Connected Convolutional Networks", authors: "Huang et al., 2017", url: "https://arxiv.org/abs/1608.06993" },
             { title: "CheXNet: Radiologist-Level Pneumonia Detection on Chest X-Rays", authors: "Rajpurkar et al., 2017", url: "https://arxiv.org/abs/1711.05225" },
@@ -115,6 +158,7 @@ const MODEL_INFO = {
         blurb: "Vision Transformer (ViT) applies the transformer architecture — originally designed for NLP — directly to image patches. It excels on large datasets and has shown strong performance in medical imaging tasks such as histopathology and radiology when fine-tuned from large pretrained checkpoints.",
         specs: { Parameters: "86M (ViT-B/16)", "Input Size": "224×224" },
         dimensions: ["2D", "3D"],
+        folderStructure: FOLDER_STRUCTURE.classification,
         papers: [
             { title: "An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale", authors: "Dosovitskiy et al., 2021", url: "https://arxiv.org/abs/2010.11929" },
             { title: "Transformers in Medical Imaging: A Survey", authors: "Shamshad et al., 2023", url: "https://arxiv.org/abs/2201.09873" },
@@ -124,12 +168,14 @@ const MODEL_INFO = {
         blurb: "Upload your own model architecture and weights. Custom models can be imported from S3 in PyTorch, ONNX, or TensorFlow formats and registered for training or deployment.",
         specs: { Parameters: "Variable", "Input Size": "Configurable" },
         dimensions: ["2D", "3D"],
+        folderStructure: FOLDER_STRUCTURE.custom,
         papers: []
     },
     segresnet: {
         blurb: "SegResNet is a residual encoder-decoder network designed for volumetric medical image segmentation. It uses residual blocks throughout with deep supervision, achieving strong Dice scores with a compact ~5M parameter footprint — ideal for prototyping and quick iterations on 3D CT/MRI data.",
         specs: { Parameters: "5M", "Input Size": "128×128×64" },
         dimensions: ["3D"],
+        folderStructure: FOLDER_STRUCTURE.segmentation,
         papers: [
             { title: "3D MRI Brain Tumor Segmentation Using Autoencoder Regularization", authors: "Myronenko, 2018", url: "https://arxiv.org/abs/1810.11654" },
         ]
@@ -138,6 +184,7 @@ const MODEL_INFO = {
         blurb: "SwinUNETR combines Swin Transformers with a U-shaped encoder-decoder for 3D medical image segmentation. It captures long-range dependencies via shifted window attention, achieving state-of-the-art results on volumetric tasks at the cost of higher GPU memory (~20GB).",
         specs: { Parameters: "62M", "Input Size": "128×128×64" },
         dimensions: ["3D"],
+        folderStructure: FOLDER_STRUCTURE.segmentation,
         papers: [
             { title: "Swin UNETR: Swin Transformers for Semantic Segmentation of Brain Tumors in MRI Images", authors: "Hatamizadeh et al., 2022", url: "https://arxiv.org/abs/2201.01266" },
             { title: "Self-Supervised Pre-Training of Swin Transformers for 3D Medical Image Analysis", authors: "Tang et al., 2022", url: "https://arxiv.org/abs/2111.14791" },
@@ -147,6 +194,7 @@ const MODEL_INFO = {
         blurb: "UNet is the classic encoder-decoder architecture with skip connections for medical image segmentation. The 3D variant extends this to volumetric data and remains a strong, well-understood baseline for organ and lesion segmentation tasks.",
         specs: { Parameters: "31M", "Input Size": "128×128×64" },
         dimensions: ["3D"],
+        folderStructure: FOLDER_STRUCTURE.segmentation,
         papers: [
             { title: "U-Net: Convolutional Networks for Biomedical Image Segmentation", authors: "Ronneberger et al., 2015", url: "https://arxiv.org/abs/1505.04597" },
             { title: "3D U-Net: Learning Dense Volumetric Segmentation from Sparse Annotation", authors: "Çiçek et al., 2016", url: "https://arxiv.org/abs/1606.06650" },
@@ -201,6 +249,43 @@ function showModelInfo(model) {
         `<span class="model-dim-badge model-dim-${d.toLowerCase()}">${d}</span>`
     ).join('');
     meta.innerHTML += `<div class="model-dim-row">${dimBadges}</div>`;
+
+    // Folder structure
+    const folderSection = document.getElementById('model-folder-structure');
+    if (folderSection && info.folderStructure) {
+        const fs = info.folderStructure;
+
+        function renderTree(nodes, depth) {
+            return nodes.map(n => {
+                const hasChildren = n.children && n.children.length;
+                const icon = hasChildren
+                    ? '<i class="fas fa-folder"></i>'
+                    : '<i class="fas fa-file"></i>';
+                const note = n.note ? `<span class="folder-tree-note">${n.note}</span>` : '';
+                const childHtml = hasChildren
+                    ? `<div class="folder-tree-children">${renderTree(n.children, depth + 1)}</div>`
+                    : '';
+                return `<div class="folder-tree-file">
+                    <span class="folder-tree-icon">${icon}</span>
+                    <span class="folder-tree-name">${n.label}</span>${note}
+                    ${childHtml}
+                </div>`;
+            }).join('');
+        }
+
+        folderSection.innerHTML = `
+            <h4 class="model-papers-heading"><i class="fas fa-folder-open"></i> Data Layout</h4>
+            <div class="folder-tree">
+                <div class="folder-tree-root">
+                    <i class="fas fa-folder-open"></i>
+                    <span>${fs.label}</span>
+                </div>
+                <div class="folder-tree-children">${renderTree(fs.children, 1)}</div>
+            </div>`;
+        folderSection.style.display = 'block';
+    } else if (folderSection) {
+        folderSection.style.display = 'none';
+    }
 
     const papersList = document.getElementById('model-papers-list');
     if (info.papers.length === 0) {
@@ -713,7 +798,6 @@ function displaySageMakerJobs(jobs) {
                 ${job.estimated_cost_usd != null ? `<div><strong>Estimated cost:</strong> <span class="cost-badge">$${job.estimated_cost_usd.toFixed(4)} USD</span></div>` : ''}
                 ${artifactHtml}
                 ${resultHtml}
-                ${commentHtml}
                 ${job.failure_reason ? `<div style="color:#c62828; font-size:0.82rem; margin-top:4px;"><strong>Failure:</strong> ${job.failure_reason}</div>` : ''}
             </div>
             <div id="sm-job-status-detail-${job.job_name}" class="job-status-detail" style="display:none;"></div>
@@ -748,6 +832,7 @@ function displaySageMakerJobs(jobs) {
                     <i class="fas fa-times"></i> Remove
                 </button>` : ''}
             </div>
+            ${commentHtml}
         `;
         container.appendChild(el);
     });

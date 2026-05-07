@@ -434,6 +434,33 @@ input:focus, select:focus, textarea:focus {
     border-radius: 8px;
     padding: 1rem;
     background-color: white;
+    position: relative;
+}
+
+.job-comment {
+    position: absolute;
+    bottom: 0.6rem;
+    right: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.78rem;
+    color: #666;
+    background: #f5f5f5;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 0.2rem 0.65rem;
+    max-width: 40%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.job-comment i {
+    color: var(--aws-orange);
+    flex-shrink: 0;
+    font-size: 0.72rem;
 }
 
 .job-header {
@@ -733,6 +760,76 @@ input:focus, select:focus, textarea:focus {
     background-color: #fff3e0;
     color: var(--aws-orange);
     border: 1px solid var(--aws-orange);
+}
+
+/* Folder tree in model card */
+.folder-tree {
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 0.82rem;
+}
+
+.folder-tree-root {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-weight: 700;
+    color: var(--aws-blue);
+    margin-bottom: 0.4rem;
+}
+
+.folder-tree-root i {
+    color: var(--aws-orange);
+}
+
+.folder-tree-children {
+    padding-left: 1.25rem;
+    border-left: 2px solid #dde;
+    margin-left: 0.55rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.folder-tree-file {
+    display: flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    line-height: 1.5;
+}
+
+.folder-tree-icon i {
+    color: #7b8ea0;
+    font-size: 0.75rem;
+}
+
+.folder-tree-icon .fa-folder {
+    color: var(--aws-orange);
+}
+
+.folder-tree-name {
+    color: #232f3e;
+    white-space: nowrap;
+}
+
+.folder-tree-note {
+    color: #888;
+    font-size: 0.78rem;
+    font-family: inherit;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.folder-tree-note::before {
+    content: "— ";
+}
+
+.folder-tree-data-note {
+    display: none;
 }
 
 /* Radio button groups (task type / dimension) */
