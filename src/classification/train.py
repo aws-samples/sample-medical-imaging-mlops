@@ -32,6 +32,8 @@ parser.add_argument("--epochs",        type=int,   default=1)
 parser.add_argument("--learning_rate", type=float, default=0.001)
 parser.add_argument("--val_interval",  type=int,   default=1)
 parser.add_argument("--data_s3_uri",   type=str,   default="")
+parser.add_argument("--checkpoint_s3_uri", type=str, default="",
+                    help="S3 URI of model.tar.gz to resume from (fine-tuning)")
 args, _ = parser.parse_known_args()
 logger.info("Args: %s", args)
 
@@ -71,6 +73,37 @@ model     = ModelDef(num_classes, args.model_name).get_model().to(device)
 optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
 loss_fn   = nn.CrossEntropyLoss()
 logger.info("Model: %s  |  Params: %s", args.model_name, sum(p.numel() for p in model.parameters()))
+
+# ── Checkpoint resume (fine-tuning) ──────────────────────────────────────────
+start_epoch = 1
+fine_tuned_from = ""
+
+if args.checkpoint_s3_uri:
+    import io, tarfile, tempfile, boto3
+    logger.info("Fine-tuning: loading checkpoint from %s", args.checkpoint_s3_uri)
+    try:
+        path   = args.checkpoint_s3_uri.replace("s3://", "")
+        bucket = path.split("/")[0]
+        key    = "/".join(path.split("/")[1:])
+        s3     = boto3.client("s3")
+        with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as tmp:
+            tmp_path = tmp.name
+        s3.download_file(bucket, key, tmp_path)
+        with tarfile.open(tmp_path, "r:gz") as tar:
+            # Prefer best_model.pth; fall back to model.pth
+            ckpt_name = "best_model.pth" if "best_model.pth" in tar.getnames() else "model.pth"
+            f    = tar.extractfile(tar.getmember(ckpt_name))
+            ckpt = torch.load(io.BytesIO(f.read()), map_location=device)
+        import os as _os; _os.unlink(tmp_path)
+        model.load_state_dict(ckpt["model"])
+        if "optimizer" in ckpt:
+            optimizer.load_state_dict(ckpt["optimizer"])
+        start_epoch     = ckpt.get("epoch", 0) + 1
+        fine_tuned_from = args.checkpoint_s3_uri
+        logger.info("Resumed from %s (epoch %d, val_acc=%.4f)",
+                    ckpt_name, ckpt.get("epoch", 0), ckpt.get("val_acc", 0))
+    except Exception as e:
+        logger.warning("Could not load checkpoint, starting from scratch: %s", e)
 
 
 def copy_inference_artifacts(src_dir: str, dest_dir: str) -> None:
@@ -116,18 +149,19 @@ last_val_acc   = 0.0
 if use_mlflow:
     mlflow.start_run()
     mlflow.log_params({
-        "model_name":    args.model_name,
-        "task_type":     args.task_type,
-        "dimension":     args.dimension,
-        "batch_size":    args.batch_size,
-        "epochs":        args.epochs,
-        "learning_rate": args.learning_rate,
-        "val_interval":  args.val_interval,
-        "num_classes":   num_classes,
-        "device":        str(device),
+        "model_name":       args.model_name,
+        "task_type":        args.task_type,
+        "dimension":        args.dimension,
+        "batch_size":       args.batch_size,
+        "epochs":           args.epochs,
+        "learning_rate":    args.learning_rate,
+        "val_interval":     args.val_interval,
+        "num_classes":      num_classes,
+        "device":           str(device),
+        "fine_tuned_from":  fine_tuned_from or "none",
     })
 
-for epoch in range(1, args.epochs + 1):
+for epoch in range(start_epoch, args.epochs + 1):
     train_loss, train_acc = run_epoch(train_loader, training=True)
     last_train_acc = train_acc
     logger.info("Epoch %d/%d  train_loss=%.4f  train_acc=%.4f", epoch, args.epochs, train_loss, train_acc)
@@ -193,6 +227,7 @@ result = {
     "dimension":         args.dimension,
     "learning_rate":     args.learning_rate,
     "batch_size":        args.batch_size,
+    "fine_tuned_from":   fine_tuned_from or None,
 }
 result_path = os.path.join(args.model_dir, "result.json")
 with open(result_path, "w") as f:

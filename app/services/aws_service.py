@@ -131,23 +131,90 @@ class AWSService:
 
     def get_mlflow_tracking_url(self, tracking_server_arn: str) -> str:
         """Generate a presigned URL for a SageMaker MLflow tracking server.
-        Works for both mlflow-tracking-server and mlflow-app ARN formats.
-        Presigned URLs expire after 5 minutes — always generate a fresh one.
+        Handles both mlflow-tracking-server and mlflow-app (Studio) ARN formats.
         """
         if not self.sagemaker_client:
             raise ValueError("AWS credentials not configured")
 
-        # Extract the tracking server name from the ARN or use as-is
         server_name = tracking_server_arn.split("/")[-1]
 
+        # mlflow-app ARNs are Studio-managed apps — use CreatePresignedDomainUrl
+        if "mlflow-app/" in tracking_server_arn:
+            try:
+                # List domains to find the one hosting this app
+                domains = self.sagemaker_client.list_domains().get("Domains", [])
+                if not domains:
+                    raise ValueError(
+                        "No SageMaker Studio domains found. "
+                        "Open MLflow via the SageMaker Studio console directly."
+                    )
+                domain_id = domains[0]["DomainId"]
+
+                # List user profiles in the domain
+                profiles = self.sagemaker_client.list_user_profiles(
+                    DomainIdEquals=domain_id
+                ).get("UserProfiles", [])
+                if not profiles:
+                    raise ValueError(
+                        f"No user profiles found in domain {domain_id}. "
+                        "Open MLflow via the SageMaker Studio console directly."
+                    )
+                user_profile = profiles[0]["UserProfileName"]
+
+                response = self.sagemaker_client.create_presigned_domain_url(
+                    DomainId=domain_id,
+                    UserProfileName=user_profile,
+                    ExpiresInSeconds=300,
+                )
+                url = response.get("AuthorizedUrl")
+                if not url:
+                    raise ValueError("No presigned URL returned for Studio domain")
+                logger.info(
+                    "Generated Studio presigned URL for mlflow-app ARN '%s' "
+                    "(domain=%s, user=%s)", tracking_server_arn, domain_id, user_profile
+                )
+                return url
+            except ClientError as e:
+                logger.error("Failed to generate Studio URL for mlflow-app ARN: %s", e)
+                raise ValueError(
+                    f"Could not generate Studio URL for MLflow app '{server_name}': {e}. "
+                    "Please open SageMaker Studio manually and navigate to the MLflow app."
+                )
+
+        # Standard mlflow-tracking-server ARN
         try:
             response = self.sagemaker_client.create_presigned_mlflow_tracking_server_url(
                 TrackingServerName=server_name,
             )
             url = response.get("AuthorizedUrl")
         except ClientError as e:
-            logger.error(f"Failed to generate presigned MLflow URL for '{tracking_server_arn}': {e}")
-            raise
+            error_code = e.response["Error"]["Code"]
+            if error_code in ("ResourceNotFound", "ValidationException"):
+                logger.warning("Server '%s' not found, attempting list lookup", server_name)
+                try:
+                    servers = self.sagemaker_client.list_mlflow_tracking_servers().get(
+                        "TrackingServerSummaries", []
+                    )
+                    match = next(
+                        (s for s in servers if s["TrackingServerName"] == server_name
+                         or s.get("TrackingServerArn", "").endswith(server_name)),
+                        None
+                    )
+                    if match:
+                        response = self.sagemaker_client.create_presigned_mlflow_tracking_server_url(
+                            TrackingServerName=match["TrackingServerName"],
+                        )
+                        url = response.get("AuthorizedUrl")
+                    else:
+                        raise ValueError(
+                            f"MLflow tracking server '{server_name}' not found. "
+                            "It may have been deleted or the ARN is outdated."
+                        )
+                except ClientError as inner_e:
+                    raise ValueError(f"Could not resolve MLflow server '{server_name}': {inner_e}")
+            else:
+                logger.error("Failed to generate presigned MLflow URL: %s", e)
+                raise
 
         if not url:
             raise ValueError(f"No presigned URL returned for MLflow server: {server_name}")

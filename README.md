@@ -4,9 +4,9 @@ A FastAPI web dashboard for managing medical image classification workflows on A
 
 ## Features
 
-- **AWS Integration** — connect via environment credentials or explicit keys, browse S3 buckets; generate presigned URLs for SageMaker MLflow tracking servers via `create_presigned_mlflow_tracking_server_url` (accepts both full ARNs and plain server names — the server name is extracted from the ARN automatically; presigned URLs expire after 5 minutes so a fresh one is generated on each request)
+- **AWS Integration** — connect via environment credentials or explicit keys, browse S3 buckets; generate presigned URLs for SageMaker MLflow tracking servers via `create_presigned_mlflow_tracking_server_url` (accepts both full ARNs and plain server names — the server name is extracted from the ARN automatically; presigned URLs expire after 5 minutes so a fresh one is generated on each request; `mlflow-app/<name>` ARNs are Studio-managed apps and are handled separately — the service calls `list_domains` and `list_user_profiles` to locate the hosting domain, then calls `create_presigned_domain_url` to generate a Studio presigned URL; if no domain or user profile is found, a descriptive `ValueError` is raised directing the user to open Studio manually; standard `mlflow-tracking-server/<name>` ARNs use `create_presigned_mlflow_tracking_server_url` directly; if the direct name-based lookup returns `ResourceNotFound` or `ValidationException`, the service falls back to listing all tracking servers and matching by name or ARN suffix — raises `ValueError` with a descriptive message if no match is found)
 - **Local Training** — train ResNet50, VGG16, EfficientNet, DenseNet121, ViT, or custom models with MLflow and TensorBoard tracking
-- **SageMaker Training** — launch BYOC training jobs on SageMaker (e.g. `ml.g5.xlarge`) with optional MLflow integration; both the classification script (`src/classification/train.py`) and the segmentation script (`src/segmentation/train.py`) enable MLflow automatically when `MLFLOW_TRACKING_URI` is set — they log hyperparameters, per-epoch metrics, the best model checkpoint, and the final model as artifacts; the best checkpoint (`best_model.pth`) saved by the classification script includes full training state: `model` weights, `optimizer` state, `epoch`, `val_acc`, `train_acc`, `train_loss`, `val_loss`, `model_name`, and `num_classes` — making it self-contained for resuming training or auditing; a separate weights-only checkpoint (`model_deploy.pth`) is also written at the end of training — it contains only the model state dict (no optimizer or scheduler state), making it roughly 50% smaller than `model.pth` and suitable for deployment; the segmentation script always uses 1 output channel (binary segmentation) and names the MLflow experiment `segmentation-<model_name>`; `num_classes` for classification is derived dynamically from the training data folder structure rather than passed as a hyperparameter; job list automatically refreshes status from AWS for any jobs currently in `InProgress` or `Stopping` state (when AWS credentials are configured), so active jobs always reflect their latest status without a separate poll; pass `?local_only=true` to skip the AWS refresh and return only the locally-cached state — useful for fast polling or when AWS credentials are unavailable; completed, failed, and other terminal-state jobs are returned directly from the local store — use the dedicated `/api/training/sagemaker/jobs/{job_name}/status` endpoint or `sync_from_aws` to force a refresh for those; jobs are persisted to `data/sagemaker_jobs.json` and survive server restarts; if `data/sagemaker_jobs.json` is missing on startup, the service automatically bootstraps the jobs store from any JSON files found in `data/training_reports/` — each report is parsed and a minimal job record is reconstructed, then the rebuilt store is saved to `data/sagemaker_jobs.json` so subsequent restarts load normally; completed jobs include billable seconds, an estimated cost in USD, `creation_time`, and `training_end_time`; each job in the list exposes the `mlflow_tracking_uri` it was submitted with (if any); a JSON training report is written to `data/training_reports/<job_name>.json` on completion; at the end of a classification training run, `inference.py` and `requirements.txt` are automatically copied from the training script directory into `model_dir`, and a `result.json` file is written there with training provenance (model name, num classes, final epoch, train/val accuracy, best val accuracy, data S3 URI, task type, dimension, learning rate, batch size); the `data_s3_uri` field is populated from the `--data_s3_uri` argument passed to `train.py` — if omitted it falls back to `SM_CHANNEL_DATA`, so passing the original S3 data path explicitly ensures the artifact records where the training data came from — SageMaker then bundles all of these into `model.tar.gz` alongside the weights, so the deployment service can point directly at the output artifact without any post-processing merge step; `result.json` is also logged as an MLflow artifact when MLflow tracking is enabled; job records support additional lifecycle operations: `remove_job` deletes a job from local tracking (only allowed when the job is not active), `archive_job` marks a job as hidden from the default list (`archived: true`), `set_comment` attaches a free-text note to a job, `delete_model_artifacts` deletes the `model.tar.gz` from S3 and sets `artifacts_deleted: true` on the record, and `store_result` persists the `result.json` contents against the job entry; `fetch_result_json` downloads `model.tar.gz` from S3, extracts `result.json`, stores it on the job record via `store_result`, and returns it — safe to call multiple times (skips the download if `result` is already present on the record); the job list response includes `archived`, `comment`, `artifacts_deleted`, and `result` fields for each job; `sync_from_aws` pulls up to 100 training jobs from AWS (sorted by creation time, newest first) and merges them into the local store — jobs already tracked locally have their mutable fields updated (`status`, `model_artifacts`, `failure_reason`, `billable_seconds`, `creation_time`, `training_end_time`), while jobs not yet tracked are added with a minimal record; an optional `name_contains` filter narrows the AWS query; the method returns `{"added": [...], "updated": [...]}` with the names of affected jobs and persists the merged state to `data/sagemaker_jobs.json`
+- **SageMaker Training** — launch BYOC training jobs on SageMaker (e.g. `ml.g5.xlarge`) with optional MLflow integration; supports fine-tuning via `checkpoint_s3_uri` (S3 URI of a `model.tar.gz` from a completed job — the script downloads the archive, extracts `best_model.pth` if present or falls back to `model.pth`, and restores both model weights and optimizer state; `start_epoch` is set to the checkpoint's epoch + 1 so the training loop continues from where the previous run left off); if the checkpoint cannot be loaded for any reason, training falls back to starting from scratch with a warning rather than failing the job; `fine_tuned_from` records the source S3 URI in `result.json` for lineage; both fields are optional and ignored when starting a fresh training run; both the classification script (`src/classification/train.py`) and the segmentation script (`src/segmentation/train.py`) enable MLflow automatically when `MLFLOW_TRACKING_URI` is set — they log hyperparameters, per-epoch metrics, the best model checkpoint, and the final model as artifacts; the best checkpoint (`best_model.pth`) saved by the classification script includes full training state: `model` weights, `optimizer` state, `epoch`, `val_acc`, `train_acc`, `train_loss`, `val_loss`, `model_name`, and `num_classes` — making it self-contained for resuming training or auditing; a separate weights-only checkpoint (`model_deploy.pth`) is also written at the end of training — it contains only the model state dict (no optimizer or scheduler state), making it roughly 50% smaller than `model.pth` and suitable for deployment; the segmentation script always uses 1 output channel (binary segmentation) and names the MLflow experiment `segmentation-<model_name>`; at the end of a segmentation training run, a `result.json` file is written to `model_dir` with training provenance: `model_name`, `task_type`, `dimension`, `final_epoch`, `best_val_dice` (rounded to 4 decimal places), `learning_rate`, `batch_size`, `data_s3_uri` (from `SM_CHANNEL_DATA` or the `--data_s3_uri` argument), and `fine_tuned_from` (source checkpoint S3 URI, or `null` for fresh runs); `result.json` is also logged as an MLflow artifact when MLflow tracking is enabled; `num_classes` for classification is derived dynamically from the training data folder structure rather than passed as a hyperparameter; job list automatically refreshes status from AWS for any jobs currently in `InProgress` or `Stopping` state (when AWS credentials are configured), so active jobs always reflect their latest status without a separate poll; pass `?local_only=true` to skip the AWS refresh and return only the locally-cached state — useful for fast polling or when AWS credentials are unavailable; completed, failed, and other terminal-state jobs are returned directly from the local store — use the dedicated `/api/training/sagemaker/jobs/{job_name}/status` endpoint or `sync_from_aws` to force a refresh for those; jobs are persisted to `data/sagemaker_jobs.json` and survive server restarts; if `data/sagemaker_jobs.json` is missing on startup, the service automatically bootstraps the jobs store from any JSON files found in `data/training_reports/` — each report is parsed and a minimal job record is reconstructed, then the rebuilt store is saved to `data/sagemaker_jobs.json` so subsequent restarts load normally; completed jobs include billable seconds, an estimated cost in USD, `creation_time`, and `training_end_time`; each job in the list exposes the `mlflow_tracking_uri` it was submitted with (if any); a JSON training report is written to `data/training_reports/<job_name>.json` on completion; at the end of a classification training run, `inference.py` and `requirements.txt` are automatically copied from the training script directory into `model_dir`, and a `result.json` file is written there with training provenance (model name, num classes, final epoch, train/val accuracy, best val accuracy, data S3 URI, task type, dimension, learning rate, batch size); the `data_s3_uri` field is populated from the `--data_s3_uri` argument passed to `train.py` — if omitted it falls back to `SM_CHANNEL_DATA`, so passing the original S3 data path explicitly ensures the artifact records where the training data came from — SageMaker then bundles all of these into `model.tar.gz` alongside the weights, so the deployment service can point directly at the output artifact without any post-processing merge step; `result.json` is also logged as an MLflow artifact when MLflow tracking is enabled; job records support additional lifecycle operations: `remove_job` deletes a job from local tracking (only allowed when the job is not active), `archive_job` marks a job as hidden from the default list (`archived: true`), `set_comment` attaches a free-text note to a job, `delete_model_artifacts` deletes the `model.tar.gz` from S3 and sets `artifacts_deleted: true` on the record, and `store_result` persists the `result.json` contents against the job entry; `fetch_result_json` downloads `model.tar.gz` from S3 and attempts to extract `result.json`; if `result.json` is absent (e.g. jobs trained before it was added to `train.py`), it falls back to reconstructing a result dict from the stored job config (`model_name`, `epochs`, `data_s3_uri`, `task_type`, `dimension`, `learning_rate`, `batch_size`) with accuracy fields set to `null` and a `reconstructed: true` flag so the UI can surface a note; the result is stored on the job record via `store_result` and returned — safe to call multiple times (skips the download if `result` is already present on the record); the job list response includes `archived`, `comment`, `artifacts_deleted`, and `result` fields for each job; `sync_from_aws` pulls up to 100 training jobs from AWS (sorted by creation time, newest first) and merges them into the local store — jobs already tracked locally have their mutable fields updated (`status`, `model_artifacts`, `failure_reason`, `billable_seconds`, `creation_time`, `training_end_time`), while jobs not yet tracked are added with a minimal record; an optional `name_contains` filter narrows the AWS query; the method returns `{"added": [...], "updated": [...]}` with the names of affected jobs and persists the merged state to `data/sagemaker_jobs.json`
 - **Deployment** — deploy trained models to SageMaker endpoints; creates a SageMaker model, endpoint config, and endpoint in sequence; tracks endpoint status (`Creating` → `InService` / `Failed`) and exposes the invocation URL once in service; deployments are persisted to `data/deployments.json` and survive server restarts; supports status polling, deletion (deletes the endpoint, its associated endpoint config, and the SageMaker model resource), and listing all active deployments; on deletion the local record is always removed from `data/deployments.json` regardless of whether the AWS API call succeeds — a `try/finally` guarantees cleanup even if the endpoint or config delete fails; if an endpoint is deleted outside the dashboard (e.g. via the AWS console or CLI), the next status poll detects the missing endpoint and marks the local record as `"Deleted"` rather than raising an error; the deployment list endpoint refreshes status from AWS for all entries except those already in `Deleted` state — `InService`, `Failed`, and `Deleting` endpoints are all re-polled on every list request so transient status changes (including deletion progress) are reflected immediately; `Deleted` entries are always filtered out of the list response; the deploy request accepts `model_artifacts`, `image_uri`, and `role_arn` as optional fields — omitting `model_artifacts` lets you import or track an existing endpoint without providing a new artifact; `inference_script` (default `"inference.py"`) specifies which serving entry point to use inside the container; the deployment service points directly at the original `model.tar.gz` — no repacking step is needed because `train.py` already copies `inference.py` and `requirements.txt` into `model_dir` and writes `result.json` at the end of training, so SageMaker bundles them all into the artifact automatically; the PyTorch container loads the entry point via `SAGEMAKER_PROGRAM` — this env var is set on real-time endpoints; set `async_endpoint: true` to create a SageMaker async endpoint — `output_s3_uri` is required in that case and `max_concurrent` (default `10`) controls the `MaxConcurrentInvocationsPerInstance` setting; async endpoints still use the separate sourcedir upload path; set `enable_data_capture: true` on the deploy request to automatically enable data capture at endpoint creation time — `capture_s3_uri` specifies the S3 destination for captured traffic and `capture_sampling_pct` (default `100`) controls the sampling percentage (1–100); this is equivalent to calling `/api/monitoring/data-capture` separately but happens atomically as part of the deploy flow
 - **Paper / Report Generation** — `PaperReportService` (`app/services/paper_report_service.py`) generates structured academic paper sections from completed training and evaluation jobs; accepts a list of SageMaker training job names and evaluation job names along with a study title and a set of sections to include (`abstract`, `methods`, `results`, `discussion`); optionally incorporates fairness analysis results when `include_fairness: true`; the `/api/report/jobs` endpoint returns only completed, non-archived training jobs and completed evaluation jobs so the UI can present a clean selection list
 
@@ -180,7 +180,146 @@ The script handles two response formats from the endpoint:
 - **Format A** (batched arrays): `{"predictions": [[p0, p1, ...]], "predicted_class": [idx], "confidence": [c]}`
 - **Format B** (named probabilities): `{"probabilities": {"class_a": 0.3, ...}, "predicted_class": "class_a"}`
 
-## Getting Started
+## Model Monitoring Workflow
+
+SageMaker Model Monitor tracks data quality and prediction drift on deployed endpoints. The dashboard covers the full lifecycle.
+
+### Step 1 — Enable data capture
+
+Data capture records every inference request and response to S3 as `.jsonl` files. You have two options:
+
+**At deploy time (recommended)** — check "Enable Data Capture" in the Deployment form before clicking Deploy. Fill in the Capture S3 URI. Capture is active from the first inference call.
+
+**After deployment** — go to Monitoring → Data Capture, select the endpoint, enter the Capture S3 URI, set the sampling percentage (default 100%), and click Enable. SageMaker updates the endpoint in-place (status shows `Updating` for a few minutes).
+
+The S3 path SageMaker writes to follows this structure:
+```
+s3://your-bucket/capture-prefix/<endpoint-name>/AllTraffic/<year>/<month>/<day>/<hour>/
+```
+Enter the root prefix (e.g. `s3://your-bucket/capture-prefix/`) — not the full dated path.
+
+### Step 2 — View captured traffic (Capture Viewer)
+
+After making inference calls, go to Monitoring → Capture Viewer:
+
+1. Select the endpoint from the dropdown — the Capture S3 URI auto-fills if capture was enabled via the dashboard
+2. Set Max Files (default 20)
+3. Click Analyse
+
+The viewer shows:
+- Summary cards: total records, files scanned, average confidence, classes seen
+- Prediction class distribution bar chart
+- Confidence score histogram
+- Recent captures table (up to 50 rows)
+
+### Step 3 — Run a data quality baseline (optional)
+
+A baseline computes statistics and constraints from a reference dataset (typically your training data). These are used by the monitoring schedule to detect drift.
+
+Go to Monitoring → Data Quality Baseline:
+- **Baseline Data S3 URI** — S3 path to your reference dataset
+- **Output S3 URI** — where constraints and statistics JSON files are written
+- **IAM Role ARN** — SageMaker execution role
+- Click Run Baseline Job
+
+Once complete, the baseline card shows the exact S3 paths for `constraints.json` and `statistics.json`. Click "Use in Schedule" to auto-fill the Data Quality Schedule form.
+
+### Step 4 — Create a monitoring schedule (optional)
+
+Go to Monitoring → Data Quality Schedule:
+- **Schedule Name** — unique name for the schedule
+- **Endpoint Name** — the endpoint to monitor
+- **Constraints / Statistics S3 URI** — from the baseline output (auto-filled if you used "Use in Schedule")
+- **Output S3 URI** — where violation reports are written
+- **Schedule Expression** — cron or rate expression (e.g. `cron(0 * ? * * *)` for hourly)
+- Click Create Schedule
+
+SageMaker runs the monitor on the schedule and writes violation reports to the output S3 URI. The schedule card shows the last execution status and time.
+
+### Inference container requirements
+
+The inference container must support data capture. The BYOC inference images (`sm-inference-byoc-classification` and `sm-inference-byoc-segmentation`) are pre-configured for this. The generic AWS PyTorch inference image (`pytorch-inference:2.6.0-gpu-py312-cu124`) also supports capture but does not include `inference.py` — use the BYOC images for all deployments from this dashboard.
+
+---
+
+## Building Docker Images
+
+The dashboard uses two BYOC (Bring Your Own Container) Docker images — one for training and one for inference. Both are built from `Dockerfile.sagemaker` and pushed to Amazon ECR.
+
+### Prerequisites on the build machine
+
+- Docker installed and running
+- AWS CLI configured with credentials that have ECR push and pull permissions
+- Login to AWS Deep Learning Containers ECR (required before the first build — the base image is hosted in AWS's account):
+
+```bash
+aws ecr get-login-password --region us-east-1 \
+  | docker login --username AWS --password-stdin \
+    763104351884.dkr.ecr.us-east-1.amazonaws.com
+```
+
+> This step is required on every new machine. Without it the build fails with `403 Forbidden` when pulling the base image.
+
+### Build and push
+
+```bash
+# Classification training image
+./build_and_push.sh 575108919340 us-east-1 classification
+
+# Segmentation training image
+./build_and_push.sh 575108919340 us-east-1 segmentation
+
+# Inference image (classification)
+./build_and_push_inference.sh 575108919340 us-east-1
+```
+
+### Base image
+
+The `Dockerfile.sagemaker` uses:
+
+```
+763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-training:2.9.0-gpu-py312-cu130-ubuntu22.04-sagemaker
+```
+
+If this tag is unavailable in your region, find the closest available tag:
+
+```bash
+aws ecr describe-images \
+  --registry-id 763104351884 \
+  --repository-name pytorch-training \
+  --region us-east-1 \
+  --query 'imageDetails[*].imageTags' \
+  --output text | tr '\t' '\n' | grep "py312" | sort
+```
+
+Then update the `FROM` line in `Dockerfile.sagemaker` accordingly. A known working alternative is:
+
+```
+763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-training:2.6.0-gpu-py312-cu124-ubuntu22.04-sagemaker
+```
+
+### Transferring to another machine
+
+The cleanest approach is git — push your branch and pull on the other machine:
+
+```bash
+# This machine
+git add -A && git commit -m "your message" && git push origin <branch>
+
+# Other machine
+git clone <repo-url> && git checkout <branch>
+```
+
+If git is not available, the minimum files needed for the Docker build are:
+
+```
+Dockerfile.sagemaker
+build_and_push.sh
+src/classification/   (for classification image)
+src/segmentation/     (for segmentation image)
+```
+
+
 
 ### Prerequisites
 

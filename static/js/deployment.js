@@ -1,26 +1,73 @@
 // Deployment JavaScript
 
-const INFERENCE_IMAGE_TEMPLATE = '763104351884.dkr.ecr.{region}.amazonaws.com/pytorch-inference:2.6.0-gpu-py312-cu124-ubuntu22.04-sagemaker';
+const INFERENCE_IMAGE_TEMPLATE = '575108919340.dkr.ecr.{region}.amazonaws.com/sm-inference-byoc-classification:latest';
+
+const DEFAULT_INFERENCE_CONTAINERS = [
+    { label: "classification-byoc (BYOC)",   uri: "575108919340.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest" },
+    { label: "segmentation-byoc (BYOC)",     uri: "575108919340.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-segmentation:latest" },
+    { label: "pytorch-inference-gpu (AWS)",  uri: "763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-inference:2.6.0-gpu-py312-cu124-ubuntu22.04-sagemaker" },
+    { label: "pytorch-inference-cpu (AWS)",  uri: "763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-inference:2.6.0-cpu-py312-ubuntu22.04-sagemaker" },
+];
+
+function loadInferenceContainers() {
+    const stored = localStorage.getItem('inference_containers');
+    return stored ? JSON.parse(stored) : DEFAULT_INFERENCE_CONTAINERS;
+}
+
+function saveInferenceContainers(containers) {
+    localStorage.setItem('inference_containers', JSON.stringify(containers));
+}
+
+function populateInferenceContainerDropdown() {
+    const select = document.getElementById('dep-image-uri');
+    if (!select) return;
+    const containers = loadInferenceContainers();
+    select.innerHTML = containers.map(c =>
+        `<option value="${c.uri}">${c.label} — ${c.uri}</option>`
+    ).join('');
+}
+
+function openAddInferenceContainerModal() {
+    document.getElementById('new-inf-container-label').value = '';
+    document.getElementById('new-inf-container-uri').value   = '';
+    document.getElementById('add-inference-container-modal').style.display = 'flex';
+}
+
+function closeAddInferenceContainerModal() {
+    document.getElementById('add-inference-container-modal').style.display = 'none';
+}
+
+function saveNewInferenceContainer() {
+    const label = document.getElementById('new-inf-container-label').value.trim();
+    const uri   = document.getElementById('new-inf-container-uri').value.trim();
+    if (!uri) { alert('Image URI is required.'); return; }
+    const containers = loadInferenceContainers();
+    containers.push({ label: label || uri, uri });
+    saveInferenceContainers(containers);
+    populateInferenceContainerDropdown();
+    document.getElementById('dep-image-uri').value = uri;
+    closeAddInferenceContainerModal();
+}
+
+function removeSelectedInferenceContainer() {
+    const select = document.getElementById('dep-image-uri');
+    if (!select || !select.value) return;
+    if (!confirm(`Remove "${select.options[select.selectedIndex].text}"?`)) return;
+    const containers = loadInferenceContainers().filter(c => c.uri !== select.value);
+    saveInferenceContainers(containers);
+    populateInferenceContainerDropdown();
+}
 
 registerTabInit('deployment', function () {
+    populateInferenceContainerDropdown();
     loadDeployments();
     const form = document.getElementById('deployment-form');
     if (form) form.addEventListener('submit', deployModel);
     setInterval(loadDeployments, 20000);
-
-    const regionSelect = document.getElementById('region');
-    if (regionSelect) {
-        regionSelect.addEventListener('change', updateInferenceImageUri);
-        updateInferenceImageUri();
-    }
 });
 
 function updateInferenceImageUri() {
-    const region  = document.getElementById('region')?.value || 'us-east-1';
-    const imgInput = document.getElementById('dep-image-uri');
-    if (imgInput) {
-        imgInput.value = INFERENCE_IMAGE_TEMPLATE.replace('{region}', region);
-    }
+    // no-op — dropdown is now used instead of a text input
 }
 
 function toggleAsyncFields() {

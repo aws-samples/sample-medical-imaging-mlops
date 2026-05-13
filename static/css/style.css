@@ -1270,3 +1270,104 @@ input:focus, select:focus, textarea:focus {
     font-size: 0.78rem;
     font-family: 'SFMono-Regular', Consolas, monospace;
 }
+
+/* ── Fine-tune ────────────────────────────────────────────────────────────── */
+
+.btn-finetune {
+    background: linear-gradient(135deg, #7b2ff7, #f107a3);
+    color: #fff;
+    border: none;
+    padding: 0.4rem 0.85rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: opacity 0.15s;
+}
+
+.btn-finetune:hover {
+    opacity: 0.88;
+}
+
+.btn-finetune:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.job-lineage {
+    font-size: 0.78rem;
+    color: #7b2ff7;
+    margin-top: 0.35rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.job-lineage code {
+    font-size: 0.73rem;
+    background: #f3eeff;
+    border-radius: 3px;
+    padding: 0.05rem 0.3rem;
+    color: #5a1fc0;
+}
+
+/* Fine-tune modal — base job info panel */
+
+.ft-info-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    margin-bottom: 0.35rem;
+    color: #333;
+}
+
+.ft-info-row i {
+    width: 14px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.ft-info-row span {
+    color: #888;
+    min-width: 90px;
+    flex-shrink: 0;
+}
+
+.ft-info-row code {
+    font-size: 0.76rem;
+    background: #efefef;
+    border-radius: 3px;
+    padding: 0.05rem 0.35rem;
+    word-break: break-all;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+}
+
+.ft-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4rem 0.75rem;
+    margin-top: 0.6rem;
+    padding-top: 0.6rem;
+    border-top: 1px dashed #ddd;
+}
+
+.ft-metric {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.ft-metric span {
+    font-size: 0.72rem;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.ft-metric strong {
+    font-size: 0.9rem;
+    color: #232f3e;
+}

@@ -374,6 +374,28 @@ async def delete_job_artifacts(job_name: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/sagemaker/finetune")
+async def start_finetune_job(config: SageMakerTrainingConfig):
+    """Start a SageMaker fine-tuning job from a completed job's checkpoint."""
+    try:
+        if not config.checkpoint_s3_uri:
+            raise ValueError("checkpoint_s3_uri is required for fine-tuning")
+        import sagemaker
+        session = sagemaker.Session(boto_session=aws_service._get_boto_session())
+        job_info = sm_training_service.start_training_job(config, session)
+        return {
+            "job_name":        job_info["job_name"],
+            "status":          job_info["status"],
+            "fine_tuned_from": config.fine_tuned_from,
+            "message":         "Fine-tuning job started",
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Fine-tune job failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to start fine-tuning job: {e}")
+
+
 @router.get("/sagemaker/mlflow-url")
 async def get_mlflow_url(arn: str):
     """Resolve a SageMaker MLflow tracking server ARN to its HTTP URL."""

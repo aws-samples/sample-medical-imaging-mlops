@@ -28,6 +28,8 @@ parser.add_argument("--batch_size",    type=int,   default=2)
 parser.add_argument("--epochs",        type=int,   default=10)
 parser.add_argument("--learning_rate", type=float, default=1e-4)
 parser.add_argument("--val_interval",  type=int,   default=2)
+parser.add_argument("--checkpoint_s3_uri", type=str, default="",
+                    help="S3 URI of model.tar.gz to resume from (fine-tuning)")
 args, _ = parser.parse_known_args()
 logger.info("Args: %s", args)
 
@@ -66,6 +68,36 @@ optimizer = optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=1
 loss_fn   = DiceLoss(sigmoid=True)
 logger.info("Model: %s  |  Params: %s", args.model_name, sum(p.numel() for p in model.parameters()))
 
+# ── Checkpoint resume (fine-tuning) ──────────────────────────────────────────
+start_epoch = 1
+fine_tuned_from = ""
+
+if args.checkpoint_s3_uri:
+    import io, tarfile, tempfile, boto3
+    logger.info("Fine-tuning: loading checkpoint from %s", args.checkpoint_s3_uri)
+    try:
+        path   = args.checkpoint_s3_uri.replace("s3://", "")
+        bucket = path.split("/")[0]
+        key    = "/".join(path.split("/")[1:])
+        s3     = boto3.client("s3")
+        with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as tmp:
+            tmp_path = tmp.name
+        s3.download_file(bucket, key, tmp_path)
+        with tarfile.open(tmp_path, "r:gz") as tar:
+            ckpt_name = "best_model.pth" if "best_model.pth" in tar.getnames() else "model.pth"
+            f    = tar.extractfile(tar.getmember(ckpt_name))
+            ckpt = torch.load(io.BytesIO(f.read()), map_location=device)
+        import os as _os; _os.unlink(tmp_path)
+        model.load_state_dict(ckpt["model"])
+        if "optimizer" in ckpt:
+            optimizer.load_state_dict(ckpt["optimizer"])
+        start_epoch     = ckpt.get("epoch", 0) + 1
+        fine_tuned_from = args.checkpoint_s3_uri
+        logger.info("Resumed from %s (epoch %d, val_dice=%.4f)",
+                    ckpt_name, ckpt.get("epoch", 0), ckpt.get("val_dice", 0))
+    except Exception as e:
+        logger.warning("Could not load checkpoint, starting from scratch: %s", e)
+
 post_trans  = Compose([Activations(sigmoid=True), AsDiscrete(threshold=0.5)])
 dice_metric = DiceMetric(include_background=True, reduction="mean")
 
@@ -75,17 +107,18 @@ best_dice = -1.0
 if use_mlflow:
     mlflow.start_run()
     mlflow.log_params({
-        "model_name":    args.model_name,
-        "task_type":     args.task_type,
-        "dimension":     args.dimension,
-        "batch_size":    args.batch_size,
-        "epochs":        args.epochs,
-        "learning_rate": args.learning_rate,
-        "val_interval":  args.val_interval,
-        "device":        str(device),
+        "model_name":      args.model_name,
+        "task_type":       args.task_type,
+        "dimension":       args.dimension,
+        "batch_size":      args.batch_size,
+        "epochs":          args.epochs,
+        "learning_rate":   args.learning_rate,
+        "val_interval":    args.val_interval,
+        "device":          str(device),
+        "fine_tuned_from": fine_tuned_from or "none",
     })
 
-for epoch in range(1, args.epochs + 1):
+for epoch in range(start_epoch, args.epochs + 1):
     model.train()
     epoch_loss, steps = 0.0, 0
     for batch in train_loader:
@@ -129,9 +162,28 @@ for epoch in range(1, args.epochs + 1):
 final_path = os.path.join(args.model_dir, "model.pth")
 torch.save({"model": model.state_dict(), "optimizer": optimizer.state_dict(), "epoch": args.epochs}, final_path)
 
+# ── result.json ───────────────────────────────────────────────────────────────
+result = {
+    "model_name":       args.model_name,
+    "task_type":        args.task_type,
+    "dimension":        args.dimension,
+    "final_epoch":      args.epochs,
+    "best_val_dice":    round(best_dice, 4),
+    "learning_rate":    args.learning_rate,
+    "batch_size":       args.batch_size,
+    "data_s3_uri":      os.environ.get("SM_CHANNEL_DATA", data_root),
+    "fine_tuned_from":  fine_tuned_from or None,
+}
+result_path = os.path.join(args.model_dir, "result.json")
+with open(result_path, "w") as f:
+    import json as _json
+    _json.dump(result, f, indent=2)
+logger.info("Saved result.json: %s", result)
+
 if use_mlflow:
     mlflow.log_metric("best_val_dice", best_dice)
     mlflow.log_artifact(final_path)
+    mlflow.log_artifact(result_path)
     mlflow.end_run()
 
 writer.close()

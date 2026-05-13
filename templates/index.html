@@ -567,7 +567,15 @@
                             </div>
                             <div class="form-group">
                                 <label for="dep-image-uri">Inference Container Image URI</label>
-                                <input type="text" id="dep-image-uri" name="image_uri" value="575108919340.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest" required>
+                                <div style="display:flex; gap:6px; align-items:center;">
+                                    <select id="dep-image-uri" name="image_uri" style="flex:1;" required></select>
+                                    <button type="button" class="btn btn-secondary" onclick="openAddInferenceContainerModal()" title="Add container">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" onclick="removeSelectedInferenceContainer()" title="Remove selected">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
                                 <small style="color:var(--aws-dark-gray)">Pre-built inference image with monai, pydicom, torch — no cold-start install delay</small>
                             </div>
                         </div>
@@ -961,8 +969,15 @@
         <div class="card-body">
             <div style="display:flex; gap:0.75rem; align-items:flex-end; flex-wrap:wrap; margin-bottom:1rem;">
                 <div class="form-group" style="flex:1; min-width:200px; margin:0;">
-                    <label for="cv-endpoint">Endpoint Name</label>
-                    <input type="text" id="cv-endpoint" placeholder="my-endpoint">
+                    <label for="cv-endpoint-select">Endpoint</label>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <select id="cv-endpoint-select" style="flex:1;" onchange="onCvEndpointSelect()">
+                            <option value="" disabled selected>Select an endpoint…</option>
+                        </select>
+                        <button type="button" class="btn btn-secondary" onclick="loadCvEndpoints()" title="Refresh endpoints" style="padding:0.4rem 0.6rem;">
+                            <i class="fas fa-sync"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="form-group" style="flex:2; min-width:280px; margin:0;">
                     <label for="cv-capture-s3">Capture S3 URI</label>
@@ -1053,6 +1068,20 @@
                 <p style="margin:0; font-size:0.85rem; color:#666;">Monitor drift in input data distribution.</p>
             </div>
             <div class="card-body">
+                <!-- Baseline picker -->
+                <div class="form-group" style="margin-bottom:1.25rem; padding-bottom:1.25rem; border-bottom:1px solid #f0f0f0;">
+                    <label for="dq-baseline-picker">Fill from completed baseline</label>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <select id="dq-baseline-picker" style="flex:1;" onchange="fillDQFromBaseline()">
+                            <option value="" disabled selected>Select a baseline…</option>
+                        </select>
+                        <button type="button" class="btn btn-secondary" onclick="refreshDQBaselinePicker()" title="Refresh">
+                            <i class="fas fa-sync"></i>
+                        </button>
+                    </div>
+                    <small style="color:#888;">Only completed baselines are shown. Select one to auto-fill the fields below.</small>
+                </div>
+
                 <form id="dq-schedule-form">
                     <div class="form-group">
                         <label for="dq-schedule-name">Schedule Name</label>
@@ -1193,6 +1222,25 @@
     </div>
 </div>
 
+<!-- Add Inference Container Modal -->
+<div id="add-inference-container-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:8px; padding:1.5rem; width:480px; max-width:90vw; box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+        <h3 style="margin:0 0 1rem;"><i class="fas fa-plus-circle"></i> Add Inference Container</h3>
+        <div class="form-group">
+            <label for="new-inf-container-label">Label (e.g. classification-v2)</label>
+            <input type="text" id="new-inf-container-label" placeholder="classification-latest" style="width:100%;">
+        </div>
+        <div class="form-group" style="margin-top:0.75rem;">
+            <label for="new-inf-container-uri">Image URI</label>
+            <input type="text" id="new-inf-container-uri" placeholder="123456789.dkr.ecr.us-east-1.amazonaws.com/repo:tag" style="width:100%;">
+        </div>
+        <div style="display:flex; gap:0.75rem; justify-content:flex-end; margin-top:1.25rem;">
+            <button type="button" class="btn btn-secondary" onclick="closeAddInferenceContainerModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveNewInferenceContainer()"><i class="fas fa-save"></i> Save</button>
+        </div>
+    </div>
+</div>
+
 <!-- Fill from Training Job Modal -->
 <div id="fill-from-job-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
     <div style="background:#fff; border-radius:8px; padding:1.5rem; width:560px; max-width:90vw; box-shadow:0 8px 32px rgba(0,0,0,0.2); max-height:80vh; display:flex; flex-direction:column;">
@@ -1201,6 +1249,109 @@
         <div id="fill-job-list" style="overflow-y:auto; flex:1; border:1px solid #e0e0e0; border-radius:4px; padding:0.5rem;"></div>
         <div style="display:flex; justify-content:flex-end; margin-top:1rem;">
             <button type="button" class="btn btn-secondary" onclick="closeFillFromJobModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Fine-tune Modal -->
+<div id="finetune-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:1000; align-items:center; justify-content:center; overflow-y:auto; padding:1rem;">
+    <div style="background:#fff; border-radius:10px; width:600px; max-width:95vw; box-shadow:0 8px 40px rgba(0,0,0,0.25); max-height:90vh; overflow-y:auto;">
+        <div style="padding:1.25rem 1.5rem; border-bottom:1px solid #eee; display:flex; align-items:center; justify-content:space-between;">
+            <h3 style="margin:0; font-size:1.05rem; display:flex; align-items:center; gap:0.5rem;">
+                <i class="fas fa-sliders-h" style="color:#FF9900;"></i> Fine-tune Model
+            </h3>
+            <button onclick="closeFineTuneModal()" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:#888;">&times;</button>
+        </div>
+        <div style="padding:1.25rem 1.5rem;">
+
+            <!-- Base job info -->
+            <div style="background:#f8f9fa; border:1px solid #e0e0e0; border-radius:6px; padding:0.75rem 1rem; margin-bottom:1.25rem; font-size:0.83rem;">
+                <div style="font-weight:600; color:#232f3e; margin-bottom:0.5rem;"><i class="fas fa-code-branch" style="color:#FF9900;"></i> Base checkpoint — <span id="ft-base-job-name"></span></div>
+                <div style="color:#888; font-size:0.75rem; margin-bottom:0.75rem; word-break:break-all;" id="ft-base-artifacts"></div>
+                <div id="ft-base-info"></div>
+            </div>
+
+            <input type="hidden" id="ft-checkpoint-uri">
+            <input type="hidden" id="ft-source-job-name">
+            <input type="hidden" id="ft-model-name">
+            <input type="hidden" id="ft-task-type">
+            <input type="hidden" id="ft-dimension">
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="ft-job-name">Job Name <small style="color:#888;">(optional)</small></label>
+                    <input type="text" id="ft-job-name" placeholder="Auto-generated if empty">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label for="ft-data-s3-uri">Data S3 URI <span style="color:#c62828;">*</span></label>
+                <input type="text" id="ft-data-s3-uri" placeholder="s3://bucket/new-dataset/" style="width:100%;">
+                <small style="color:#888;">Can be different from the original training data</small>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="ft-epochs">Epochs</label>
+                    <input type="number" id="ft-epochs" value="5" min="1">
+                </div>
+                <div class="form-group">
+                    <label for="ft-learning-rate">Learning Rate</label>
+                    <input type="number" id="ft-learning-rate" value="0.0001" step="0.00001">
+                    <small style="color:#888;">Typically 10× lower than original</small>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="ft-batch-size">Batch Size</label>
+                    <input type="number" id="ft-batch-size" value="16" min="1">
+                </div>
+                <div class="form-group">
+                    <label for="ft-val-interval">Val Interval</label>
+                    <input type="number" id="ft-val-interval" value="1" min="1">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label for="ft-instance-type">Instance Type</label>
+                <select id="ft-instance-type" style="width:100%;">
+                    <option value="ml.g5.xlarge">ml.g5.xlarge (GPU)</option>
+                    <option value="ml.g5.2xlarge">ml.g5.2xlarge (GPU)</option>
+                    <option value="ml.p3.2xlarge">ml.p3.2xlarge (GPU)</option>
+                    <option value="ml.m5.xlarge">ml.m5.xlarge (CPU)</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label for="ft-image-uri">Container Image URI <span style="color:#c62828;">*</span></label>
+                <input type="text" id="ft-image-uri" style="width:100%;">
+            </div>
+
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label for="ft-role-arn">IAM Role ARN <span style="color:#c62828;">*</span></label>
+                <input type="text" id="ft-role-arn" style="width:100%;">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="ft-output-s3-uri">Output S3 URI <small style="color:#888;">(optional)</small></label>
+                    <input type="text" id="ft-output-s3-uri" placeholder="s3://bucket/finetune-output/">
+                </div>
+                <div class="form-group">
+                    <label for="ft-mlflow-uri">MLflow URI <small style="color:#888;">(optional)</small></label>
+                    <input type="text" id="ft-mlflow-uri" placeholder="arn:aws:sagemaker:...">
+                </div>
+            </div>
+
+            <div id="ft-status" class="sm-status-banner" style="display:none; margin-bottom:1rem;"></div>
+
+            <div style="display:flex; gap:0.75rem; justify-content:flex-end; margin-top:0.5rem;">
+                <button type="button" class="btn btn-secondary" onclick="closeFineTuneModal()">Cancel</button>
+                <button type="button" id="ft-submit-btn" class="btn btn-finetune" onclick="submitFineTuneJob()">
+                    <i class="fas fa-sliders-h"></i> Start Fine-tuning
+                </button>
+            </div>
         </div>
     </div>
 </div>

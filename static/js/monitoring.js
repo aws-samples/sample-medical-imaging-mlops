@@ -2,8 +2,10 @@
 
 registerTabInit('monitoring', function () {
     loadMonitorEndpoints();
+    loadCvEndpoints();
     loadMonitorSchedules();
     loadBaselineJobs();
+    refreshDQBaselinePicker();
 
     document.getElementById('data-capture-form')?.addEventListener('submit', enableDataCapture);
     document.getElementById('baseline-form')?.addEventListener('submit', runBaseline);
@@ -20,14 +22,15 @@ let _cvClassChart = null;
 let _cvConfChart  = null;
 
 async function loadCaptureViewer() {
-    const endpointName = document.getElementById('cv-endpoint')?.value?.trim();
+    const select       = document.getElementById('cv-endpoint-select');
+    const endpointName = select?.value?.trim();
     const captureS3    = document.getElementById('cv-capture-s3')?.value?.trim();
     const maxFiles     = document.getElementById('cv-max-files')?.value || '20';
     const banner       = document.getElementById('cv-status-banner');
     const results      = document.getElementById('cv-results');
 
     if (!endpointName || !captureS3) {
-        showMonitorBanner(banner, 'error', '<i class="fas fa-exclamation-circle"></i> Enter endpoint name and capture S3 URI');
+        showMonitorBanner(banner, 'error', '<i class="fas fa-exclamation-circle"></i> Select an endpoint and enter a capture S3 URI');
         return;
     }
 
@@ -177,9 +180,50 @@ async function loadMonitorEndpoints() {
             if (cvEndpoint && !cvEndpoint.value) cvEndpoint.value = withCapture.endpoint_name;
             if (cvS3 && !cvS3.value)             cvS3.value       = withCapture.capture_s3_uri;
         }
+
+        // Also populate the capture viewer dropdown
+        loadCvEndpoints(active);
     } catch (_) {
         select.innerHTML = '<option value="" disabled selected>Could not load endpoints</option>';
     }
+}
+
+async function loadCvEndpoints(preloaded) {
+    const select = document.getElementById('cv-endpoint-select');
+    if (!select) return;
+    try {
+        const deployments = preloaded || (await apiCall('/api/deployment/deployments?local_only=true')).deployments || [];
+        const all = deployments.filter(d => ['InService', 'Creating', 'Updating'].includes(d.status));
+        if (!all.length) {
+            select.innerHTML = '<option value="" disabled selected>No endpoints found</option>';
+            return;
+        }
+        select.innerHTML = '<option value="" disabled selected>Select an endpoint…</option>'
+            + all.map(d => {
+                const captureFlag = d.data_capture_enabled ? ' 📡' : '';
+                const captureUri  = d.capture_s3_uri || '';
+                return `<option value="${d.endpoint_name}" data-capture="${captureUri}" data-status="${d.status}">`
+                    + `${d.endpoint_name}${captureFlag} (${d.status})</option>`;
+            }).join('');
+
+        // Auto-select first endpoint with capture enabled
+        const withCapture = all.find(d => d.data_capture_enabled && d.capture_s3_uri);
+        if (withCapture) {
+            select.value = withCapture.endpoint_name;
+            onCvEndpointSelect();
+        }
+    } catch (_) {
+        select.innerHTML = '<option value="" disabled selected>Could not load endpoints</option>';
+    }
+}
+
+function onCvEndpointSelect() {
+    const select = document.getElementById('cv-endpoint-select');
+    const s3Input = document.getElementById('cv-capture-s3');
+    if (!select || !s3Input) return;
+    const selected = select.options[select.selectedIndex];
+    const captureUri = selected?.dataset?.capture || '';
+    if (captureUri) s3Input.value = captureUri;
 }
 
 // ── Data Capture ──────────────────────────────────────────────────────────────
@@ -240,6 +284,7 @@ async function runBaseline(e) {
         showMonitorBanner(banner, 'success',
             `<i class="fas fa-check-circle"></i> Baseline job <strong>${result.job_name}</strong> submitted`);
         loadBaselineJobs();
+        refreshDQBaselinePicker();
     } catch (err) {
         showMonitorBanner(banner, 'error', `<i class="fas fa-exclamation-circle"></i> ${err.message}`);
     } finally {
@@ -410,6 +455,57 @@ function fillScheduleFromBaseline(outputS3Uri) {
     if (statisticsEl)  statisticsEl.value  = `${base}/statistics.json`;
     // Scroll to the DQ schedule form
     document.getElementById('dq-schedule-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── DQ baseline picker ────────────────────────────────────────────────────────
+
+async function refreshDQBaselinePicker() {
+    const select = document.getElementById('dq-baseline-picker');
+    if (!select) return;
+    try {
+        const res      = await apiCall('/api/monitoring/baselines');
+        const completed = (res.baselines || []).filter(b => b.status === 'Completed');
+        if (!completed.length) {
+            select.innerHTML = '<option value="" disabled selected>No completed baselines</option>';
+            return;
+        }
+        select.innerHTML = '<option value="" disabled selected>Select a baseline…</option>'
+            + completed.map(b => {
+                const base = (b.output_s3_uri || '').replace(/\/$/, '');
+                return `<option value="${base}" data-job="${b.job_name}" data-data="${b.baseline_data_s3_uri || ''}">`
+                    + `${b.job_name} — ${b.baseline_data_s3_uri || 'unknown data'}</option>`;
+            }).join('');
+    } catch (_) {
+        select.innerHTML = '<option value="" disabled selected>Could not load baselines</option>';
+    }
+}
+
+function fillDQFromBaseline() {
+    const select = document.getElementById('dq-baseline-picker');
+    if (!select || !select.value) return;
+    const base    = select.value;
+    const opt     = select.options[select.selectedIndex];
+    const dataUri = opt.dataset.data || '';
+
+    // Auto-fill constraints, statistics, and suggest output URI
+    const constraintsEl = document.getElementById('dq-constraints-s3');
+    const statisticsEl  = document.getElementById('dq-statistics-s3');
+    const outputEl      = document.getElementById('dq-output-s3');
+    const nameEl        = document.getElementById('dq-schedule-name');
+
+    if (constraintsEl) constraintsEl.value = `${base}/constraints.json`;
+    if (statisticsEl)  statisticsEl.value  = `${base}/statistics.json`;
+
+    // Suggest output URI alongside baseline output
+    if (outputEl && !outputEl.value) {
+        outputEl.value = base.replace(/\/[^/]+$/, '/monitor-output/');
+    }
+
+    // Suggest a schedule name from the baseline job name
+    if (nameEl && !nameEl.value) {
+        const jobName = opt.dataset.job || '';
+        nameEl.value  = ('dq-schedule-' + jobName).slice(0, 63);
+    }
 }
 
 function renderMonitorSchedules(schedules) {

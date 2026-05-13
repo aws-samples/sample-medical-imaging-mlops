@@ -58,6 +58,9 @@ class SageMakerTrainingConfig(BaseModel):
     py_version: str = "py38"
     mlflow_tracking_uri: Optional[str] = None
     output_s3_uri: Optional[str] = None
+    # Fine-tuning
+    checkpoint_s3_uri: Optional[str] = None   # model.tar.gz from a completed job
+    fine_tuned_from: Optional[str] = None     # source job name for lineage
 
 class ModelImportRequest(BaseModel):
     model_name: str

@@ -94,12 +94,17 @@ const FOLDER_STRUCTURE = {
         label: "s3://your-bucket/dataset/",
         children: [
             { label: "train/", children: [
-                { label: "img/", children: [{ label: "*.nii.gz" }] },
-                { label: "mask/", children: [{ label: "*.nii.gz" }] },
+                { label: "subject_001/", children: [
+                    { label: "img.nii.gz" },
+                    { label: "label.nii.gz" },
+                ]},
+                { label: "subject_002/  ...", children: [] },
             ]},
             { label: "val/", children: [
-                { label: "img/", children: [{ label: "*.nii.gz" }] },
-                { label: "mask/", children: [{ label: "*.nii.gz" }] },
+                { label: "subject_N/", children: [
+                    { label: "img.nii.gz" },
+                    { label: "label.nii.gz" },
+                ]},
             ]},
         ]
     },
@@ -767,11 +772,21 @@ function displaySageMakerJobs(jobs) {
             <div class="result-highlight">
                 <div class="result-row"><span>Model</span><strong>${r.model_name}</strong></div>
                 <div class="result-row"><span>Final epoch</span><strong>${r.final_epoch ?? '—'}</strong></div>
-                <div class="result-row"><span>Train acc</span><strong>${r.train_accuracy != null ? (r.train_accuracy * 100).toFixed(1) + '%' : '—'}</strong></div>
-                <div class="result-row"><span>Val acc</span><strong>${r.val_accuracy != null ? (r.val_accuracy * 100).toFixed(1) + '%' : '—'}</strong></div>
-                <div class="result-row"><span>Best val acc</span><strong>${r.best_val_accuracy != null ? (r.best_val_accuracy * 100).toFixed(1) + '%' : '—'}</strong></div>
+                ${r.best_val_dice != null
+                    ? `<div class="result-row"><span>Best val dice</span><strong>${(r.best_val_dice * 100).toFixed(1)}%</strong></div>`
+                    : `<div class="result-row"><span>Train acc</span><strong>${r.train_accuracy != null ? (r.train_accuracy * 100).toFixed(1) + '%' : '—'}</strong></div>
+                       <div class="result-row"><span>Val acc</span><strong>${r.val_accuracy != null ? (r.val_accuracy * 100).toFixed(1) + '%' : '—'}</strong></div>
+                       <div class="result-row"><span>Best val acc</span><strong>${r.best_val_accuracy != null ? (r.best_val_accuracy * 100).toFixed(1) + '%' : '—'}</strong></div>`
+                }
                 <div class="result-row"><span>Data</span><code style="font-size:0.75rem;">${r.data_s3_uri || '—'}</code></div>
+                ${r.fine_tuned_from ? `<div class="result-row" style="grid-column:1/-1;"><span>Fine-tuned from</span><code style="font-size:0.72rem;">${r.fine_tuned_from}</code></div>` : ''}
+                ${r.reconstructed ? `<div class="result-row" style="grid-column:1/-1; color:#888; font-size:0.75rem; font-style:italic;"><span></span>Metrics unavailable — job predates result.json</div>` : ''}
             </div>` : '';
+
+        // Lineage badge (fine-tuned from another job)
+        const lineageHtml = job.fine_tuned_from
+            ? `<div class="job-lineage"><i class="fas fa-code-branch"></i> Fine-tuned from: <code>${job.fine_tuned_from}</code></div>`
+            : '';
 
         const commentHtml = job.comment
             ? `<div class="job-comment"><i class="fas fa-comment-alt"></i> ${job.comment}</div>` : '';
@@ -798,6 +813,7 @@ function displaySageMakerJobs(jobs) {
                 ${job.estimated_cost_usd != null ? `<div><strong>Estimated cost:</strong> <span class="cost-badge">$${job.estimated_cost_usd.toFixed(4)} USD</span></div>` : ''}
                 ${artifactHtml}
                 ${resultHtml}
+                ${lineageHtml}
                 ${job.failure_reason ? `<div style="color:#c62828; font-size:0.82rem; margin-top:4px;"><strong>Failure:</strong> ${job.failure_reason}</div>` : ''}
             </div>
             <div id="sm-job-status-detail-${job.job_name}" class="job-status-detail" style="display:none;"></div>
@@ -810,7 +826,7 @@ function displaySageMakerJobs(jobs) {
                     <i class="fas fa-stop"></i> Stop
                 </button>` : ''}
                 ${job.mlflow_tracking_uri && !['Stopped','Failed'].includes(job.status) ? `
-                <button type="button" class="btn btn-mlflow" onclick="openMlflowDashboard('${job.mlflow_tracking_uri}')">
+                <button type="button" class="btn btn-mlflow" onclick="openMlflowDashboard(this)" data-uri="${job.mlflow_tracking_uri.replace(/"/g, '&quot;')}">
                     <i class="fas fa-flask"></i> MLflow
                 </button>` : ''}
                 ${terminal ? `
@@ -823,6 +839,10 @@ function displaySageMakerJobs(jobs) {
                 ${job.status === 'Completed' && !job.result && job.model_artifacts && !job.artifacts_deleted ? `
                 <button onclick="loadJobResult('${job.job_name}')" class="btn btn-secondary" title="Load result.json from model artifacts">
                     <i class="fas fa-download"></i> Load Results
+                </button>` : ''}
+                ${job.status === 'Completed' && job.model_artifacts && !job.artifacts_deleted ? `
+                <button onclick="openFineTuneModal('${job.job_name}')" class="btn btn-finetune" title="Fine-tune from this checkpoint">
+                    <i class="fas fa-sliders-h"></i> Fine-tune
                 </button>` : ''}
                 ${job.model_artifacts && !job.artifacts_deleted ? `
                 <button onclick="deleteJobArtifacts('${job.job_name}')" class="btn btn-secondary" title="Delete model.tar.gz from S3" style="color:#c62828;">
@@ -968,7 +988,9 @@ async function stopSageMakerJob(jobName) {
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
 
-async function openMlflowDashboard(uri) {
+async function openMlflowDashboard(btnOrUri) {
+    const uri = (typeof btnOrUri === 'string') ? btnOrUri : btnOrUri.dataset.uri;
+    if (!uri) return;
     if (uri.startsWith('http')) {
         window.open(uri, '_blank');
         return;
@@ -978,7 +1000,10 @@ async function openMlflowDashboard(uri) {
         const res = await apiCall(`/api/training/sagemaker/mlflow-url?arn=${encodeURIComponent(uri)}`);
         window.open(res.url, '_blank');
     } catch (e) {
-        alert(`Could not resolve MLflow URL: ${e.message}`);
+        const msg = e.message.includes('does not exist')
+            ? `MLflow tracking server not found. It may have been deleted or the ARN is outdated.\n\nARN: ${uri}`
+            : `Could not resolve MLflow URL: ${e.message}`;
+        alert(msg);
     }
 }
 
@@ -1087,4 +1112,126 @@ function onTaskTypeChange() {
     // Update default epochs
     const epochInput = document.getElementById('sm_epochs');
     if (epochInput) epochInput.value = task === 'segmentation' ? '10' : '1';
+}
+
+// ── Fine-tune Modal ───────────────────────────────────────────────────────────
+
+function openFineTuneModal(jobName) {
+    // Fetch fresh job list to get full config
+    apiCall('/api/training/sagemaker/jobs?local_only=true').then(resp => {
+        const job = (resp.jobs || []).find(j => j.job_name === jobName);
+        if (!job) { alert('Job not found'); return; }
+        const cfg     = job.config || {};
+        const metrics = job.result || {};
+
+        // Base checkpoint header
+        document.getElementById('ft-base-job-name').textContent  = jobName;
+        document.getElementById('ft-base-artifacts').textContent = job.model_artifacts || '';
+        document.getElementById('ft-checkpoint-uri').value       = job.model_artifacts || '';
+        document.getElementById('ft-source-job-name').value      = jobName;
+
+        // Previous dataset + metrics panel
+        const dataUri = cfg.data_s3_uri || '—';
+        const metricsHtml = metrics.model_name ? `
+            <div class="ft-metrics-grid">
+                <div class="ft-metric"><span>Train acc</span><strong>${metrics.train_accuracy != null ? (metrics.train_accuracy*100).toFixed(1)+'%' : '—'}</strong></div>
+                <div class="ft-metric"><span>Val acc</span><strong>${metrics.val_accuracy != null ? (metrics.val_accuracy*100).toFixed(1)+'%' : '—'}</strong></div>
+                <div class="ft-metric"><span>Best val acc</span><strong>${metrics.best_val_accuracy != null ? (metrics.best_val_accuracy*100).toFixed(1)+'%' : '—'}</strong></div>
+                <div class="ft-metric"><span>Epochs</span><strong>${metrics.final_epoch ?? cfg.epochs ?? '—'}</strong></div>
+                <div class="ft-metric"><span>LR</span><strong>${metrics.learning_rate ?? cfg.learning_rate ?? '—'}</strong></div>
+                <div class="ft-metric"><span>Batch</span><strong>${metrics.batch_size ?? cfg.batch_size ?? '—'}</strong></div>
+            </div>` : `<p style="color:#888; font-size:0.8rem; margin:0.5rem 0 0;">No metrics loaded — use "Load Results" on the job card first.</p>`;
+
+        document.getElementById('ft-base-info').innerHTML = `
+            <div class="ft-info-row"><i class="fas fa-database" style="color:#16a085;"></i><span>Training data</span><code>${dataUri}</code></div>
+            <div class="ft-info-row"><i class="fas fa-microchip" style="color:#8e44ad;"></i><span>Model</span><strong>${cfg.model_name || '—'}</strong> &nbsp;·&nbsp; ${cfg.task_type || ''} ${cfg.dimension || ''}</div>
+            <div class="ft-info-row"><i class="fas fa-server" style="color:#1a6fa0;"></i><span>Instance</span><strong>${cfg.instance_type || '—'}</strong></div>
+            ${metricsHtml}`;
+
+        // Pre-fill form from base job config
+        document.getElementById('ft-job-name').value         = '';
+        document.getElementById('ft-data-s3-uri').value      = cfg.data_s3_uri || '';
+        document.getElementById('ft-output-s3-uri').value    = cfg.output_s3_uri || '';
+        document.getElementById('ft-epochs').value           = cfg.epochs || 5;
+        document.getElementById('ft-learning-rate').value    = (cfg.learning_rate || 0.001) * 0.1;
+        document.getElementById('ft-batch-size').value       = cfg.batch_size || 16;
+        document.getElementById('ft-val-interval').value     = cfg.val_interval || 1;
+        document.getElementById('ft-instance-type').value    = cfg.instance_type || 'ml.g5.xlarge';
+        document.getElementById('ft-image-uri').value        = cfg.image_uri || '';
+        document.getElementById('ft-role-arn').value         = cfg.role_arn || '';
+        document.getElementById('ft-model-name').value       = cfg.model_name || '';
+        document.getElementById('ft-task-type').value        = cfg.task_type || 'classification';
+        document.getElementById('ft-dimension').value        = cfg.dimension || '2D';
+        document.getElementById('ft-mlflow-uri').value       = cfg.mlflow_tracking_uri || '';
+
+        document.getElementById('finetune-modal').style.display = 'flex';
+    }).catch(err => alert(`Could not load job: ${err.message}`));
+}
+
+function closeFineTuneModal() {
+    document.getElementById('finetune-modal').style.display = 'none';
+    document.getElementById('ft-status').style.display = 'none';
+}
+
+async function submitFineTuneJob() {
+    const btn = document.getElementById('ft-submit-btn');
+    const statusEl = document.getElementById('ft-status');
+
+    const jobNameRaw = document.getElementById('ft-job-name').value.trim();
+    const date  = new Date();
+    const ts    = `${date.getFullYear()}${String(date.getMonth()+1).padStart(2,'0')}${String(date.getDate()).padStart(2,'0')}-${String(date.getHours()).padStart(2,'0')}${String(date.getMinutes()).padStart(2,'0')}`;
+    const autoName = `finetune-${document.getElementById('ft-model-name').value || 'model'}-${ts}`.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 63);
+
+    const payload = {
+        job_name:            jobNameRaw || autoName,
+        model_name:          document.getElementById('ft-model-name').value,
+        task_type:           document.getElementById('ft-task-type').value,
+        dimension:           document.getElementById('ft-dimension').value,
+        epochs:              parseInt(document.getElementById('ft-epochs').value),
+        batch_size:          parseInt(document.getElementById('ft-batch-size').value),
+        learning_rate:       parseFloat(document.getElementById('ft-learning-rate').value),
+        val_interval:        parseInt(document.getElementById('ft-val-interval').value),
+        instance_type:       document.getElementById('ft-instance-type').value,
+        instance_count:      1,
+        image_uri:           document.getElementById('ft-image-uri').value,
+        data_s3_uri:         document.getElementById('ft-data-s3-uri').value,
+        role_arn:            document.getElementById('ft-role-arn').value,
+        output_s3_uri:       document.getElementById('ft-output-s3-uri').value || null,
+        mlflow_tracking_uri: document.getElementById('ft-mlflow-uri').value || null,
+        checkpoint_s3_uri:   document.getElementById('ft-checkpoint-uri').value,
+        fine_tuned_from:     document.getElementById('ft-source-job-name').value,
+        source_dir:          'src/' + document.getElementById('ft-task-type').value,
+        entry_point:         'train.py',
+    };
+
+    if (!payload.data_s3_uri)  { alert('Data S3 URI is required.'); return; }
+    if (!payload.image_uri)    { alert('Container image URI is required.'); return; }
+    if (!payload.role_arn)     { alert('IAM Role ARN is required.'); return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting…';
+    statusEl.style.display = 'none';
+
+    try {
+        const res = await apiCall('/api/training/sagemaker/finetune', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        statusEl.className = 'sm-status-banner sm-status-success';
+        statusEl.innerHTML = `<i class="fas fa-check-circle"></i> Fine-tune job submitted: <strong>${res.job_name}</strong>`;
+        statusEl.style.display = 'flex';
+        setTimeout(() => {
+            closeFineTuneModal();
+            switchJobsTab('active');
+            loadSageMakerJobs();
+        }, 1800);
+    } catch (err) {
+        statusEl.className = 'sm-status-banner sm-status-error';
+        statusEl.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${err.message}`;
+        statusEl.style.display = 'flex';
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sliders-h"></i> Start Fine-tuning';
+    }
 }

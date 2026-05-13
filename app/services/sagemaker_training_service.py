@@ -139,6 +139,9 @@ class SageMakerTrainingService:
             "data_s3_uri":   config.data_s3_uri,
         }
 
+        if config.checkpoint_s3_uri:
+            hyperparameters["checkpoint_s3_uri"] = config.checkpoint_s3_uri
+
         env = {}
         if config.mlflow_tracking_uri:
             env["MLFLOW_TRACKING_URI"] = config.mlflow_tracking_uri
@@ -166,6 +169,7 @@ class SageMakerTrainingService:
             "model_artifacts": None,
             "failure_reason":  None,
             "config":          config.model_dump(),
+            "fine_tuned_from": config.fine_tuned_from or None,
         }
         self.jobs[job_name] = job_info
         self._save_jobs()
@@ -214,6 +218,8 @@ class SageMakerTrainingService:
 
     def fetch_result_json(self, job_name: str, s3_client) -> dict:
         """Download model.tar.gz, extract result.json, store on job record.
+        Falls back to reconstructing from stored config if result.json is absent
+        (jobs trained before result.json was added to train.py).
         Safe to call multiple times — skips if already fetched."""
         job = self.jobs.get(job_name)
         if not job:
@@ -233,20 +239,40 @@ class SageMakerTrainingService:
         with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as tmp:
             tmp_path = tmp.name
 
+        result = None
         try:
             s3_client.download_file(bucket, key, tmp_path)
             with tarfile.open(tmp_path, "r:gz") as tar:
-                try:
-                    member = tar.getmember("result.json")
-                    f      = tar.extractfile(member)
+                # Try result.json first
+                if "result.json" in tar.getnames():
+                    f      = tar.extractfile(tar.getmember("result.json"))
                     result = json.loads(f.read().decode("utf-8"))
-                except KeyError:
-                    raise ValueError("result.json not found in model.tar.gz — was the model trained with the updated train.py?")
+                else:
+                    # Fallback: reconstruct from stored config + any available metadata
+                    logger.warning(
+                        "result.json not found in model.tar.gz for job %s — "
+                        "reconstructing from stored config", job_name
+                    )
+                    cfg = job.get("config") or {}
+                    result = {
+                        "model_name":        cfg.get("model_name", "unknown"),
+                        "num_classes":       None,
+                        "final_epoch":       cfg.get("epochs"),
+                        "train_accuracy":    None,
+                        "val_accuracy":      None,
+                        "best_val_accuracy": None,
+                        "data_s3_uri":       cfg.get("data_s3_uri", ""),
+                        "task_type":         cfg.get("task_type", "classification"),
+                        "dimension":         cfg.get("dimension", "2D"),
+                        "learning_rate":     cfg.get("learning_rate"),
+                        "batch_size":        cfg.get("batch_size"),
+                        "reconstructed":     True,   # flag so UI can show a note
+                    }
         finally:
             os.unlink(tmp_path)
 
         self.store_result(job_name, result)
-        logger.info("Fetched result.json for job %s: %s", job_name, result)
+        logger.info("Stored result for job %s: %s", job_name, result)
         return result
 
     def list_jobs(self) -> list:
@@ -266,6 +292,7 @@ class SageMakerTrainingService:
                 "mlflow_tracking_uri": v.get("config", {}).get("mlflow_tracking_uri"),
                 "config":             v.get("config"),
                 "result":             v.get("result"),
+                "fine_tuned_from":    v.get("fine_tuned_from"),
             }
             for k, v in self.jobs.items()
         ]
