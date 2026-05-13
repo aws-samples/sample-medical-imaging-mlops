@@ -1192,3 +1192,81 @@ input:focus, select:focus, textarea:focus {
 .inf-prob-bar-wrap { flex: 1; background: #eee; border-radius: 4px; height: 10px; overflow: hidden; }
 .inf-prob-bar { height: 100%; background: #1a6fa8; border-radius: 4px; transition: width 0.4s ease; }
 .inf-prob-value { min-width: 44px; color: #666; }
+
+/* ── Coming Soon / TODO section ──────────────────────────────────────────── */
+
+.todo-group {
+    border-bottom: 1px solid #f0f0f0;
+    padding: 0.75rem 0 0.25rem;
+}
+
+.todo-group-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #888;
+    padding: 0 1.25rem 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.todo-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.6rem 1.25rem;
+    border-bottom: 1px solid #f8f8f8;
+    transition: background 0.1s;
+}
+
+.todo-item:hover {
+    background: #fafafa;
+}
+
+.todo-badge {
+    flex-shrink: 0;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.15rem 0.45rem;
+    border-radius: 10px;
+    margin-top: 2px;
+    background: #fdecea;
+    color: #c0392b;
+    border: 1px solid #f5c6cb;
+    letter-spacing: 0.03em;
+}
+
+.todo-badge-p2 {
+    background: #fff3e0;
+    color: #e67e22;
+    border-color: #ffd699;
+}
+
+.todo-badge-p3 {
+    background: #f0f0f0;
+    color: #666;
+    border-color: #ddd;
+}
+
+.todo-title {
+    font-size: 0.87rem;
+    font-weight: 600;
+    color: #232f3e;
+    margin-bottom: 0.2rem;
+}
+
+.todo-desc {
+    font-size: 0.8rem;
+    color: #666;
+    line-height: 1.55;
+}
+
+.todo-desc code {
+    background: #f0f0f0;
+    border-radius: 3px;
+    padding: 0.05rem 0.3rem;
+    font-size: 0.78rem;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+}
