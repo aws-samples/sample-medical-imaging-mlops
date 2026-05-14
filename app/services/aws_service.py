@@ -169,6 +169,14 @@ class AWSService:
                 url = response.get("AuthorizedUrl")
                 if not url:
                     raise ValueError("No presigned URL returned for Studio domain")
+                # Append the MLflow app path so the user lands directly in MLflow
+                # Studio presigned URLs end with ?token=... — append the app path before the query
+                mlflow_path = f"/jupyter/default/lab/workspaces/auto-o/tree/mlflow-app/{server_name}"
+                if "?" in url:
+                    base, query = url.split("?", 1)
+                    url = f"{base}{mlflow_path}?{query}"
+                else:
+                    url = f"{url}{mlflow_path}"
                 logger.info(
                     "Generated Studio presigned URL for mlflow-app ARN '%s' "
                     "(domain=%s, user=%s)", tracking_server_arn, domain_id, user_profile

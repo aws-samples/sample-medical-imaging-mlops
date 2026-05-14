@@ -473,6 +473,11 @@ input:focus, select:focus, textarea:focus {
 .job-id {
     font-weight: bold;
     color: var(--aws-blue);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    max-width: 100%;
 }
 
 .job-status {
@@ -503,11 +508,28 @@ input:focus, select:focus, textarea:focus {
 }
 
 .job-details {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1rem;
-    font-size: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.88rem;
     color: var(--aws-dark-gray);
+    overflow: hidden;
+}
+
+.job-details > div {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.job-details code {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
 }
 
 /* Status Indicators */

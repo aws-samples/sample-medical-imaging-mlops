@@ -1,5 +1,13 @@
 # TODO — MedML Training Dashboard
 
+## 🔧 In Progress
+
+- [ ] **Segmentation endpoint deployment** — `sm-training-byoc-segmentation` Docker image needs to be rebuilt after `train.py` changes (now copies `inference.py` + `model_def.py` into `model_dir`). Steps:
+  1. `./build_and_push.sh 575108919340 us-east-1 segmentation` — rebuild training image
+  2. Retrain aorta segmentation model with new image so `model.tar.gz` includes `inference.py`
+  3. Deploy via dashboard (Deployment tab) or `python deploy_segmentation.py --model-artifacts <new-s3-uri> --endpoint-name aorta-segmentation`
+  4. Test: `python test_endpoint_segmentation.py --endpoint aorta-segmentation --skip-deploy --s3-uri s3://...`
+
 ## Training
 
 - [ ] **Custom train.py upload** — Allow users to upload a custom `train.py` (and optionally `utils.py`, `model_def.py`) via the UI. Save to a temp directory on the server and use it as `source_dir` when submitting the SageMaker job.

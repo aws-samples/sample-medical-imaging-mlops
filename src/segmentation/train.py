@@ -188,3 +188,30 @@ if use_mlflow:
 
 writer.close()
 logger.info("Training complete. Best val_dice=%.4f", best_dice)
+
+# ── Copy inference artifacts into model_dir ───────────────────────────────────
+# SageMaker bundles everything in model_dir into model.tar.gz.
+# Copying inference.py and model_def.py here means the deployment container
+# can serve the model without needing a separate source_dir upload.
+import shutil as _shutil
+
+def _copy_inference_artifacts(src_dir: str, dest_dir: str) -> None:
+    for fname in ("inference.py", "model_def.py", "requirements.txt"):
+        # Look in the segmentation inference dir first, then the training dir
+        candidates = [
+            os.path.join(src_dir, "..", "..", "inference", "segmentation", fname),
+            os.path.join(src_dir, fname),
+        ]
+        for src in candidates:
+            src = os.path.normpath(src)
+            if os.path.exists(src):
+                _shutil.copy2(src, os.path.join(dest_dir, fname))
+                logger.info("Copied %s to model_dir for deployment", fname)
+                break
+        else:
+            logger.warning("Deployment artifact not found, skipping: %s", fname)
+
+_copy_inference_artifacts(
+    src_dir=os.path.dirname(os.path.abspath(__file__)),
+    dest_dir=args.model_dir,
+)

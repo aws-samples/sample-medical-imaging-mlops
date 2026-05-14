@@ -25,8 +25,12 @@ document.addEventListener('DOMContentLoaded', function() {
 async function loadAvailableModels() {
     try {
         const response = await apiCall('/api/training/models');
-        displayModels(response.models);
-        populateSageMakerModelDropdown(response.models);
+        const apiModels    = response.models || [];
+        const customModels = getCustomModels();
+        // Merge: custom models appear after built-in ones, marked with a badge
+        const allModels = [...apiModels, ...customModels];
+        displayModels(allModels);
+        populateSageMakerModelDropdown(allModels);
     } catch (error) {
         console.error('Error loading models:', error);
     }
@@ -42,6 +46,7 @@ function displayModels(models) {
         const task = (model.task || 'classification').toLowerCase();
         const taskClass = task === 'segmentation' ? 'model-tag-segmentation' : 'model-tag-classification';
         const taskLabel = task === 'segmentation' ? 'Segmentation' : 'Classification';
+        const isCustom  = !!model.custom;
 
         const modelElement = document.createElement('div');
         modelElement.className = `model-item model-item-${task}`;
@@ -50,7 +55,13 @@ function displayModels(models) {
         modelElement.innerHTML = `
             <div class="model-item-header">
                 <div class="model-name">${getDisplayName(model.name)}</div>
-                <span class="model-tag ${taskClass}">${taskLabel}</span>
+                <div style="display:flex; gap:4px; align-items:center;">
+                    ${isCustom ? '<span class="model-tag" style="background:#f3eeff; color:#7b2ff7; border:1px solid #c9b0f5;">Custom</span>' : ''}
+                    <span class="model-tag ${taskClass}">${taskLabel}</span>
+                    ${isCustom ? `<button type="button" title="Remove" onclick="removeCustomModel('${model.name}', event)"
+                        style="background:none; border:none; cursor:pointer; color:#c62828; font-size:0.75rem; padding:0 2px;">
+                        <i class="fas fa-times"></i></button>` : ''}
+                </div>
             </div>
             <div class="model-description">${model.description}</div>
             <div class="model-specs">
@@ -62,6 +73,14 @@ function displayModels(models) {
         modelElement.addEventListener('click', () => selectModel(model, modelElement));
         container.appendChild(modelElement);
     });
+}
+
+function removeCustomModel(name, event) {
+    event.stopPropagation();
+    if (!confirm(`Remove custom model "${name}"?`)) return;
+    const updated = loadCustomModels().filter(m => m.name !== name);
+    saveCustomModels(updated);
+    loadAvailableModels();
 }
 
 function populateSageMakerModelDropdown(models) {
@@ -80,13 +99,17 @@ const FOLDER_STRUCTURE = {
         label: "s3://your-bucket/dataset/",
         children: [
             { label: "train/", children: [
-                { label: "<class_name>/", children: [{ label: "*.dcm / *.png / *.jpg" }] }
+                { label: "class_a/", note: "e.g. No_finding", children: [{ label: "*.dcm / *.png / *.jpg" }] },
+                { label: "class_b/", note: "e.g. Pneumonia", children: [{ label: "*.dcm / *.png / *.jpg" }] },
+                { label: "class_c/  …", children: [] },
             ]},
             { label: "val/", children: [
-                { label: "<class_name>/", children: [{ label: "*.dcm / *.png / *.jpg" }] }
+                { label: "class_a/", children: [{ label: "*.dcm / *.png / *.jpg" }] },
+                { label: "class_b/  …", children: [] },
             ]},
             { label: "test/", note: "optional", children: [
-                { label: "<class_name>/", children: [{ label: "*.dcm / *.png / *.jpg" }] }
+                { label: "class_a/", children: [{ label: "*.dcm / *.png / *.jpg" }] },
+                { label: "class_b/  …", children: [] },
             ]},
         ]
     },
@@ -825,7 +848,7 @@ function displaySageMakerJobs(jobs) {
                 <button onclick="stopSageMakerJob('${job.job_name}')" class="btn btn-secondary">
                     <i class="fas fa-stop"></i> Stop
                 </button>` : ''}
-                ${job.mlflow_tracking_uri && !['Stopped','Failed'].includes(job.status) ? `
+                ${job.mlflow_tracking_uri ? `
                 <button type="button" class="btn btn-mlflow" onclick="openMlflowDashboard(this)" data-uri="${job.mlflow_tracking_uri.replace(/"/g, '&quot;')}">
                     <i class="fas fa-flask"></i> MLflow
                 </button>` : ''}
@@ -991,19 +1014,32 @@ async function stopSageMakerJob(jobName) {
 async function openMlflowDashboard(btnOrUri) {
     const uri = (typeof btnOrUri === 'string') ? btnOrUri : btnOrUri.dataset.uri;
     if (!uri) return;
+
+    // Plain HTTP URL — open directly
     if (uri.startsWith('http')) {
         window.open(uri, '_blank');
         return;
     }
-    // It's an ARN — resolve to URL via backend
+
+    // Show loading state on the button
+    const btn = (typeof btnOrUri === 'object') ? btnOrUri : null;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Opening…'; }
+
     try {
         const res = await apiCall(`/api/training/sagemaker/mlflow-url?arn=${encodeURIComponent(uri)}`);
         window.open(res.url, '_blank');
     } catch (e) {
-        const msg = e.message.includes('does not exist')
-            ? `MLflow tracking server not found. It may have been deleted or the ARN is outdated.\n\nARN: ${uri}`
-            : `Could not resolve MLflow URL: ${e.message}`;
+        let msg;
+        if (e.message.includes('does not exist') || e.message.includes('not found')) {
+            msg = `MLflow tracking server not found.\n\nThe server may have been deleted or the ARN is outdated.\nARN: ${uri}\n\nOpen SageMaker Studio manually and navigate to the MLflow app.`;
+        } else if (e.message.includes('Studio')) {
+            msg = `${e.message}\n\nOpen SageMaker Studio manually and navigate to the MLflow app.`;
+        } else {
+            msg = `Could not open MLflow: ${e.message}`;
+        }
         alert(msg);
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-flask"></i> MLflow'; }
     }
 }
 
@@ -1082,6 +1118,64 @@ function removeSelectedContainer() {
     const containers = loadContainers().filter(c => c.uri !== select.value);
     saveContainers(containers);
     populateContainerDropdown();
+}
+
+// ── Custom Model Management ───────────────────────────────────────────────────
+
+const CUSTOM_MODELS_KEY = 'medml_custom_models';
+
+function loadCustomModels() {
+    try { return JSON.parse(localStorage.getItem(CUSTOM_MODELS_KEY) || '[]'); }
+    catch { return []; }
+}
+
+function saveCustomModels(models) {
+    localStorage.setItem(CUSTOM_MODELS_KEY, JSON.stringify(models));
+}
+
+function openAddCustomModelModal() {
+    document.getElementById('cm-name').value        = '';
+    document.getElementById('cm-description').value = '';
+    document.getElementById('cm-parameters').value  = '';
+    document.getElementById('cm-input-size').value  = '';
+    document.getElementById('cm-task').value        = 'classification';
+    document.getElementById('cm-dimension').value   = '2D';
+    document.getElementById('add-custom-model-modal').style.display = 'flex';
+    document.getElementById('cm-name').focus();
+}
+
+function closeAddCustomModelModal() {
+    document.getElementById('add-custom-model-modal').style.display = 'none';
+}
+
+function saveCustomModel() {
+    const name = document.getElementById('cm-name').value.trim();
+    if (!name) { alert('Model name is required.'); return; }
+
+    const model = {
+        name:        name.toLowerCase().replace(/\s+/g, '-'),
+        description: document.getElementById('cm-description').value.trim() || 'Custom model',
+        parameters:  document.getElementById('cm-parameters').value.trim() || 'N/A',
+        input_size:  document.getElementById('cm-input-size').value.trim() || 'N/A',
+        task:        document.getElementById('cm-task').value,
+        dimension:   document.getElementById('cm-dimension').value,
+        pretrained:  false,
+        custom:      true,
+    };
+
+    const existing = loadCustomModels();
+    // Replace if same name exists
+    const idx = existing.findIndex(m => m.name === model.name);
+    if (idx >= 0) existing[idx] = model;
+    else existing.push(model);
+    saveCustomModels(existing);
+
+    closeAddCustomModelModal();
+    loadAvailableModels();  // refresh the model list
+}
+
+function getCustomModels() {
+    return loadCustomModels();
 }
 
 // ── Task type auto-wiring ─────────────────────────────────────────────────────

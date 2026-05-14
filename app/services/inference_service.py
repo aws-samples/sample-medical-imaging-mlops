@@ -2,9 +2,17 @@
 import json
 import logging
 import boto3
+from botocore.config import Config
 from typing import Optional
 
 logger = logging.getLogger(__name__)
+
+# 3D segmentation inference can be slow — allow up to 5 minutes
+_INFERENCE_CONFIG = Config(
+    read_timeout=300,
+    connect_timeout=10,
+    retries={"max_attempts": 1},
+)
 
 
 class InferenceService:
@@ -18,7 +26,7 @@ class InferenceService:
         boto_session,
     ) -> dict:
         """Invoke a SageMaker real-time endpoint and optionally save result to S3."""
-        runtime = boto_session.client("sagemaker-runtime")
+        runtime = boto_session.client("sagemaker-runtime", config=_INFERENCE_CONFIG)
 
         # Handle raw bytes (local file upload) vs JSON payload
         if "bytes" in input_data:

@@ -351,6 +351,9 @@
                 </div>
                 <div class="card-body">
                     <div id="models-list" class="models-grid"></div>
+                    <button type="button" class="btn btn-secondary" style="margin-top:0.75rem; width:100%; font-size:0.85rem;" onclick="openAddCustomModelModal()">
+                        <i class="fas fa-plus"></i> Add Custom Model
+                    </button>
                 </div>
             </div>
 
@@ -1222,6 +1225,57 @@
     </div>
 </div>
 
+<!-- Add Custom Model Modal -->
+<div id="add-custom-model-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:10px; width:480px; max-width:95vw; box-shadow:0 8px 40px rgba(0,0,0,0.25);">
+        <div style="padding:1.25rem 1.5rem; border-bottom:1px solid #eee; display:flex; align-items:center; justify-content:space-between;">
+            <h3 style="margin:0; font-size:1.05rem;"><i class="fas fa-plus-circle" style="color:#FF9900;"></i> Add Custom Model</h3>
+            <button onclick="closeAddCustomModelModal()" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:#888;">&times;</button>
+        </div>
+        <div style="padding:1.25rem 1.5rem;">
+            <div class="form-group">
+                <label for="cm-name">Model Name <span style="color:#c62828;">*</span></label>
+                <input type="text" id="cm-name" placeholder="e.g. my-resnet, custom-unet" style="width:100%;">
+                <small style="color:#888;">Used as the identifier in the training form</small>
+            </div>
+            <div class="form-row" style="margin-top:0.75rem;">
+                <div class="form-group">
+                    <label for="cm-task">Task</label>
+                    <select id="cm-task" style="width:100%;">
+                        <option value="classification">Classification</option>
+                        <option value="segmentation">Segmentation</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="cm-dimension">Dimension</label>
+                    <select id="cm-dimension" style="width:100%;">
+                        <option value="2D">2D</option>
+                        <option value="3D">3D</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row" style="margin-top:0.75rem;">
+                <div class="form-group">
+                    <label for="cm-parameters">Parameters</label>
+                    <input type="text" id="cm-parameters" placeholder="e.g. 25.6M" style="width:100%;">
+                </div>
+                <div class="form-group">
+                    <label for="cm-input-size">Input Size</label>
+                    <input type="text" id="cm-input-size" placeholder="e.g. 224×224" style="width:100%;">
+                </div>
+            </div>
+            <div class="form-group" style="margin-top:0.75rem;">
+                <label for="cm-description">Description</label>
+                <input type="text" id="cm-description" placeholder="Brief description of the model" style="width:100%;">
+            </div>
+            <div style="display:flex; gap:0.75rem; justify-content:flex-end; margin-top:1.25rem;">
+                <button type="button" class="btn btn-secondary" onclick="closeAddCustomModelModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveCustomModel()"><i class="fas fa-save"></i> Add Model</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Add Inference Container Modal -->
 <div id="add-inference-container-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
     <div style="background:#fff; border-radius:8px; padding:1.5rem; width:480px; max-width:90vw; box-shadow:0 8px 32px rgba(0,0,0,0.2);">
@@ -1382,9 +1436,10 @@
 .eval-metric-card { background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:1rem; text-align:center; }
 .eval-metric-value { font-size:1.8rem; font-weight:700; color:#232f3e; }
 .eval-metric-label { font-size:0.8rem; color:#666; margin-top:0.25rem; }
-.result-highlight { background:#f0f7ff; border-left:3px solid #4B9CD3; border-radius:4px; padding:0.5rem 0.75rem; margin-top:0.5rem; display:grid; grid-template-columns:1fr 1fr; gap:2px 1rem; }
-.result-row { display:flex; gap:0.4rem; font-size:0.82rem; align-items:baseline; }
-.result-row span { color:#666; min-width:80px; }
+.result-highlight { background:#f0f7ff; border-left:3px solid #4B9CD3; border-radius:4px; padding:0.5rem 0.75rem; margin-top:0.5rem; display:grid; grid-template-columns:1fr 1fr; gap:2px 1rem; overflow:hidden; }
+.result-row { display:flex; gap:0.4rem; font-size:0.82rem; align-items:baseline; min-width:0; overflow:hidden; }
+.result-row span { color:#666; min-width:80px; flex-shrink:0; }
+.result-row strong, .result-row code { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
 .job-comment { font-size:0.82rem; color:#555; margin-top:0.4rem; font-style:italic; }
 .job-archived { opacity:0.65; }
 .jobs-tab-bar { display:flex; gap:0; border-bottom:2px solid #e0e0e0; margin-bottom:1rem; }
