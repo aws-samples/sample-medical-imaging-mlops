@@ -207,8 +207,9 @@ class DeploymentService:
             self.deployments[endpoint_name] = record
             self._save()
             return record
-        except sagemaker_client.exceptions.ClientError as e:
-            if "Could not find endpoint" in str(e) or "ValidationException" in str(e):
+        except Exception as e:
+            err_str = str(e)
+            if "Could not find endpoint" in err_str or "ValidationException" in err_str or "does not exist" in err_str:
                 # Endpoint deleted externally — remove from local store
                 self.deployments.pop(endpoint_name, None)
                 self._save()

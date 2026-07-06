@@ -13,18 +13,9 @@ async function loadEvalEndpoints() {
     if (!select) return;
     try {
         const res = await apiCall('/api/inference/endpoints');
-        if (res.endpoints && res.endpoints.length > 0) {
-            select.innerHTML = res.endpoints.map(e =>
-                `<option value="${e.name}">${e.name} (${e.status})</option>`
-            ).join('');
-            return;
-        }
-    } catch (_) {}
-    try {
-        const dep    = await apiCall('/api/deployment/deployments');
-        const active = (dep.deployments || []).filter(d => d.status === 'InService');
-        select.innerHTML = active.length
-            ? active.map(d => `<option value="${d.endpoint_name}">${d.endpoint_name}</option>`).join('')
+        const eps = res.endpoints || [];
+        select.innerHTML = eps.length
+            ? eps.map(e => `<option value="${e.name}">${e.name} (${e.status})</option>`).join('')
             : '<option value="" disabled selected>No InService endpoints found</option>';
     } catch (_) {
         select.innerHTML = '<option value="" disabled selected>Could not load endpoints</option>';
