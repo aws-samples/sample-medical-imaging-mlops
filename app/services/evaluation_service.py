@@ -274,3 +274,76 @@ class EvaluationService:
                     except Exception as e:
                         logger.warning("Could not refresh status for %s: %s", job_name, e)
         return sorted(self.jobs.values(), key=lambda j: j.get("created_at", ""), reverse=True)
+
+    def sync_from_aws(self, sagemaker_client, name_contains: str = None) -> dict:
+        """Pull processing jobs from AWS (filtered to eval-* by default) and merge into local store.
+
+        Returns {"added": [...], "updated": [...]} with affected job names.
+        """
+        kwargs = {
+            "SortBy": "CreationTime",
+            "SortOrder": "Descending",
+            "MaxResults": 100,
+        }
+        if name_contains:
+            kwargs["NameContains"] = name_contains
+        else:
+            kwargs["NameContains"] = "eval-"
+
+        response = sagemaker_client.list_processing_jobs(**kwargs)
+        summaries = response.get("ProcessingJobSummaries", [])
+
+        added = []
+        updated = []
+
+        for summary in summaries:
+            job_name = summary["ProcessingJobName"]
+            status = summary["ProcessingJobStatus"]
+            creation_time = summary.get("CreationTime")
+            end_time = summary.get("ProcessingEndTime")
+
+            if job_name in self.jobs:
+                self.jobs[job_name]["status"] = status
+                if end_time:
+                    self.jobs[job_name]["completed_at"] = end_time.isoformat() if hasattr(end_time, 'isoformat') else str(end_time)
+                if status == "Failed":
+                    try:
+                        detail = sagemaker_client.describe_processing_job(ProcessingJobName=job_name)
+                        self.jobs[job_name]["failure_reason"] = detail.get("FailureReason")
+                    except Exception:
+                        pass
+                updated.append(job_name)
+            else:
+                record = {
+                    "job_name": job_name,
+                    "endpoint_name": None,
+                    "task_type": "classification",
+                    "data_s3_uri": None,
+                    "output_s3_uri": None,
+                    "instance_type": None,
+                    "image_uri": None,
+                    "status": status,
+                    "created_at": creation_time.isoformat() if hasattr(creation_time, 'isoformat') else str(creation_time) if creation_time else None,
+                    "completed_at": end_time.isoformat() if hasattr(end_time, 'isoformat') else str(end_time) if end_time else None,
+                    "metrics": None,
+                    "failure_reason": None,
+                }
+                # Try to get details for richer record
+                try:
+                    detail = sagemaker_client.describe_processing_job(ProcessingJobName=job_name)
+                    env = detail.get("Environment", {})
+                    record["endpoint_name"] = env.get("EVAL_ENDPOINT_NAME")
+                    record["data_s3_uri"] = env.get("EVAL_DATA_S3_URI")
+                    record["output_s3_uri"] = env.get("EVAL_OUTPUT_S3_URI")
+                    if status == "Failed":
+                        record["failure_reason"] = detail.get("FailureReason")
+                    if status == "Completed" and record["output_s3_uri"]:
+                        record["metrics"] = self._fetch_metrics(record["output_s3_uri"])
+                except Exception as e:
+                    logger.warning("Could not describe processing job %s: %s", job_name, e)
+                self.jobs[job_name] = record
+                added.append(job_name)
+
+        self._save()
+        logger.info("sync_from_aws (evaluation): added %d, updated %d", len(added), len(updated))
+        return {"added": added, "updated": updated}

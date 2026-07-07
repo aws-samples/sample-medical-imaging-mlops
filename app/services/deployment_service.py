@@ -273,3 +273,64 @@ class DeploymentService:
         self._save()
         logger.info("Imported existing endpoint: %s (%s)", endpoint_name, status)
         return record
+
+    def sync_from_aws(self, sagemaker_client, name_contains: str = None) -> dict:
+        """Pull endpoints from AWS and merge into the local store.
+
+        Endpoints already tracked locally have their status updated.
+        Endpoints not yet tracked are added with a minimal record.
+        Returns {"added": [...], "updated": [...]} with affected endpoint names.
+        """
+        kwargs = {
+            "SortBy": "CreationTime",
+            "SortOrder": "Descending",
+            "MaxResults": 100,
+        }
+        if name_contains:
+            kwargs["NameContains"] = name_contains
+
+        response = sagemaker_client.list_endpoints(**kwargs)
+        summaries = response.get("Endpoints", [])
+
+        added = []
+        updated = []
+
+        for summary in summaries:
+            endpoint_name = summary["EndpointName"]
+            status = summary["EndpointStatus"]
+            creation_time = summary.get("CreationTime")
+
+            if endpoint_name in self.deployments:
+                self.deployments[endpoint_name]["status"] = status
+                if creation_time:
+                    self.deployments[endpoint_name]["created_at"] = creation_time.isoformat() if hasattr(creation_time, 'isoformat') else str(creation_time)
+                if status == "InService":
+                    region = sagemaker_client.meta.region_name
+                    self.deployments[endpoint_name]["endpoint_url"] = (
+                        f"https://runtime.sagemaker.{region}.amazonaws.com"
+                        f"/endpoints/{endpoint_name}/invocations"
+                    )
+                updated.append(endpoint_name)
+            else:
+                record = {
+                    "endpoint_name":  endpoint_name,
+                    "endpoint_type":  "realtime",
+                    "model_artifacts": None,
+                    "image_uri":      None,
+                    "instance_type":  None,
+                    "instance_count": None,
+                    "status":         status,
+                    "created_at":     creation_time.isoformat() if hasattr(creation_time, 'isoformat') else str(creation_time) if creation_time else None,
+                }
+                if status == "InService":
+                    region = sagemaker_client.meta.region_name
+                    record["endpoint_url"] = (
+                        f"https://runtime.sagemaker.{region}.amazonaws.com"
+                        f"/endpoints/{endpoint_name}/invocations"
+                    )
+                self.deployments[endpoint_name] = record
+                added.append(endpoint_name)
+
+        self._save()
+        logger.info("sync_from_aws (deployments): added %d, updated %d", len(added), len(updated))
+        return {"added": added, "updated": updated}

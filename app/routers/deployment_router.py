@@ -122,3 +122,18 @@ async def invoke_async(request: AsyncInvokeRequest):
     except Exception as e:
         logger.error("Async invocation failed: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/sync")
+async def sync_deployments_from_aws(name_contains: str = None):
+    """Pull endpoints from AWS and merge into the local store."""
+    try:
+        if not aws_service.sagemaker_client:
+            raise ValueError("AWS credentials not configured")
+        result = deployment_service.sync_from_aws(aws_service.sagemaker_client, name_contains=name_contains)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error("Failed to sync deployments from AWS: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))

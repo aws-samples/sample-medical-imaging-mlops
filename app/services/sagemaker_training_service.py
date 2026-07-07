@@ -351,6 +351,92 @@ class SageMakerTrainingService:
             self.jobs[job_name]["result"] = result
             self._save_jobs()
 
+    def sync_from_aws(self, sagemaker_client, name_contains: str = None) -> dict:
+        """Pull up to 100 training jobs from AWS and merge into the local store.
+
+        Jobs already tracked locally have their mutable fields updated.
+        Jobs not yet tracked are added with a minimal record.
+        Returns {"added": [...], "updated": [...]} with affected job names.
+        """
+        kwargs = {
+            "SortBy": "CreationTime",
+            "SortOrder": "Descending",
+            "MaxResults": 100,
+        }
+        if name_contains:
+            kwargs["NameContains"] = name_contains
+
+        response = sagemaker_client.list_training_jobs(**kwargs)
+        summaries = response.get("TrainingJobSummaries", [])
+
+        added = []
+        updated = []
+
+        for summary in summaries:
+            job_name = summary["TrainingJobName"]
+            status = summary["TrainingJobStatus"]
+            creation_time = summary.get("CreationTime")
+            training_end_time = summary.get("TrainingEndTime")
+
+            # Get detailed info for completed/failed jobs to capture model artifacts
+            model_artifacts = None
+            failure_reason = None
+            billable_seconds = None
+            estimated_cost = None
+
+            if status in ("Completed", "Failed"):
+                try:
+                    detail = sagemaker_client.describe_training_job(TrainingJobName=job_name)
+                    model_artifacts = detail.get("ModelArtifacts", {}).get("S3ModelArtifacts")
+                    failure_reason = detail.get("FailureReason")
+                    billable_seconds = detail.get("BillableTimeInSeconds")
+                    if billable_seconds and job_name in self.jobs:
+                        cfg = self.jobs[job_name].get("config", {})
+                        estimated_cost = _estimate_cost(
+                            cfg.get("instance_type", ""),
+                            cfg.get("instance_count", 1),
+                            billable_seconds,
+                        )
+                except Exception as e:
+                    logger.warning("Could not describe job %s: %s", job_name, e)
+
+            if job_name in self.jobs:
+                # Update mutable fields
+                self.jobs[job_name]["status"] = status
+                if model_artifacts:
+                    self.jobs[job_name]["model_artifacts"] = model_artifacts
+                if failure_reason:
+                    self.jobs[job_name]["failure_reason"] = failure_reason
+                if billable_seconds:
+                    self.jobs[job_name]["billable_seconds"] = billable_seconds
+                if estimated_cost:
+                    self.jobs[job_name]["estimated_cost_usd"] = estimated_cost
+                if creation_time:
+                    self.jobs[job_name]["creation_time"] = creation_time.isoformat() if hasattr(creation_time, 'isoformat') else str(creation_time)
+                if training_end_time:
+                    self.jobs[job_name]["training_end_time"] = training_end_time.isoformat() if hasattr(training_end_time, 'isoformat') else str(training_end_time)
+                updated.append(job_name)
+            else:
+                # Add new minimal record
+                self.jobs[job_name] = {
+                    "job_name": job_name,
+                    "status": status,
+                    "model_artifacts": model_artifacts,
+                    "failure_reason": failure_reason,
+                    "billable_seconds": billable_seconds,
+                    "estimated_cost_usd": estimated_cost,
+                    "creation_time": creation_time.isoformat() if hasattr(creation_time, 'isoformat') else str(creation_time) if creation_time else None,
+                    "training_end_time": training_end_time.isoformat() if hasattr(training_end_time, 'isoformat') else str(training_end_time) if training_end_time else None,
+                    "archived": False,
+                    "config": {},
+                    "result": None,
+                }
+                added.append(job_name)
+
+        self._save_jobs()
+        logger.info("sync_from_aws: added %d, updated %d jobs", len(added), len(updated))
+        return {"added": added, "updated": updated}
+
 
 
 

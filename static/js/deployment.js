@@ -2,12 +2,29 @@
 
 const INFERENCE_IMAGE_TEMPLATE = 'YOUR_ACCOUNT_ID.dkr.ecr.{region}.amazonaws.com/sm-inference-byoc-classification:latest';
 
-const DEFAULT_INFERENCE_CONTAINERS = [
+let DEFAULT_INFERENCE_CONTAINERS = [
     { label: "classification-byoc (BYOC)",   uri: "YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest" },
     { label: "segmentation-byoc (BYOC)",     uri: "YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-segmentation:latest" },
     { label: "pytorch-inference-gpu (AWS)",  uri: "763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-inference:2.6.0-gpu-py312-cu124-ubuntu22.04-sagemaker" },
     { label: "pytorch-inference-cpu (AWS)",  uri: "763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-inference:2.6.0-cpu-py312-ubuntu22.04-sagemaker" },
 ];
+
+/**
+ * Called by index.html after /api/config loads. Replaces placeholder account IDs
+ * in the default container list with real values from .env.local.
+ */
+function updateInferenceContainersFromConfig(cfg) {
+    if (!cfg.inference_image_classification && !cfg.inference_image_segmentation) return;
+    DEFAULT_INFERENCE_CONTAINERS = [
+        { label: "classification-byoc (BYOC)",   uri: cfg.inference_image_classification || DEFAULT_INFERENCE_CONTAINERS[0].uri },
+        { label: "segmentation-byoc (BYOC)",     uri: cfg.inference_image_segmentation || DEFAULT_INFERENCE_CONTAINERS[1].uri },
+        { label: "pytorch-inference-gpu (AWS)",  uri: "763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-inference:2.6.0-gpu-py312-cu124-ubuntu22.04-sagemaker" },
+        { label: "pytorch-inference-cpu (AWS)",  uri: "763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-inference:2.6.0-cpu-py312-ubuntu22.04-sagemaker" },
+    ];
+    // Clear localStorage to pick up new defaults if account changed
+    localStorage.removeItem('inference_containers');
+    populateInferenceContainerDropdown();
+}
 
 function loadInferenceContainers() {
     const stored = localStorage.getItem('inference_containers');
@@ -155,6 +172,22 @@ async function loadDeployments() {
         displayDeployments(res.deployments);
     } catch (err) {
         console.error('Error loading deployments:', err);
+    }
+}
+
+async function syncDeploymentsFromAWS() {
+    const btn = document.getElementById('btn-sync-deployments');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...'; }
+    try {
+        const result = await apiCall('/api/deployment/sync', { method: 'POST' });
+        const added = (result.added || []).length;
+        const updated = (result.updated || []).length;
+        alert(`Synced from AWS: ${added} added, ${updated} updated`);
+        await loadDeployments();
+    } catch (error) {
+        alert('Sync failed: ' + (error.message || error));
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Sync from AWS'; }
     }
 }
 

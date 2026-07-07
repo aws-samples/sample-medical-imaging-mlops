@@ -177,3 +177,18 @@ async def get_evaluation_plots(job_name: str):
     except Exception as e:
         logger.error("Failed to get plot URLs: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/sync")
+async def sync_evaluation_jobs_from_aws(name_contains: str = None):
+    """Pull evaluation processing jobs from AWS and merge into the local store."""
+    try:
+        if not aws_service.sagemaker_client:
+            raise ValueError("AWS credentials not configured")
+        result = evaluation_service.sync_from_aws(aws_service.sagemaker_client, name_contains=name_contains)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error("Failed to sync evaluation jobs from AWS: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))

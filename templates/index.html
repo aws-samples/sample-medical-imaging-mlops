@@ -515,7 +515,8 @@
 
                 <!-- Jobs tabs -->
                 <div style="margin-top:1.5rem;">
-                    <div class="jobs-tab-bar">
+                    <div class="jobs-tab-bar" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap;">
+                        <div>
                         <button class="jobs-tab" id="tab-active" onclick="switchJobsTab('active')">
                             <i class="fas fa-running"></i> Active
                         </button>
@@ -528,6 +529,13 @@
                         <button class="jobs-tab" id="tab-archived" onclick="switchJobsTab('archived')">
                             <i class="fas fa-archive"></i> Archived
                         </button>
+                        </div>
+                        <button class="btn btn-secondary" onclick="syncTrainingJobsFromAWS()" id="btn-sync-training" style="font-size:0.8rem; padding:0.4rem 0.8rem;">
+                            <i class="fas fa-sync"></i> Sync from AWS
+                        </button>
+                    </div>
+                    <div style="margin-top:0.75rem;">
+                        <input type="text" id="jobs-search" placeholder="Search jobs by name..." oninput="filterSageMakerJobs()" style="width:100%; padding:0.5rem 0.75rem; border:1px solid #ddd; border-radius:4px; font-size:0.85rem;">
                     </div>
                     <div id="sagemaker-jobs" class="jobs-list"></div>
                 </div>
@@ -661,9 +669,14 @@
             <div class="card">
                 <div class="card-header">
                     <h3>Active Deployments</h3>
-                    <button class="btn btn-secondary" onclick="loadDeployments()">
-                        <i class="fas fa-sync"></i> Refresh
-                    </button>
+                    <div style="display:flex; gap:0.5rem;">
+                        <button class="btn btn-secondary" onclick="loadDeployments()">
+                            <i class="fas fa-sync"></i> Refresh
+                        </button>
+                        <button class="btn btn-secondary" onclick="syncDeploymentsFromAWS()" id="btn-sync-deployments">
+                            <i class="fas fa-cloud-download-alt"></i> Sync from AWS
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div id="deployments-list" class="deployments-grid"></div>
@@ -1459,4 +1472,41 @@
 <script src="/static/js/fairness.js"></script>
 <script src="/static/js/evaluation.js"></script>
 <script src="/static/js/monitoring.js"></script>
+<script>
+// Load runtime config from backend (.env.local) and populate form defaults
+(async function loadConfig() {
+    try {
+        const resp = await fetch('/api/config');
+        if (!resp.ok) return;
+        const cfg = await resp.json();
+        window.__appConfig = cfg;
+
+        // Populate IAM Role ARN fields
+        const roleArn = cfg.sagemaker_role_arn || '';
+        document.querySelectorAll('#sm_role_arn, #dep-role-arn, #eval-role-arn, #bl-role-arn, #dq-role-arn, #mq-role-arn').forEach(el => {
+            if (el && !el.value) el.value = roleArn;
+        });
+
+        // Populate default data S3 URI
+        if (cfg.default_data_s3_uri) {
+            const dataInput = document.getElementById('sm_data_s3_uri');
+            if (dataInput && (dataInput.value === 's3://your-bucket/your-training-data/' || !dataInput.value)) {
+                dataInput.value = cfg.default_data_s3_uri;
+            }
+        }
+
+        // Update training container defaults with real account ID
+        if (cfg.training_image_classification && typeof updateTrainingContainersFromConfig === 'function') {
+            updateTrainingContainersFromConfig(cfg);
+        }
+
+        // Update inference container defaults with real account ID
+        if (cfg.inference_image_classification && typeof updateInferenceContainersFromConfig === 'function') {
+            updateInferenceContainersFromConfig(cfg);
+        }
+    } catch (e) {
+        console.warn('Could not load app config:', e);
+    }
+})();
+</script>
 {% endblock %}

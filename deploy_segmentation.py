@@ -38,16 +38,23 @@ import sys
 import tempfile
 import time
 
+from dotenv import load_dotenv
+load_dotenv()
+load_dotenv(".env.local", override=True)
+
 import boto3
 import sagemaker
 from botocore.config import Config
 
 # ── Defaults ──────────────────────────────────────────────────────────────────
 DEFAULT_ENDPOINT      = "aorta-segmentation"
-DEFAULT_REGION        = "us-east-1"
+DEFAULT_REGION        = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
 DEFAULT_INSTANCE_TYPE = "ml.g5.xlarge"
-DEFAULT_ROLE_ARN      = ""  # TODO: Set your SageMaker execution role ARN
-INFERENCE_IMAGE_URI   = f"{os.environ.get('AWS_ACCOUNT_ID', 'YOUR_ACCOUNT_ID')}.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-segmentation:latest"
+DEFAULT_ROLE_ARN      = os.environ.get("SAGEMAKER_ROLE_ARN", "")
+INFERENCE_IMAGE_URI   = os.environ.get(
+    "INFERENCE_IMAGE_SEGMENTATION",
+    f"{os.environ.get('AWS_ACCOUNT_ID', 'YOUR_ACCOUNT_ID')}.dkr.ecr.{os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')}.amazonaws.com/sm-inference-byoc-segmentation:latest"
+)
 # SAGEMAKER_PROGRAM is set via env at deploy time — inference.py is bundled
 # inside model.tar.gz by train.py, so no source_dir upload is needed.
 INVOKE_TIMEOUT_S      = 300   # 3D segmentation can be slow on first call

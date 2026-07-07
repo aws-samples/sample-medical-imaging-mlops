@@ -408,3 +408,18 @@ async def get_mlflow_url(arn: str):
     except Exception as e:
         logger.error(f"Failed to resolve MLflow ARN: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/sagemaker/sync")
+async def sync_from_aws(name_contains: str = None):
+    """Pull training jobs from AWS and merge into the local store."""
+    try:
+        if not aws_service.sagemaker_client:
+            raise ValueError("AWS credentials not configured")
+        result = sm_training_service.sync_from_aws(aws_service.sagemaker_client, name_contains=name_contains)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Failed to sync from AWS: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

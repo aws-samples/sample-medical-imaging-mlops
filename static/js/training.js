@@ -747,6 +747,28 @@ async function loadSageMakerJobs() {
     }
 }
 
+async function syncTrainingJobsFromAWS() {
+    const btn = document.getElementById('btn-sync-training');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...'; }
+    try {
+        const result = await apiCall('/api/training/sagemaker/sync', { method: 'POST' });
+        const added = (result.added || []).length;
+        const updated = (result.updated || []).length;
+        alert(`Synced from AWS: ${added} added, ${updated} updated`);
+        await loadSageMakerJobs();
+    } catch (error) {
+        alert('Sync failed: ' + (error.message || error));
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync"></i> Sync from AWS'; }
+    }
+}
+
+function filterSageMakerJobs() {
+    if (window._allSageMakerJobs) {
+        displaySageMakerJobs(window._allSageMakerJobs);
+    }
+}
+
 function switchJobsTab(tab) {
     window._jobsTab = tab;
     document.getElementById('tab-active').classList.toggle('active', tab === 'active');
@@ -757,10 +779,12 @@ function switchJobsTab(tab) {
 }
 
 function displaySageMakerJobs(jobs) {
+    window._allSageMakerJobs = jobs; // cache for search filtering
     const container = document.getElementById('sagemaker-jobs');
     if (!container) return;
 
     const tab = window._jobsTab || 'completed';
+    const searchTerm = (document.getElementById('jobs-search')?.value || '').toLowerCase().trim();
     const ACTIVE_STATES = new Set(['InProgress', 'Stopping']);
     const COMPLETED_STATES = new Set(['Completed', 'Stopped']);
 
@@ -769,6 +793,12 @@ function displaySageMakerJobs(jobs) {
         if (tab === 'failed')     return !j.archived && j.status === 'Failed';
         if (tab === 'completed')  return !j.archived && COMPLETED_STATES.has(j.status);
         return !j.archived && ACTIVE_STATES.has(j.status); // 'active'
+    }).filter(j => {
+        if (!searchTerm) return true;
+        const name = (j.job_name || '').toLowerCase();
+        const model = (j.config?.model_name || '').toLowerCase();
+        const comment = (j.comment || '').toLowerCase();
+        return name.includes(searchTerm) || model.includes(searchTerm) || comment.includes(searchTerm);
     });
 
     if (!visible.length) {
@@ -1063,10 +1093,25 @@ function formatDuration(seconds) {
 }
 
 // ── Container Image Management ────────────────────────────────────────────────
-const DEFAULT_CONTAINERS = [
+let DEFAULT_CONTAINERS = [
     { label: "classification-latest", uri: "YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-classification:latest" },
     { label: "segmentation-latest",   uri: "YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-segmentation:latest" },
 ];
+
+/**
+ * Called by index.html after /api/config loads. Replaces placeholder account IDs
+ * in the default container list with real values from .env.local.
+ */
+function updateTrainingContainersFromConfig(cfg) {
+    if (!cfg.training_image_classification && !cfg.training_image_segmentation) return;
+    DEFAULT_CONTAINERS = [
+        { label: "classification-latest", uri: cfg.training_image_classification || DEFAULT_CONTAINERS[0].uri },
+        { label: "segmentation-latest",   uri: cfg.training_image_segmentation || DEFAULT_CONTAINERS[1].uri },
+    ];
+    // Clear localStorage to pick up new defaults if account changed
+    localStorage.removeItem('sm_containers');
+    populateContainerDropdown();
+}
 
 function loadContainers() {
     const stored = localStorage.getItem('sm_containers');
