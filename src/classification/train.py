@@ -65,7 +65,7 @@ logger.info("Train: %s  |  Val: %s", train_path, val_path)
 train_loader, num_classes, label_dict = create_data_loaders(train_path, args.batch_size)
 val_loader,   _,           _          = create_data_loaders(val_path,   args.batch_size, label_dict)
 
-with open(os.path.join(args.model_dir, "label_dict.json"), "w") as f:
+with open(os.path.join(args.model_dir, "label_dict.json"), "w", encoding="utf-8") as f:
     json.dump(label_dict, f, indent=2)
 logger.info("Label dict: %s", label_dict)
 
@@ -87,6 +87,7 @@ if args.checkpoint_s3_uri:
         key    = "/".join(path.split("/")[1:])
         s3     = boto3.client("s3")
         with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as tmp:
+            tmp.flush()
             tmp_path = tmp.name
         s3.download_file(bucket, key, tmp_path)
         with tarfile.open(tmp_path, "r:gz") as tar:
@@ -230,7 +231,7 @@ result = {
     "fine_tuned_from":   fine_tuned_from or None,
 }
 result_path = os.path.join(args.model_dir, "result.json")
-with open(result_path, "w") as f:
+with open(result_path, "w", encoding="utf-8") as f:
     json.dump(result, f, indent=2)
 logger.info("Saved result.json: %s", result)
 

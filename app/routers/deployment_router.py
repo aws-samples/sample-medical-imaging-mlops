@@ -55,7 +55,7 @@ async def deploy_model(request: EndpointDeployRequest):
         )
         return result
     except Exception as e:
-        logger.error("Deployment failed: %s", e)
+        logger.warning("Deployment failed: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 

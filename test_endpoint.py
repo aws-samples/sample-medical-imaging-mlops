@@ -87,8 +87,9 @@ def upload_to_default_bucket(source_s3_uri, region, s3_client, default_bucket):
 
     print(f"Downloading {source_s3_uri} ...")
     with tempfile.NamedTemporaryFile(delete=False, suffix=".dcm") as tmp:
-        s3_client.download_file(bucket, key, tmp.name)
+        tmp.flush()
         tmp_path = tmp.name
+    s3_client.download_file(bucket, key, tmp_path)
 
     print(f"Uploading to s3://{default_bucket}/{dest_key} ...")
     s3_client.upload_file(tmp_path, default_bucket, dest_key)

@@ -84,7 +84,7 @@ class AWSService:
             return buckets
             
         except ClientError as e:
-            logger.error(f"Failed to list S3 buckets: {e}")
+            logger.warning(f"Failed to list S3 buckets: {e}")
             raise
     
     def list_bucket_objects(self, bucket_name: str, prefix: str = "") -> List[Dict]:
@@ -112,7 +112,7 @@ class AWSService:
             return objects
             
         except ClientError as e:
-            logger.error(f"Failed to list bucket objects: {e}")
+            logger.warning(f"Failed to list bucket objects: {e}")
             raise
     
     def download_from_s3(self, bucket: str, key: str, local_path: str) -> str:
@@ -126,7 +126,7 @@ class AWSService:
             logger.info(f"Downloaded s3://{bucket}/{key} to {local_path}")
             return local_path
         except ClientError as e:
-            logger.error(f"Failed to download from S3: {e}")
+            logger.warning(f"Failed to download from S3: {e}")
             raise
 
     def get_mlflow_tracking_url(self, tracking_server_arn: str) -> str:
@@ -183,7 +183,7 @@ class AWSService:
                 )
                 return url
             except ClientError as e:
-                logger.error("Failed to generate Studio URL for mlflow-app ARN: %s", e)
+                logger.warning("Failed to generate Studio URL for mlflow-app ARN: %s", e)
                 raise ValueError(
                     f"Could not generate Studio URL for MLflow app '{server_name}': {e}. "
                     "Please open SageMaker Studio manually and navigate to the MLflow app."
@@ -221,7 +221,7 @@ class AWSService:
                 except ClientError as inner_e:
                     raise ValueError(f"Could not resolve MLflow server '{server_name}': {inner_e}")
             else:
-                logger.error("Failed to generate presigned MLflow URL: %s", e)
+                logger.warning("Failed to generate presigned MLflow URL: %s", e)
                 raise
 
         if not url:
@@ -258,5 +258,5 @@ class AWSService:
                 "etag": response["ETag"]
             }
         except ClientError as e:
-            logger.error(f"Failed to get S3 object metadata: {e}")
+            logger.warning(f"Failed to get S3 object metadata: {e}")
             raise

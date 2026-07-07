@@ -18,3 +18,9 @@ COPY src/inference/${TASK}/requirements.txt /tmp/requirements-inference.txt
 RUN pip install --no-cache-dir -r /tmp/requirements-inference.txt
 
 # SAGEMAKER_PROGRAM is set at deploy time via create_model Environment — not baked in.
+
+# NOTE: SageMaker inference containers require root for nginx, gunicorn, and the
+# multi-model server. A non-root USER is not added here.
+
+# NOTE: HEALTHCHECK is not applicable — SageMaker manages endpoint health via
+# its own /ping route and orchestration layer.

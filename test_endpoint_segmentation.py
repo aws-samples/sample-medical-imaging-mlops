@@ -139,6 +139,7 @@ def save_mask(result: dict, output_path: str):
         # nibabel can load from a file-like object via a temp file
         with tempfile.NamedTemporaryFile(delete=False, suffix=".nii.gz") as tmp:
             tmp.write(raw)
+            tmp.flush()
             tmp_path = tmp.name
         nii = nib.load(tmp_path)
         nib.save(nii, output_path)

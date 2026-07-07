@@ -75,8 +75,10 @@ def _s3_to_tmp(s3_uri: str, suffix: str = ".nii.gz") -> str:
     bucket, key = parts[0], parts[1]
     s3 = boto3.client("s3")
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as f:
-        s3.download_file(bucket, key, f.name)
-        return f.name
+        f.flush()
+        tmp_path = f.name
+    s3.download_file(bucket, key, tmp_path)
+    return tmp_path
 
 
 def input_fn(request_body: Union[str, bytes], content_type: str) -> str:
@@ -84,6 +86,7 @@ def input_fn(request_body: Union[str, bytes], content_type: str) -> str:
     if content_type == "application/octet-stream":
         with tempfile.NamedTemporaryFile(delete=False, suffix=".nii.gz") as f:
             f.write(request_body)
+            f.flush()
             return f.name
 
     if content_type == "application/json":
@@ -102,6 +105,7 @@ def input_fn(request_body: Union[str, bytes], content_type: str) -> str:
             raw = base64.b64decode(uri)
             with tempfile.NamedTemporaryFile(delete=False, suffix=".nii.gz") as f:
                 f.write(raw)
+                f.flush()
                 return f.name
         except Exception:
             raise ValueError(f"Cannot resolve input: {uri}")
@@ -130,9 +134,11 @@ def output_fn(mask: np.ndarray, accept: str) -> str:
     """Return mask as base64-encoded NIfTI bytes or JSON with stats."""
     nii  = nib.Nifti1Image(mask, affine=np.eye(4))
     with tempfile.NamedTemporaryFile(delete=False, suffix=".nii.gz") as f:
-        nib.save(nii, f.name)
-        with open(f.name, "rb") as fh:
-            encoded = base64.b64encode(fh.read()).decode("utf-8")
+        f.flush()
+        tmp_path = f.name
+    nib.save(nii, tmp_path)
+    with open(tmp_path, "rb") as fh:
+        encoded = base64.b64encode(fh.read()).decode("utf-8")
 
     result = {
         "mask_nifti_b64": encoded,

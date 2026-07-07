@@ -36,10 +36,12 @@ def _s3_to_bucket_key(s3_uri: str):
 
 def _download_s3(s3_uri: str, suffix: str = ".dcm") -> str:
     bucket, key = _s3_to_bucket_key(s3_uri)
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
-    boto3.client("s3").download_file(bucket, key, tmp.name)
-    logger.info("Downloaded %s → %s", s3_uri, tmp.name)
-    return tmp.name
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        tmp.flush()
+        tmp_path = tmp.name
+    boto3.client("s3").download_file(bucket, key, tmp_path)
+    logger.info("Downloaded %s → %s", s3_uri, tmp_path)
+    return tmp_path
 
 
 # ── SageMaker handler functions ───────────────────────────────────────────────
@@ -53,7 +55,7 @@ def model_fn(model_dir: str) -> Dict[str, Any]:
     result_path = os.path.join(model_dir, "result.json")
     if not os.path.exists(result_path):
         raise FileNotFoundError("result.json not found in model_dir — was the model trained with the updated train.py?")
-    with open(result_path) as f:
+    with open(result_path, encoding="utf-8") as f:
         result = json.load(f)
     model_name = result["model_name"]
     logger.info("Model name from result.json: %s", model_name)
@@ -62,7 +64,7 @@ def model_fn(model_dir: str) -> Dict[str, Any]:
     label_dict_path = os.path.join(model_dir, "label_dict.json")
     if not os.path.exists(label_dict_path):
         raise FileNotFoundError("label_dict.json not found in model_dir")
-    with open(label_dict_path) as f:
+    with open(label_dict_path, encoding="utf-8") as f:
         label_dict = json.load(f)
     num_classes = len(label_dict)
     logger.info("num_classes from label_dict.json: %d  labels: %s", num_classes, list(label_dict.keys()))
@@ -111,11 +113,12 @@ def model_fn(model_dir: str) -> Dict[str, Any]:
 def input_fn(request_body: Union[str, bytes], content_type: str) -> str:
     """Return a local file path to the DICOM image."""
     if content_type == "application/dicom":
-        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".dcm")
-        tmp.write(request_body)
-        tmp.flush()
-        logger.info("Received raw DICOM bytes → %s", tmp.name)
-        return tmp.name
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".dcm") as tmp:
+            tmp.write(request_body)
+            tmp.flush()
+            tmp_path = tmp.name
+        logger.info("Received raw DICOM bytes → %s", tmp_path)
+        return tmp_path
 
     if content_type == "application/json":
         data = json.loads(request_body)

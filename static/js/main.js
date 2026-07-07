@@ -1,5 +1,16 @@
 // Main JavaScript file for MedML Training Platform
 
+// ── HTML escaping utility (prevents XSS in template strings) ─────────────────
+function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 // ── Tab system ────────────────────────────────────────────────────────────────
 const _tabInits   = {};
 const _tabVisited = {};

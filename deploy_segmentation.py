@@ -210,6 +210,7 @@ def save_mask(result: dict, output_path: str):
         import nibabel as nib
         with tempfile.NamedTemporaryFile(delete=False, suffix=".nii.gz") as tmp:
             tmp.write(raw)
+            tmp.flush()
             tmp_path = tmp.name
         nii = nib.load(tmp_path)
         nib.save(nii, output_path)

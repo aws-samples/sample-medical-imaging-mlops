@@ -48,8 +48,8 @@ echo "Press Ctrl+C to stop all services"
 cleanup() {
     echo ""
     echo "🛑 Stopping services..."
-    kill $MLFLOW_PID 2>/dev/null
-    kill $TENSORBOARD_PID 2>/dev/null
+    kill "$MLFLOW_PID" 2>/dev/null
+    kill "$TENSORBOARD_PID" 2>/dev/null
     echo "✅ All services stopped"
     exit 0
 }

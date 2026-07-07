@@ -427,7 +427,7 @@ def main():
         # Remove internal idx fields before writing CSV
         csv_rows = [{k: v for k, v in r.items() if k not in ("true_idx", "pred_idx")}
                     for r in rows]
-        with open(OUTPUT_DIR / "predictions.csv", "w", newline="") as f:
+        with open(OUTPUT_DIR / "predictions.csv", "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=csv_rows[0].keys())
             writer.writeheader()
             writer.writerows(csv_rows)
@@ -728,7 +728,7 @@ def main():
     # predictions.csv
     if rows:
         csv_path = OUTPUT_DIR / "predictions.csv"
-        with open(csv_path, "w", newline="") as f:
+        with open(csv_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=rows[0].keys())
             writer.writeheader()
             writer.writerows(rows)

@@ -163,7 +163,7 @@ async def start_training(config: TrainingConfig, dataset_path: str):
         
         return job
     except Exception as e:
-        logger.error(f"Failed to start training: {e}")
+        logger.warning(f"Failed to start training: {e}")
         raise HTTPException(status_code=500, detail="Failed to start training job")
 
 @router.get("/jobs", response_model=List[TrainingJob])
@@ -296,7 +296,7 @@ async def get_sagemaker_job_status(job_name: str):
             raise ValueError("AWS credentials not configured")
         return sm_training_service.get_job_status(job_name, aws_service.sagemaker_client)
     except Exception as e:
-        logger.error(f"Failed to get SageMaker job status: {e}")
+        logger.warning(f"Failed to get SageMaker job status: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -309,7 +309,7 @@ async def stop_sagemaker_job(job_name: str):
         sm_training_service.stop_training_job(job_name, aws_service.sagemaker_client)
         return {"job_name": job_name, "status": "Stopping"}
     except Exception as e:
-        logger.error(f"Failed to stop SageMaker job: {e}")
+        logger.warning(f"Failed to stop SageMaker job: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -406,7 +406,7 @@ async def get_mlflow_url(arn: str):
         url = aws_service.get_mlflow_tracking_url(arn)
         return {"url": url}
     except Exception as e:
-        logger.error(f"Failed to resolve MLflow ARN: {e}")
+        logger.warning(f"Failed to resolve MLflow ARN: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

@@ -54,6 +54,7 @@ def decode_mask(result: dict) -> np.ndarray:
     raw = base64.b64decode(b64)
     with tempfile.NamedTemporaryFile(suffix=".nii.gz", delete=False) as f:
         f.write(raw)
+        f.flush()
         tmp_path = f.name
     mask = nib.load(tmp_path).get_fdata().astype(np.uint8)
     os.unlink(tmp_path)
@@ -65,8 +66,9 @@ def load_gt_mask(s3_client, bucket: str, key: str) -> np.ndarray:
     import tempfile, nibabel as nib
 
     with tempfile.NamedTemporaryFile(suffix=".nii.gz", delete=False) as f:
-        s3_client.download_file(bucket, key, f.name)
+        f.flush()
         tmp_path = f.name
+    s3_client.download_file(bucket, key, tmp_path)
     mask = nib.load(tmp_path).get_fdata().astype(np.uint8)
     os.unlink(tmp_path)
     return mask
@@ -202,7 +204,7 @@ def main():
 
     if rows:
         csv_path = OUTPUT_DIR / "predictions.csv"
-        with open(csv_path, "w", newline="") as f:
+        with open(csv_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=["subject", "dice", "iou"])
             writer.writeheader()
             writer.writerows(rows)

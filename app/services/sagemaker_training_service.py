@@ -237,6 +237,7 @@ class SageMakerTrainingService:
         key    = "/".join(path.split("/")[1:])
 
         with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as tmp:
+            tmp.flush()
             tmp_path = tmp.name
 
         result = None

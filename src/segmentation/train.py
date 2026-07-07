@@ -81,6 +81,7 @@ if args.checkpoint_s3_uri:
         key    = "/".join(path.split("/")[1:])
         s3     = boto3.client("s3")
         with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as tmp:
+            tmp.flush()
             tmp_path = tmp.name
         s3.download_file(bucket, key, tmp_path)
         with tarfile.open(tmp_path, "r:gz") as tar:
@@ -175,7 +176,7 @@ result = {
     "fine_tuned_from":  fine_tuned_from or None,
 }
 result_path = os.path.join(args.model_dir, "result.json")
-with open(result_path, "w") as f:
+with open(result_path, "w", encoding="utf-8") as f:
     import json as _json
     _json.dump(result, f, indent=2)
 logger.info("Saved result.json: %s", result)

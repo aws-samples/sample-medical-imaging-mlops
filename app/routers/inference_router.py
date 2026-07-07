@@ -34,7 +34,7 @@ async def invoke_endpoint(request: InferenceRequest):
         )
         return result
     except Exception as e:
-        logger.error("Inference failed: %s", e)
+        logger.warning("Inference failed: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -59,7 +59,7 @@ async def invoke_endpoint_local(
         )
         return result
     except Exception as e:
-        logger.error("Local file inference failed: %s", e)
+        logger.warning("Local file inference failed: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 

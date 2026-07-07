@@ -31,7 +31,7 @@ async def configure_aws_credentials(credentials: AWSCredentials):
         else:
             raise HTTPException(status_code=400, detail="Invalid AWS credentials")
     except Exception as e:
-        logger.error(f"AWS configuration error: {e}")
+        logger.warning(f"AWS configuration error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/buckets", response_model=List[S3Bucket])
