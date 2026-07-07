@@ -41,8 +41,11 @@ from botocore.config import Config
 # ── Config ────────────────────────────────────────────────────────────────────
 DEFAULT_ENDPOINT = "my-seg-endpoint"
 DEFAULT_REGION   = "us-east-1"
-# Public aorta NIfTI sample — replace with your own
-DEFAULT_S3_URI   = "s3://public-datasets-imaging-us-east-1/aorta/val/subject_001/img.nii.gz"
+# Override via TEST_SEGMENTATION_S3_URI env var or --s3-uri flag
+DEFAULT_S3_URI   = os.environ.get(
+    "TEST_SEGMENTATION_S3_URI",
+    "s3://your-bucket/path/to/test/volume.nii.gz",
+)
 
 # 3D segmentation inference is slow — allow up to 5 minutes
 INVOKE_TIMEOUT_S = 300

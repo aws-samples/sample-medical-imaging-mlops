@@ -1,6 +1,6 @@
 #!/bin/bash
 # Usage: ./build_and_push.sh <aws_account_id> <region> [classification|segmentation]
-# Example: ./build_and_push.sh 575108919340 us-east-1 classification
+# Example: ./build_and_push.sh <YOUR_AWS_ACCOUNT_ID> us-east-1 classification
 
 set -e
 

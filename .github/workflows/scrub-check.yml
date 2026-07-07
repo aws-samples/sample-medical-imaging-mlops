@@ -1,0 +1,66 @@
+name: Scrub Check
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  check-account-specific-values:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for hardcoded AWS account IDs
+        run: |
+          # Add your AWS account ID(s) here to block accidental commits
+          ACCOUNT_IDS="575108919340"
+
+          for id in $ACCOUNT_IDS; do
+            if grep -r "$id" \
+              --include='*.py' --include='*.js' --include='*.html' \
+              --include='*.sh' --include='*.md' --include='*.yml' \
+              --include='*.yaml' --include='*.json' \
+              --exclude-dir='.github' \
+              --exclude-dir='node_modules' \
+              --exclude-dir='.git' .; then
+              echo "::error::Found hardcoded AWS account ID ($id). Use environment variables instead."
+              exit 1
+            fi
+          done
+
+      - name: Check for hardcoded IAM Role ARNs
+        run: |
+          # Matches arn:aws:iam::<12-digit-id>:role/ patterns (excludes test fixtures with 123456789012)
+          if grep -rP 'arn:aws:iam::(?!123456789012)\d{12}:role/' \
+            --include='*.py' --include='*.js' --include='*.html' \
+            --include='*.sh' --include='*.md' \
+            --exclude-dir='.github' \
+            --exclude-dir='.git' .; then
+            echo "::error::Found hardcoded IAM Role ARN. Use environment variables instead."
+            exit 1
+          fi
+
+      - name: Check for account-specific S3 buckets
+        run: |
+          # Add bucket name patterns that should not appear in public code
+          BLOCKED_BUCKETS="public-datasets-imaging-us-east-1|sagemaker-us-east-1-575108919340"
+
+          if grep -rE "$BLOCKED_BUCKETS" \
+            --include='*.py' --include='*.js' --include='*.html' \
+            --include='*.sh' --include='*.md' --include='*.json' \
+            --exclude-dir='.github' \
+            --exclude-dir='.git' .; then
+            echo "::error::Found account-specific S3 bucket name. Replace with placeholder or env var."
+            exit 1
+          fi
+
+      - name: Check for leaked secrets patterns
+        run: |
+          # Check for AWS access key patterns
+          if grep -rP 'AKIA[0-9A-Z]{16}' \
+            --include='*.py' --include='*.js' --include='*.html' \
+            --include='*.sh' --include='*.env' --include='*.json' \
+            --exclude-dir='.git' .; then
+            echo "::error::Found potential AWS access key. Remove immediately."
+            exit 1
+          fi

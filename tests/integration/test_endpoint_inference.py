@@ -8,7 +8,7 @@ Usage:
 Environment variables (or set directly below):
     AWS_DEFAULT_REGION   default: us-east-1
     ENDPOINT_NAME        default: test-endp
-    TEST_IMAGE_S3_URI    default: s3://public-datasets-imaging-us-east-1/vindr-spinexr-subset/test/Foraminal_stenosis/412cb981a940a9689347c614cb1489dd.dcm
+    TEST_IMAGE_S3_URI    default: s3://your-bucket/path/to/test/image.dcm
     TEST_LOCAL_IMAGE     path to a local image file (DICOM, PNG, JPG); if not set a synthetic PNG is used
 """
 import base64
@@ -25,8 +25,7 @@ REGION        = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
 ENDPOINT_NAME = os.environ.get("ENDPOINT_NAME", "test-endp")
 TEST_IMAGE    = os.environ.get(
     "TEST_IMAGE_S3_URI",
-    "s3://public-datasets-imaging-us-east-1/vindr-spinexr-subset/test/"
-    "Foraminal_stenosis/412cb981a940a9689347c614cb1489dd.dcm",
+    "s3://your-bucket/path/to/test/image.dcm",
 )
 TEST_LOCAL_IMAGE = os.environ.get("TEST_LOCAL_IMAGE", "")
 

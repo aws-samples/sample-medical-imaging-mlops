@@ -14,7 +14,7 @@ set -e
 # ── Config (override via env vars) ────────────────────────────────────────────
 export AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
 export ENDPOINT_NAME="${ENDPOINT_NAME:-test-endp}"
-export TEST_IMAGE_S3_URI="${TEST_IMAGE_S3_URI:-s3://public-datasets-imaging-us-east-1/vindr-spinexr-subset/test/Foraminal_stenosis/412cb981a940a9689347c614cb1489dd.dcm}"
+export TEST_IMAGE_S3_URI="${TEST_IMAGE_S3_URI:-s3://your-bucket/path/to/test/image.dcm}"
 
 # Optional: pass a local image file as first argument
 if [ -n "$1" ]; then

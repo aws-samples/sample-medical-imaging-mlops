@@ -267,13 +267,13 @@ aws ecr get-login-password --region us-east-1 \
 
 ```bash
 # Classification training image
-./build_and_push.sh 575108919340 us-east-1 classification
+./build_and_push.sh <YOUR_AWS_ACCOUNT_ID> us-east-1 classification
 
 # Segmentation training image
-./build_and_push.sh 575108919340 us-east-1 segmentation
+./build_and_push.sh <YOUR_AWS_ACCOUNT_ID> us-east-1 segmentation
 
 # Inference image (classification)
-./build_and_push_inference.sh 575108919340 us-east-1
+./build_and_push_inference.sh <YOUR_AWS_ACCOUNT_ID> us-east-1
 ```
 
 ### Base image

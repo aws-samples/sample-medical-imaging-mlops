@@ -1064,8 +1064,8 @@ function formatDuration(seconds) {
 
 // ── Container Image Management ────────────────────────────────────────────────
 const DEFAULT_CONTAINERS = [
-    { label: "classification-latest", uri: "575108919340.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-classification:latest" },
-    { label: "segmentation-latest",   uri: "575108919340.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-segmentation:latest" },
+    { label: "classification-latest", uri: "YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-classification:latest" },
+    { label: "segmentation-latest",   uri: "YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-segmentation:latest" },
 ];
 
 function loadContainers() {

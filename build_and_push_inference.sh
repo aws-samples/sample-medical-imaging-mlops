@@ -1,7 +1,7 @@
 #!/bin/bash
 # Build and push the SageMaker inference image.
 # Usage: ./build_and_push_inference.sh <aws_account_id> <region> [classification|segmentation]
-# Example: ./build_and_push_inference.sh 575108919340 us-east-1 classification
+# Example: ./build_and_push_inference.sh <YOUR_AWS_ACCOUNT_ID> us-east-1 classification
 
 set -e
 

@@ -17,9 +17,9 @@ from botocore.config import Config
 
 # ── Config ────────────────────────────────────────────────────────────────────
 DEFAULT_ENDPOINT   = "test-endp"
-DEFAULT_SOURCE_IMG = (
-    "s3://public-datasets-imaging-us-east-1/vindr-spinexr-subset/test/"
-    "Foraminal_stenosis/412cb981a940a9689347c614cb1489dd.dcm"
+DEFAULT_SOURCE_IMG = os.environ.get(
+    "TEST_IMAGE_S3_URI",
+    "s3://your-bucket/path/to/test/image.dcm",
 )
 DEFAULT_REGION = "us-east-1"
 

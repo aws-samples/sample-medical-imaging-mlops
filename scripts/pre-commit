@@ -1,0 +1,56 @@
+#!/bin/bash
+#
+# Pre-commit hook: blocks commits containing account-specific values.
+# Install: cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+#
+
+set -e
+
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+# --- Configuration ---
+# Add AWS account IDs that should never appear in committed code
+BLOCKED_ACCOUNT_IDS="575108919340"
+
+# Add S3 bucket names that are account-specific
+BLOCKED_BUCKETS="public-datasets-imaging-us-east-1|sagemaker-us-east-1-575108919340"
+
+# --- Checks ---
+FAILED=0
+
+# Check staged diff for account IDs
+for id in $BLOCKED_ACCOUNT_IDS; do
+  if git diff --cached --diff-filter=ACMR | grep -q "$id"; then
+    echo -e "${RED}ERROR:${NC} Staged changes contain AWS account ID: $id"
+    echo "       Use environment variables or <YOUR_AWS_ACCOUNT_ID> placeholder instead."
+    FAILED=1
+  fi
+done
+
+# Check staged diff for blocked bucket names
+if git diff --cached --diff-filter=ACMR | grep -qE "$BLOCKED_BUCKETS"; then
+  echo -e "${RED}ERROR:${NC} Staged changes contain account-specific S3 bucket name."
+  echo "       Use s3://your-bucket/... placeholder or env vars instead."
+  FAILED=1
+fi
+
+# Check for IAM role ARNs (excluding the test mock account 123456789012)
+if git diff --cached --diff-filter=ACMR | grep -P 'arn:aws:iam::(?!123456789012)\d{12}:role/' > /dev/null 2>&1; then
+  echo -e "${RED}ERROR:${NC} Staged changes contain a hardcoded IAM Role ARN."
+  echo "       Use environment variables instead."
+  FAILED=1
+fi
+
+# Check for AWS access keys
+if git diff --cached --diff-filter=ACMR | grep -P 'AKIA[0-9A-Z]{16}' > /dev/null 2>&1; then
+  echo -e "${RED}ERROR:${NC} Staged changes contain what looks like an AWS Access Key."
+  echo "       NEVER commit credentials. Use environment variables."
+  FAILED=1
+fi
+
+if [ $FAILED -ne 0 ]; then
+  echo ""
+  echo "Commit blocked. Fix the issues above or use 'git commit --no-verify' to bypass (not recommended)."
+  exit 1
+fi

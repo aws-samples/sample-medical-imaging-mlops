@@ -1,10 +1,10 @@
 // Deployment JavaScript
 
-const INFERENCE_IMAGE_TEMPLATE = '575108919340.dkr.ecr.{region}.amazonaws.com/sm-inference-byoc-classification:latest';
+const INFERENCE_IMAGE_TEMPLATE = 'YOUR_ACCOUNT_ID.dkr.ecr.{region}.amazonaws.com/sm-inference-byoc-classification:latest';
 
 const DEFAULT_INFERENCE_CONTAINERS = [
-    { label: "classification-byoc (BYOC)",   uri: "575108919340.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest" },
-    { label: "segmentation-byoc (BYOC)",     uri: "575108919340.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-segmentation:latest" },
+    { label: "classification-byoc (BYOC)",   uri: "YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest" },
+    { label: "segmentation-byoc (BYOC)",     uri: "YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-segmentation:latest" },
     { label: "pytorch-inference-gpu (AWS)",  uri: "763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-inference:2.6.0-gpu-py312-cu124-ubuntu22.04-sagemaker" },
     { label: "pytorch-inference-cpu (AWS)",  uri: "763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-inference:2.6.0-cpu-py312-ubuntu22.04-sagemaker" },
 ];
