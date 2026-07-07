@@ -342,11 +342,17 @@ pip install -r requirements.txt
 # Copy and configure environment variables
 cp .env.example .env
 
+# Configure account-specific values (ECR URIs, IAM role, etc.)
+cp .env.local.example .env.local
+# Edit .env.local with your AWS account ID, role ARN, and S3 paths
+
 # Start the app
 python main.py
 ```
 
 App runs at `http://localhost:8000`
+
+> On first launch with empty data stores, click **Sync from AWS** on the Training or Deployment tabs to pull existing jobs and endpoints from your AWS account.
 
 ### With Docker
 
@@ -371,6 +377,8 @@ This starts MLflow, TensorBoard, and the FastAPI app together.
 
 ## Environment Variables
 
+### `.env` — General application config
+
 | Variable | Description | Default |
 |---|---|---|
 | `AWS_ACCESS_KEY_ID` | AWS access key | — |
@@ -379,6 +387,22 @@ This starts MLflow, TensorBoard, and the FastAPI app together.
 | `MLFLOW_TRACKING_URI` | MLflow server URI | `http://localhost:5000` |
 | `MLFLOW_EXPERIMENT_NAME` | MLflow experiment name | `medical_imaging_experiments` |
 | `TENSORBOARD_LOG_DIR` | TensorBoard log directory | `./logs/tensorboard` |
+
+### `.env.local` — Account-specific config (gitignored)
+
+| Variable | Description | Example |
+|---|---|---|
+| `AWS_ACCOUNT_ID` | Your 12-digit AWS account ID | `123456789012` |
+| `SAGEMAKER_ROLE_ARN` | SageMaker execution role ARN | `arn:aws:iam::123456789012:role/SageMakerRole` |
+| `TRAINING_IMAGE_CLASSIFICATION` | ECR URI for classification training image | `123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-classification:latest` |
+| `TRAINING_IMAGE_SEGMENTATION` | ECR URI for segmentation training image | `123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-segmentation:latest` |
+| `INFERENCE_IMAGE_CLASSIFICATION` | ECR URI for classification inference image | `123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest` |
+| `INFERENCE_IMAGE_SEGMENTATION` | ECR URI for segmentation inference image | `123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-segmentation:latest` |
+| `DEFAULT_DATA_S3_URI` | Default training data S3 URI (pre-populates form) | `s3://your-bucket/training-data/` |
+| `TEST_IMAGE_S3_URI` | Test image for integration tests | `s3://your-bucket/test/image.dcm` |
+| `TEST_SEGMENTATION_S3_URI` | Test volume for segmentation tests | `s3://your-bucket/test/volume.nii.gz` |
+
+> `.env.local` is loaded after `.env` with override priority. Copy `.env.local.example` and fill in your values. This file is gitignored and never committed.
 
 ## Project Structure
 
@@ -634,6 +658,7 @@ One of `--image` or `--s3-uri` is required. When using `--image`, the file is ba
 
 | Prefix | Description |
 |---|---|
+| `/api/config` | Runtime configuration (account ID, role ARN, ECR URIs) |
 | `/api/aws` | AWS credentials and S3 operations |
 | `/api/training` | Local and SageMaker training jobs |
 | `/api/deployment` | Model deployment to SageMaker |
@@ -649,6 +674,19 @@ One of `--image` or `--s3-uri` is required. When using `--image`, the file is ba
 |---|---|---|
 | `POST` | `/api/training/models/upload-code` | Upload a `.zip` file of custom model code; extracts to `data/custom_models/<model_name>/` and returns `{"model_name", "source_dir", "files"}`; query params: `model_name` (string); form field: `file` (`.zip` only); rejects absolute paths and `..` traversal in the archive |
 | `POST` | `/api/training/models/import` | Import a pre-trained model artifact from S3 |
+| `POST` | `/api/training/sagemaker/sync` | Pull up to 100 training jobs from AWS and merge into local store; optional `?name_contains=` filter |
+
+### `/api/deployment` routes
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/deployment/sync` | Pull endpoints from AWS and merge into local store; optional `?name_contains=` filter |
+
+### `/api/evaluation` routes
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/evaluation/sync` | Pull evaluation processing jobs from AWS and merge into local store; optional `?name_contains=` filter |
 
 ### `/api/inference` routes
 
