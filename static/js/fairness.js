@@ -27,7 +27,7 @@ async function runFairnessScan(e) {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scanning...';
     status.style.display = 'flex';
     status.className = 'sm-status-banner sm-status-submitting';
-    status.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Scanning DICOM files in <code>${s3Uri}</code>...`;
+    status.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Scanning DICOM files in <code>${escapeHtml(s3Uri)}</code>...`;
     results.style.display = 'none';
 
     // Destroy old charts
@@ -48,7 +48,7 @@ async function runFairnessScan(e) {
         results.style.display = 'block';
     } catch (err) {
         status.className = 'sm-status-banner sm-status-error';
-        status.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${err.message}`;
+        status.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${escapeHtml(err.message)}`;
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-search"></i> Scan Demographics';
@@ -150,7 +150,7 @@ function renderMissingRates(missingRates, total) {
         .filter(([k]) => !['Modality','BodyPartExamined','PatientRace'].includes(k))
         .map(([attr, pct]) => `
             <tr>
-                <td>${attr}</td>
+                <td>${escapeHtml(attr)}</td>
                 <td>
                     <div style="display:flex; align-items:center; gap:0.5rem;">
                         <div style="flex:1; background:#eee; border-radius:4px; height:8px;">
@@ -176,10 +176,10 @@ function renderSampleTable(sample) {
     if (!container || !sample?.length) return;
 
     const cols = ['key', 'PatientSex', 'AgeBucket', 'EthnicGroup', 'Modality'];
-    const headers = cols.map(c => `<th style="padding:4px 8px; text-align:left; font-size:0.8rem;">${c}</th>`).join('');
+    const headers = cols.map(c => `<th style="padding:4px 8px; text-align:left; font-size:0.8rem;">${escapeHtml(c)}</th>`).join('');
     const rows = sample.map(row =>
         `<tr style="border-bottom:1px solid #f5f5f5;">${
-            cols.map(c => `<td style="padding:4px 8px; font-size:0.78rem; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${row[c] || ''}">${row[c] || '—'}</td>`).join('')
+            cols.map(c => `<td style="padding:4px 8px; font-size:0.78rem; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(row[c] || '')}">${escapeHtml(row[c] || '—')}</td>`).join('')
         }</tr>`
     ).join('');
 

@@ -38,7 +38,7 @@ async function browseS3Uri() {
             } else {
                 container.innerHTML = response.objects.map(obj => `
                     <div class="bucket-item">
-                        <div class="bucket-name">${obj.key}</div>
+                        <div class="bucket-name">${escapeHtml(obj.key)}</div>
                         <div class="bucket-info">
                             <div>Size: ${(obj.size / 1024).toFixed(1)} KB</div>
                             <div>Modified: ${formatDate(obj.last_modified)}</div>
@@ -107,9 +107,9 @@ function displayBuckets(buckets) {
         const bucketElement = document.createElement('div');
         bucketElement.className = 'bucket-item';
         bucketElement.innerHTML = `
-            <div class="bucket-name">${bucket.name}</div>
+            <div class="bucket-name">${escapeHtml(bucket.name)}</div>
             <div class="bucket-info">
-                <div>Region: ${bucket.region}</div>
+                <div>Region: ${escapeHtml(bucket.region)}</div>
                 <div>Created: ${formatDate(bucket.creation_date)}</div>
             </div>
         `;

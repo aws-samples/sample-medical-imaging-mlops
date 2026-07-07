@@ -40,7 +40,7 @@ function populateInferenceContainerDropdown() {
     if (!select) return;
     const containers = loadInferenceContainers();
     select.innerHTML = containers.map(c =>
-        `<option value="${c.uri}">${c.label} — ${c.uri}</option>`
+        `<option value="${escapeHtml(c.uri)}">${escapeHtml(c.label)} — ${escapeHtml(c.uri)}</option>`
     ).join('');
 }
 
@@ -151,14 +151,14 @@ async function deployModel(e) {
         if (banner) {
             banner.className = 'sm-status-banner sm-status-success';
             banner.innerHTML = importOnly
-                ? `<i class="fas fa-check-circle"></i> Endpoint <strong>${result.endpoint_name}</strong> imported (${result.status})`
-                : `<i class="fas fa-check-circle"></i> Endpoint <strong>${result.endpoint_name}</strong> is being created`;
+                ? `<i class="fas fa-check-circle"></i> Endpoint <strong>${escapeHtml(result.endpoint_name)}</strong> imported (${escapeHtml(result.status)})`
+                : `<i class="fas fa-check-circle"></i> Endpoint <strong>${escapeHtml(result.endpoint_name)}</strong> is being created`;
         }
         loadDeployments();
     } catch (err) {
         if (banner) {
             banner.className = 'sm-status-banner sm-status-error';
-            banner.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${err.message}`;
+            banner.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${escapeHtml(err.message)}`;
         }
     } finally {
         btn.disabled = false;
@@ -212,25 +212,25 @@ function displayDeployments(deployments) {
     container.innerHTML = deployments.map(d => `
         <div class="job-item">
             <div class="job-header">
-                <div class="job-id">${d.endpoint_name}</div>
-                <div class="job-status ${statusClass[d.status] || 'status-unknown'}">${d.status}</div>
+                <div class="job-id">${escapeHtml(d.endpoint_name)}</div>
+                <div class="job-status ${statusClass[d.status] || 'status-unknown'}">${escapeHtml(d.status)}</div>
             </div>
             <div class="job-details">
                 <div><strong>Type:</strong> ${d.endpoint_type === 'async' ? '⚡ Async' : '🔄 Real-time'}</div>
-                <div><strong>Instance:</strong> ${d.instance_type} × ${d.instance_count}</div>
-                <div><strong>Created:</strong> ${d.created_at ? new Date(d.created_at).toLocaleString() : 'N/A'}</div>
-                ${d.output_s3_uri ? `<div><strong>Output:</strong> <code style="font-size:0.78rem;">${d.output_s3_uri}</code></div>` : ''}
-                ${d.data_capture_enabled ? `<div><strong>Data Capture:</strong> <span style="color:#1e8449;"><i class="fas fa-circle" style="font-size:0.6rem;"></i> Enabled</span> → <code style="font-size:0.78rem;">${d.capture_s3_uri}</code></div>` : ''}
-                ${d.endpoint_url ? `<div><strong>URL:</strong> <code style="font-size:0.78rem;">${d.endpoint_url}</code></div>` : ''}
-                ${d.failure_reason ? `<div style="color:#c62828;"><strong>Failure:</strong> ${d.failure_reason}</div>` : ''}
+                <div><strong>Instance:</strong> ${escapeHtml(d.instance_type)} × ${d.instance_count}</div>
+                <div><strong>Created:</strong> ${d.created_at ? escapeHtml(new Date(d.created_at).toLocaleString()) : 'N/A'}</div>
+                ${d.output_s3_uri ? `<div><strong>Output:</strong> <code style="font-size:0.78rem;">${escapeHtml(d.output_s3_uri)}</code></div>` : ''}
+                ${d.data_capture_enabled ? `<div><strong>Data Capture:</strong> <span style="color:#1e8449;"><i class="fas fa-circle" style="font-size:0.6rem;"></i> Enabled</span> → <code style="font-size:0.78rem;">${escapeHtml(d.capture_s3_uri)}</code></div>` : ''}
+                ${d.endpoint_url ? `<div><strong>URL:</strong> <code style="font-size:0.78rem;">${escapeHtml(d.endpoint_url)}</code></div>` : ''}
+                ${d.failure_reason ? `<div style="color:#c62828;"><strong>Failure:</strong> ${escapeHtml(d.failure_reason)}</div>` : ''}
             </div>
             <div class="job-actions">
                 ${!['InService', 'Failed', 'Deleting', 'Deleted'].includes(d.status) ? `
-                <button class="btn btn-secondary" onclick="refreshDeployment('${d.endpoint_name}')">
+                <button class="btn btn-secondary" onclick="refreshDeployment('${escapeHtml(d.endpoint_name)}')">
                     <i class="fas fa-sync"></i> Refresh
                 </button>` : ''}
                 ${!['Deleting','Deleted'].includes(d.status) ? `
-                <button class="btn btn-secondary" onclick="deleteDeployment('${d.endpoint_name}')" style="color:#c62828;">
+                <button class="btn btn-secondary" onclick="deleteDeployment('${escapeHtml(d.endpoint_name)}')" style="color:#c62828;">
                     <i class="fas fa-trash"></i> Delete
                 </button>` : ''}
             </div>
@@ -275,16 +275,16 @@ async function openFillFromJobModal() {
         list.innerHTML = jobs.map(j => `
             <div style="padding:0.6rem 0.5rem; border-bottom:1px solid #f0f0f0; cursor:pointer; border-radius:4px;"
                  onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''"
-                 onclick="fillFromJob('${j.model_artifacts}', '${j.job_name}')">
-                <div style="font-weight:600; font-size:0.9rem;">${j.job_name}</div>
-                <div style="font-size:0.78rem; color:#666; margin-top:2px;">${j.model_artifacts}</div>
+                 onclick="fillFromJob('${escapeHtml(j.model_artifacts)}', '${escapeHtml(j.job_name)}')">
+                <div style="font-weight:600; font-size:0.9rem;">${escapeHtml(j.job_name)}</div>
+                <div style="font-size:0.78rem; color:#666; margin-top:2px;">${escapeHtml(j.model_artifacts)}</div>
                 <div style="font-size:0.75rem; color:#888; margin-top:2px;">
-                    ${j.config?.model_name || ''} · ${j.config?.instance_type || ''} · ${j.config?.epochs || ''} epochs
+                    ${escapeHtml(j.config?.model_name || '')} · ${escapeHtml(j.config?.instance_type || '')} · ${j.config?.epochs || ''} epochs
                 </div>
             </div>
         `).join('');
     } catch (err) {
-        list.innerHTML = `<p style="color:#c62828; padding:0.5rem;">Error loading jobs: ${err.message}</p>`;
+        list.innerHTML = `<p style="color:#c62828; padding:0.5rem;">Error loading jobs: ${escapeHtml(err.message)}</p>`;
     }
 }
 

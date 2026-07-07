@@ -29,7 +29,7 @@ async function loadInferenceEndpoints() {
         const active = (dep.deployments || []).filter(d => d.status === 'InService');
         if (active.length > 0) {
             select.innerHTML = active.map(d =>
-                `<option value="${d.endpoint_name}">${d.endpoint_name}</option>`
+                `<option value="${escapeHtml(d.endpoint_name)}">${escapeHtml(d.endpoint_name)}</option>`
             ).join('');
             return;
         }
@@ -40,7 +40,7 @@ async function loadInferenceEndpoints() {
         const res = await apiCall('/api/inference/endpoints');
         if (res.endpoints && res.endpoints.length > 0) {
             select.innerHTML = res.endpoints.map(e =>
-                `<option value="${e.name}">${e.name} (${e.status})</option>`
+                `<option value="${escapeHtml(e.name)}">${escapeHtml(e.name)} (${escapeHtml(e.status)})</option>`
             ).join('');
             return;
         }
@@ -108,7 +108,7 @@ async function runInference(e) {
         if (savedTo) savedTo.textContent = res.saved_to ? `Saved to: ${res.saved_to}` : '';
 
     } catch (err) {
-        if (banner) { banner.className = 'sm-status-banner sm-status-error'; banner.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${err.message}`; }
+        if (banner) { banner.className = 'sm-status-banner sm-status-error'; banner.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${escapeHtml(err.message)}`; }
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-play"></i> Run Inference';
@@ -135,7 +135,7 @@ function displayClassificationResult(res) {
         const sorted = Object.entries(res.probabilities).sort((a, b) => b[1] - a[1]);
         barsEl.innerHTML = sorted.map(([cls, prob]) => `
             <div class="inf-prob-row">
-                <span class="inf-prob-label">${cls}</span>
+                <span class="inf-prob-label">${escapeHtml(cls)}</span>
                 <div class="inf-prob-bar-wrap">
                     <div class="inf-prob-bar" style="width:${(prob * 100).toFixed(1)}%"></div>
                 </div>

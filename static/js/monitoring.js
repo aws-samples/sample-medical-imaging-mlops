@@ -140,8 +140,8 @@ function renderCaptureViewer(data) {
     if (table && data.recent_records?.length) {
         const rows = data.recent_records.map(r => `
             <tr style="border-bottom:1px solid #f0f0f0;">
-                <td style="padding:0.4rem 0.75rem; font-size:0.78rem; color:#888;">${r.time ? new Date(r.time).toLocaleString() : '—'}</td>
-                <td style="padding:0.4rem 0.75rem; font-size:0.82rem;"><strong>${r.predicted_class}</strong></td>
+                <td style="padding:0.4rem 0.75rem; font-size:0.78rem; color:#888;">${r.time ? escapeHtml(new Date(r.time).toLocaleString()) : '—'}</td>
+                <td style="padding:0.4rem 0.75rem; font-size:0.82rem;"><strong>${escapeHtml(String(r.predicted_class))}</strong></td>
                 <td style="padding:0.4rem 0.75rem; font-size:0.82rem;">${(r.confidence * 100).toFixed(1)}%</td>
             </tr>`).join('');
         table.innerHTML = `
@@ -169,7 +169,7 @@ async function loadMonitorEndpoints() {
         const dep    = await apiCall('/api/deployment/deployments?local_only=true');
         const active = (dep.deployments || []).filter(d => d.status === 'InService');
         select.innerHTML = active.length
-            ? active.map(d => `<option value="${d.endpoint_name}" data-capture="${d.capture_s3_uri || ''}">${d.endpoint_name}${d.data_capture_enabled ? ' 📡' : ''}</option>`).join('')
+            ? active.map(d => `<option value="${escapeHtml(d.endpoint_name)}" data-capture="${escapeHtml(d.capture_s3_uri || '')}">${escapeHtml(d.endpoint_name)}${d.data_capture_enabled ? ' 📡' : ''}</option>`).join('')
             : '<option value="" disabled selected>No InService endpoints</option>';
 
         // Auto-fill capture viewer if any endpoint has capture enabled
@@ -202,8 +202,8 @@ async function loadCvEndpoints(preloaded) {
             + all.map(d => {
                 const captureFlag = d.data_capture_enabled ? ' 📡' : '';
                 const captureUri  = d.capture_s3_uri || '';
-                return `<option value="${d.endpoint_name}" data-capture="${captureUri}" data-status="${d.status}">`
-                    + `${d.endpoint_name}${captureFlag} (${d.status})</option>`;
+                return `<option value="${escapeHtml(d.endpoint_name)}" data-capture="${escapeHtml(captureUri)}" data-status="${escapeHtml(d.status)}">`
+                    + `${escapeHtml(d.endpoint_name)}${captureFlag} (${escapeHtml(d.status)})</option>`;
             }).join('');
 
         // Auto-select first endpoint with capture enabled
@@ -372,7 +372,7 @@ async function loadMonitorSchedules() {
         // Only show schedules (not baselines) in this list
         renderMonitorSchedules((res.schedules || []).filter(s => s.type === 'schedule'));
     } catch (err) {
-        container.innerHTML = `<p style="color:#c62828;">Error: ${err.message}</p>`;
+        container.innerHTML = `<p style="color:#c62828;">Error: ${escapeHtml(err.message)}</p>`;
     }
 }
 
@@ -383,7 +383,7 @@ async function loadBaselineJobs() {
         const res = await apiCall('/api/monitoring/baselines');
         renderBaselineJobs(res.baselines || []);
     } catch (err) {
-        container.innerHTML = `<p style="color:#c62828;">Error: ${err.message}</p>`;
+        container.innerHTML = `<p style="color:#c62828;">Error: ${escapeHtml(err.message)}</p>`;
     }
 }
 
@@ -405,30 +405,30 @@ function renderBaselineJobs(baselines) {
     container.innerHTML = baselines.map(b => `
         <div class="job-item">
             <div class="job-header">
-                <div class="job-id">${b.job_name}</div>
-                <div class="job-status ${statusClass[b.status] || 'status-unknown'}">${b.status}</div>
+                <div class="job-id">${escapeHtml(b.job_name)}</div>
+                <div class="job-status ${statusClass[b.status] || 'status-unknown'}">${escapeHtml(b.status)}</div>
             </div>
             <div class="job-details">
                 <div><strong>Type:</strong> Data Quality Baseline</div>
-                <div><strong>Instance:</strong> ${b.instance_type || 'N/A'}</div>
-                <div><strong>Baseline data:</strong> <code style="font-size:0.78rem;">${b.baseline_data_s3_uri || 'N/A'}</code></div>
-                <div><strong>Output:</strong> <code style="font-size:0.78rem;">${b.output_s3_uri || 'N/A'}</code></div>
-                ${b.created_at ? `<div><strong>Submitted:</strong> ${new Date(b.created_at).toLocaleString()}</div>` : ''}
-                ${b.completed_at ? `<div><strong>Completed:</strong> ${new Date(b.completed_at).toLocaleString()}</div>` : ''}
-                ${b.failure_reason ? `<div style="color:#c62828; font-size:0.82rem;"><strong>Failure:</strong> ${b.failure_reason}</div>` : ''}
+                <div><strong>Instance:</strong> ${escapeHtml(b.instance_type || 'N/A')}</div>
+                <div><strong>Baseline data:</strong> <code style="font-size:0.78rem;">${escapeHtml(b.baseline_data_s3_uri || 'N/A')}</code></div>
+                <div><strong>Output:</strong> <code style="font-size:0.78rem;">${escapeHtml(b.output_s3_uri || 'N/A')}</code></div>
+                ${b.created_at ? `<div><strong>Submitted:</strong> ${escapeHtml(new Date(b.created_at).toLocaleString())}</div>` : ''}
+                ${b.completed_at ? `<div><strong>Completed:</strong> ${escapeHtml(new Date(b.completed_at).toLocaleString())}</div>` : ''}
+                ${b.failure_reason ? `<div style="color:#c62828; font-size:0.82rem;"><strong>Failure:</strong> ${escapeHtml(b.failure_reason)}</div>` : ''}
                 ${b.status === 'Completed' ? `
                 <div style="margin-top:0.5rem; font-size:0.82rem; color:#555;">
                     <strong>Use these URIs in your Data Quality Schedule:</strong><br>
-                    Constraints: <code style="font-size:0.75rem;">${b.output_s3_uri?.replace(/\/$/, '')}/constraints.json</code><br>
-                    Statistics: <code style="font-size:0.75rem;">${b.output_s3_uri?.replace(/\/$/, '')}/statistics.json</code>
+                    Constraints: <code style="font-size:0.75rem;">${escapeHtml((b.output_s3_uri || '').replace(/\/$/, ''))}/constraints.json</code><br>
+                    Statistics: <code style="font-size:0.75rem;">${escapeHtml((b.output_s3_uri || '').replace(/\/$/, ''))}/statistics.json</code>
                 </div>` : ''}
             </div>
             <div class="job-actions">
-                <button class="btn btn-secondary" onclick="deleteBaselineJob('${b.job_name}')">
+                <button class="btn btn-secondary" onclick="deleteBaselineJob('${escapeHtml(b.job_name)}')">
                     <i class="fas fa-times"></i> Remove
                 </button>
                 ${b.status === 'Completed' ? `
-                <button class="btn btn-secondary" onclick="fillScheduleFromBaseline('${b.output_s3_uri}')">
+                <button class="btn btn-secondary" onclick="fillScheduleFromBaseline('${escapeHtml(b.output_s3_uri)}')">
                     <i class="fas fa-arrow-right"></i> Use in Schedule
                 </button>` : ''}
             </div>
@@ -472,8 +472,8 @@ async function refreshDQBaselinePicker() {
         select.innerHTML = '<option value="" disabled selected>Select a baseline…</option>'
             + completed.map(b => {
                 const base = (b.output_s3_uri || '').replace(/\/$/, '');
-                return `<option value="${base}" data-job="${b.job_name}" data-data="${b.baseline_data_s3_uri || ''}">`
-                    + `${b.job_name} — ${b.baseline_data_s3_uri || 'unknown data'}</option>`;
+                return `<option value="${escapeHtml(base)}" data-job="${escapeHtml(b.job_name)}" data-data="${escapeHtml(b.baseline_data_s3_uri || '')}">`
+                    + `${escapeHtml(b.job_name)} — ${escapeHtml(b.baseline_data_s3_uri || 'unknown data')}</option>`;
             }).join('');
     } catch (_) {
         select.innerHTML = '<option value="" disabled selected>Could not load baselines</option>';
@@ -539,23 +539,23 @@ function renderMonitorSchedules(schedules) {
         return `
         <div class="job-item">
             <div class="job-header">
-                <div class="job-id">${name} ${typeLabel[s.monitor_type] || ''}</div>
-                <div class="job-status ${statusClass[status] || 'status-unknown'}">${status}</div>
+                <div class="job-id">${escapeHtml(name)} ${typeLabel[s.monitor_type] || ''}</div>
+                <div class="job-status ${statusClass[status] || 'status-unknown'}">${escapeHtml(status)}</div>
             </div>
             <div class="job-details">
-                ${s.endpoint_name ? `<div><strong>Endpoint:</strong> ${s.endpoint_name}</div>` : ''}
-                ${s.schedule_expression ? `<div><strong>Schedule:</strong> ${s.schedule_expression}</div>` : ''}
-                ${s.output_s3_uri ? `<div><strong>Output:</strong> <code style="font-size:0.78rem;">${s.output_s3_uri}</code></div>` : ''}
-                ${s.created_at ? `<div><strong>Created:</strong> ${new Date(s.created_at).toLocaleString()}</div>` : ''}
-                ${execStatus ? `<div><strong>Last execution:</strong> <span class="${statusClass[execStatus] || ''}" style="font-size:0.82rem;">${execStatus}</span>${execTime ? ` at ${execTime}` : ''}</div>` : ''}
-                ${s.last_failure_reason ? `<div style="color:#c62828; font-size:0.82rem;"><strong>Failure:</strong> ${s.last_failure_reason}</div>` : ''}
+                ${s.endpoint_name ? `<div><strong>Endpoint:</strong> ${escapeHtml(s.endpoint_name)}</div>` : ''}
+                ${s.schedule_expression ? `<div><strong>Schedule:</strong> ${escapeHtml(s.schedule_expression)}</div>` : ''}
+                ${s.output_s3_uri ? `<div><strong>Output:</strong> <code style="font-size:0.78rem;">${escapeHtml(s.output_s3_uri)}</code></div>` : ''}
+                ${s.created_at ? `<div><strong>Created:</strong> ${escapeHtml(new Date(s.created_at).toLocaleString())}</div>` : ''}
+                ${execStatus ? `<div><strong>Last execution:</strong> <span class="${statusClass[execStatus] || ''}" style="font-size:0.82rem;">${escapeHtml(execStatus)}</span>${execTime ? ` at ${escapeHtml(execTime)}` : ''}</div>` : ''}
+                ${s.last_failure_reason ? `<div style="color:#c62828; font-size:0.82rem;"><strong>Failure:</strong> ${escapeHtml(s.last_failure_reason)}</div>` : ''}
             </div>
             <div class="job-actions">
                 ${s.type === 'schedule' ? `
-                <button class="btn btn-secondary" onclick="refreshMonitorSchedule('${name}')">
+                <button class="btn btn-secondary" onclick="refreshMonitorSchedule('${escapeHtml(name)}')">
                     <i class="fas fa-sync"></i> Refresh
                 </button>
-                <button class="btn btn-secondary" onclick="deleteMonitorSchedule('${name}')" style="color:#c62828;">
+                <button class="btn btn-secondary" onclick="deleteMonitorSchedule('${escapeHtml(name)}')" style="color:#c62828;">
                     <i class="fas fa-trash"></i> Delete
                 </button>` : ''}
             </div>

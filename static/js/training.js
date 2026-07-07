@@ -54,19 +54,19 @@ function displayModels(models) {
 
         modelElement.innerHTML = `
             <div class="model-item-header">
-                <div class="model-name">${getDisplayName(model.name)}</div>
+                <div class="model-name">${escapeHtml(getDisplayName(model.name))}</div>
                 <div style="display:flex; gap:4px; align-items:center;">
                     ${isCustom ? '<span class="model-tag" style="background:#f3eeff; color:#7b2ff7; border:1px solid #c9b0f5;">Custom</span>' : ''}
                     <span class="model-tag ${taskClass}">${taskLabel}</span>
-                    ${isCustom ? `<button type="button" title="Remove" onclick="removeCustomModel('${model.name}', event)"
+                    ${isCustom ? `<button type="button" title="Remove" onclick="removeCustomModel('${escapeHtml(model.name)}', event)"
                         style="background:none; border:none; cursor:pointer; color:#c62828; font-size:0.75rem; padding:0 2px;">
                         <i class="fas fa-times"></i></button>` : ''}
                 </div>
             </div>
-            <div class="model-description">${model.description}</div>
+            <div class="model-description">${escapeHtml(model.description)}</div>
             <div class="model-specs">
-                <span>Parameters: ${model.parameters}</span>
-                <span>Input: ${model.input_size}</span>
+                <span>Parameters: ${escapeHtml(model.parameters)}</span>
+                <span>Input: ${escapeHtml(model.input_size)}</span>
             </div>
         `;
 
@@ -89,7 +89,7 @@ function populateSageMakerModelDropdown(models) {
     select.innerHTML = models.map(m => {
         const task = (m.task || 'classification').toLowerCase();
         const label = task === 'segmentation' ? '🔬' : '🏷️';
-        return `<option value="${m.name}" data-task="${task}">${label} ${getDisplayName(m.name)} (${task})</option>`;
+        return `<option value="${escapeHtml(m.name)}" data-task="${escapeHtml(task)}">${label} ${escapeHtml(getDisplayName(m.name))} (${escapeHtml(task)})</option>`;
     }).join('');
 }
 
@@ -250,13 +250,13 @@ function showModelInfo(model) {
         // Fallback — show basic info from the model object itself
         placeholder.style.display = 'none';
         content.style.display = 'block';
-        document.getElementById('model-info-title').innerHTML = `<i class="fas fa-info-circle"></i> ${getDisplayName(model.name)}`;
+        document.getElementById('model-info-title').innerHTML = `<i class="fas fa-info-circle"></i> ${escapeHtml(getDisplayName(model.name))}`;
         document.getElementById('model-info-blurb').textContent = model.description || 'No description available.';
         const meta = document.getElementById('model-info-meta');
         meta.innerHTML = [
-            model.parameters ? `<span class="model-meta-tag"><strong>Parameters:</strong> ${model.parameters}</span>` : '',
-            model.input_size  ? `<span class="model-meta-tag"><strong>Input:</strong> ${model.input_size}</span>` : '',
-            model.task        ? `<span class="model-meta-tag"><strong>Task:</strong> ${model.task}</span>` : '',
+            model.parameters ? `<span class="model-meta-tag"><strong>Parameters:</strong> ${escapeHtml(model.parameters)}</span>` : '',
+            model.input_size  ? `<span class="model-meta-tag"><strong>Input:</strong> ${escapeHtml(model.input_size)}</span>` : '',
+            model.task        ? `<span class="model-meta-tag"><strong>Task:</strong> ${escapeHtml(model.task)}</span>` : '',
         ].join('');
         document.getElementById('model-papers-list').innerHTML = '<li>No papers listed.</li>';
         return;
@@ -265,7 +265,7 @@ function showModelInfo(model) {
     placeholder.style.display = 'none';
     content.style.display = 'block';
 
-    document.getElementById('model-info-title').innerHTML = `<i class="fas fa-info-circle"></i> ${getDisplayName(model.name)}`;
+    document.getElementById('model-info-title').innerHTML = `<i class="fas fa-info-circle"></i> ${escapeHtml(getDisplayName(model.name))}`;
     document.getElementById('model-info-blurb').textContent = info.blurb;
 
     const meta = document.getElementById('model-info-meta');
@@ -353,20 +353,20 @@ function displayTrainingJobs(jobs) {
         
         jobElement.innerHTML = `
             <div class="job-header">
-                <div class="job-id">Job: ${job.job_id.substring(0, 8)}...</div>
-                <div class="job-status ${job.status}">${job.status.toUpperCase()}</div>
+                <div class="job-id">Job: ${escapeHtml(job.job_id.substring(0, 8))}...</div>
+                <div class="job-status ${job.status}">${escapeHtml(job.status.toUpperCase())}</div>
             </div>
             <div class="job-details">
-                <div><strong>Model:</strong> ${job.model_type}</div>
-                <div><strong>Created:</strong> ${formatDate(job.created_at)}</div>
-                ${job.completed_at ? `<div><strong>Completed:</strong> ${formatDate(job.completed_at)}</div>` : ''}
+                <div><strong>Model:</strong> ${escapeHtml(job.model_type)}</div>
+                <div><strong>Created:</strong> ${escapeHtml(formatDate(job.created_at))}</div>
+                ${job.completed_at ? `<div><strong>Completed:</strong> ${escapeHtml(formatDate(job.completed_at))}</div>` : ''}
             </div>
             <div class="job-actions">
-                <button onclick="viewJobMetrics('${job.job_id}')" class="btn btn-secondary">
+                <button onclick="viewJobMetrics('${escapeHtml(job.job_id)}')" class="btn btn-secondary">
                     <i class="fas fa-chart-line"></i> View Metrics
                 </button>
                 ${job.status === 'running' ? 
-                    `<button onclick="stopTrainingJob('${job.job_id}')" class="btn btn-secondary">
+                    `<button onclick="stopTrainingJob('${escapeHtml(job.job_id)}')" class="btn btn-secondary">
                         <i class="fas fa-stop"></i> Stop
                     </button>` : ''
                 }
@@ -385,7 +385,7 @@ async function viewJobMetrics(jobId) {
         metricsWindow.document.write(`
             <html>
                 <head>
-                    <title>Training Metrics - ${jobId}</title>
+                    <title>Training Metrics - ${escapeHtml(jobId)}</title>
                     <style>
                         body { font-family: Arial, sans-serif; padding: 20px; }
                         .metric { margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 4px; }
@@ -395,7 +395,7 @@ async function viewJobMetrics(jobId) {
                 </head>
                 <body>
                     <h1>Training Metrics</h1>
-                    <h2>Job ID: ${jobId}</h2>
+                    <h2>Job ID: ${escapeHtml(jobId)}</h2>
                     <div class="metric"><strong>Epoch:</strong> ${metrics.metrics.epoch}</div>
                     <div class="metric"><strong>Training Loss:</strong> ${metrics.metrics.train_loss}</div>
                     <div class="metric"><strong>Validation Loss:</strong> ${metrics.metrics.val_loss}</div>
@@ -404,8 +404,8 @@ async function viewJobMetrics(jobId) {
                     <div class="metric"><strong>Learning Rate:</strong> ${metrics.metrics.learning_rate}</div>
                     
                     <div class="links">
-                        <a href="${metrics.metrics.tensorboard_url}" target="_blank">Open TensorBoard</a>
-                        <a href="${metrics.metrics.mlflow_url}" target="_blank">Open MLflow</a>
+                        <a href="${escapeHtml(metrics.metrics.tensorboard_url)}" target="_blank">Open TensorBoard</a>
+                        <a href="${escapeHtml(metrics.metrics.mlflow_url)}" target="_blank">Open MLflow</a>
                     </div>
                 </body>
             </html>
@@ -485,11 +485,11 @@ function displayImportedModels(models) {
         el.className = 'model-item';
         el.dataset.modelId = model.model_id;
         el.innerHTML = `
-            <div class="model-name">${model.model_name}</div>
-            <div class="model-description">Format: ${model.model_format} | Classes: ${model.num_classes}</div>
+            <div class="model-name">${escapeHtml(model.model_name)}</div>
+            <div class="model-description">Format: ${escapeHtml(model.model_format)} | Classes: ${model.num_classes}</div>
             <div class="model-specs">
-                <span>Source: ${model.s3_source}</span>
-                <span>Status: ${model.status}</span>
+                <span>Source: ${escapeHtml(model.s3_source)}</span>
+                <span>Status: ${escapeHtml(model.status)}</span>
             </div>
         `;
         el.addEventListener('click', () => {
@@ -582,7 +582,7 @@ async function validateSageMakerConfig() {
         resultsEl.style.display = 'block';
         resultsEl.innerHTML = `<div class="validation-panel validation-failed">
             <h4><i class="fas fa-times-circle"></i> Validation Error</h4>
-            <p>${error.message}</p>
+            <p>${escapeHtml(error.message)}</p>
         </div>`;
     } finally {
         btn.disabled = false;
@@ -599,8 +599,8 @@ function renderValidationResults(result, container) {
         <div class="validation-check ${c.passed ? 'check-ok' : 'check-fail'}">
             <i class="fas ${c.passed ? 'fa-check' : 'fa-times'}"></i>
             <div>
-                <strong>${c.name}</strong>
-                <span>${c.message}</span>
+                <strong>${escapeHtml(c.name)}</strong>
+                <span>${escapeHtml(c.message)}</span>
             </div>
         </div>
     `).join('');
@@ -723,7 +723,7 @@ async function startSageMakerTraining(e) {
 
         if (statusBanner) {
             statusBanner.className = 'sm-status-banner sm-status-success';
-            statusBanner.innerHTML = `<i class="fas fa-check-circle"></i> Job submitted: <strong>${response.job_name}</strong> — Status: <strong>${response.status || 'InProgress'}</strong>`;
+            statusBanner.innerHTML = `<i class="fas fa-check-circle"></i> Job submitted: <strong>${escapeHtml(response.job_name)}</strong> — Status: <strong>${escapeHtml(response.status || 'InProgress')}</strong>`;
         }
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Start SageMaker Training';
@@ -731,7 +731,7 @@ async function startSageMakerTraining(e) {
     } catch (error) {
         if (statusBanner) {
             statusBanner.className = 'sm-status-banner sm-status-error';
-            statusBanner.innerHTML = `<i class="fas fa-exclamation-circle"></i> Failed: ${error.message}`;
+            statusBanner.innerHTML = `<i class="fas fa-exclamation-circle"></i> Failed: ${escapeHtml(error.message)}`;
         }
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Start SageMaker Training';
@@ -823,7 +823,7 @@ function displaySageMakerJobs(jobs) {
         // result.json highlight block
         const resultHtml = r.model_name ? `
             <div class="result-highlight">
-                <div class="result-row"><span>Model</span><strong>${r.model_name}</strong></div>
+                <div class="result-row"><span>Model</span><strong>${escapeHtml(r.model_name)}</strong></div>
                 <div class="result-row"><span>Final epoch</span><strong>${r.final_epoch ?? '—'}</strong></div>
                 ${r.best_val_dice != null
                     ? `<div class="result-row"><span>Best val dice</span><strong>${(r.best_val_dice * 100).toFixed(1)}%</strong></div>`
@@ -831,23 +831,23 @@ function displaySageMakerJobs(jobs) {
                        <div class="result-row"><span>Val acc</span><strong>${r.val_accuracy != null ? (r.val_accuracy * 100).toFixed(1) + '%' : '—'}</strong></div>
                        <div class="result-row"><span>Best val acc</span><strong>${r.best_val_accuracy != null ? (r.best_val_accuracy * 100).toFixed(1) + '%' : '—'}</strong></div>`
                 }
-                <div class="result-row"><span>Data</span><code style="font-size:0.75rem;">${r.data_s3_uri || '—'}</code></div>
-                ${r.fine_tuned_from ? `<div class="result-row" style="grid-column:1/-1;"><span>Fine-tuned from</span><code style="font-size:0.72rem;">${r.fine_tuned_from}</code></div>` : ''}
+                <div class="result-row"><span>Data</span><code style="font-size:0.75rem;">${escapeHtml(r.data_s3_uri || '—')}</code></div>
+                ${r.fine_tuned_from ? `<div class="result-row" style="grid-column:1/-1;"><span>Fine-tuned from</span><code style="font-size:0.72rem;">${escapeHtml(r.fine_tuned_from)}</code></div>` : ''}
                 ${r.reconstructed ? `<div class="result-row" style="grid-column:1/-1; color:#888; font-size:0.75rem; font-style:italic;"><span></span>Metrics unavailable — job predates result.json</div>` : ''}
             </div>` : '';
 
         // Lineage badge (fine-tuned from another job)
         const lineageHtml = job.fine_tuned_from
-            ? `<div class="job-lineage"><i class="fas fa-code-branch"></i> Fine-tuned from: <code>${job.fine_tuned_from}</code></div>`
+            ? `<div class="job-lineage"><i class="fas fa-code-branch"></i> Fine-tuned from: <code>${escapeHtml(job.fine_tuned_from)}</code></div>`
             : '';
 
         const commentHtml = job.comment
-            ? `<div class="job-comment"><i class="fas fa-comment-alt"></i> ${job.comment}</div>` : '';
+            ? `<div class="job-comment"><i class="fas fa-comment-alt"></i> ${escapeHtml(job.comment)}</div>` : '';
 
         const artifactHtml = job.model_artifacts
             ? (job.artifacts_deleted
                 ? `<div style="color:#999; font-size:0.8rem;"><i class="fas fa-trash"></i> Artifacts deleted</div>`
-                : `<div style="font-size:0.8rem;"><strong>Artifacts:</strong> <code style="font-size:0.75rem;">${job.model_artifacts}</code></div>`)
+                : `<div style="font-size:0.8rem;"><strong>Artifacts:</strong> <code style="font-size:0.75rem;">${escapeHtml(job.model_artifacts)}</code></div>`)
             : '';
 
         const el = document.createElement('div');
@@ -855,27 +855,27 @@ function displaySageMakerJobs(jobs) {
         el.id = `sm-job-${job.job_name}`;
         el.innerHTML = `
             <div class="job-header">
-                <div class="job-id">${job.job_name}${job.archived ? ' <span style="color:#aaa;font-size:0.75rem;">[archived]</span>' : ''}</div>
-                <div class="job-status ${statusClass}">${job.status}</div>
+                <div class="job-id">${escapeHtml(job.job_name)}${job.archived ? ' <span style="color:#aaa;font-size:0.75rem;">[archived]</span>' : ''}</div>
+                <div class="job-status ${statusClass}">${escapeHtml(job.status)}</div>
             </div>
             <div class="job-details">
-                <div><strong>Model:</strong> ${job.config?.model_name || 'N/A'} &nbsp;|&nbsp; <strong>Instance:</strong> ${job.config?.instance_type || 'N/A'}</div>
-                ${job.creation_time ? `<div><strong>Started:</strong> ${new Date(job.creation_time).toLocaleString()}</div>` : ''}
-                ${job.training_end_time ? `<div><strong>Ended:</strong> ${new Date(job.training_end_time).toLocaleString()}</div>` : ''}
-                ${job.billable_seconds ? `<div><strong>Training time:</strong> ${formatDuration(job.billable_seconds)}</div>` : ''}
+                <div><strong>Model:</strong> ${escapeHtml(job.config?.model_name || 'N/A')} &nbsp;|&nbsp; <strong>Instance:</strong> ${escapeHtml(job.config?.instance_type || 'N/A')}</div>
+                ${job.creation_time ? `<div><strong>Started:</strong> ${escapeHtml(new Date(job.creation_time).toLocaleString())}</div>` : ''}
+                ${job.training_end_time ? `<div><strong>Ended:</strong> ${escapeHtml(new Date(job.training_end_time).toLocaleString())}</div>` : ''}
+                ${job.billable_seconds ? `<div><strong>Training time:</strong> ${escapeHtml(formatDuration(job.billable_seconds))}</div>` : ''}
                 ${job.estimated_cost_usd != null ? `<div><strong>Estimated cost:</strong> <span class="cost-badge">$${job.estimated_cost_usd.toFixed(4)} USD</span></div>` : ''}
                 ${artifactHtml}
                 ${resultHtml}
                 ${lineageHtml}
-                ${job.failure_reason ? `<div style="color:#c62828; font-size:0.82rem; margin-top:4px;"><strong>Failure:</strong> ${job.failure_reason}</div>` : ''}
+                ${job.failure_reason ? `<div style="color:#c62828; font-size:0.82rem; margin-top:4px;"><strong>Failure:</strong> ${escapeHtml(job.failure_reason)}</div>` : ''}
             </div>
-            <div id="sm-job-status-detail-${job.job_name}" class="job-status-detail" style="display:none;"></div>
+            <div id="sm-job-status-detail-${escapeHtml(job.job_name)}" class="job-status-detail" style="display:none;"></div>
             <div class="job-actions">
                 ${!terminal ? `
-                <button onclick="checkSageMakerStatus('${job.job_name}')" class="btn btn-secondary" id="sm-status-btn-${job.job_name}">
+                <button onclick="checkSageMakerStatus('${escapeHtml(job.job_name)}')" class="btn btn-secondary" id="sm-status-btn-${escapeHtml(job.job_name)}">
                     <i class="fas fa-sync"></i> Fetch Status
                 </button>
-                <button onclick="stopSageMakerJob('${job.job_name}')" class="btn btn-secondary">
+                <button onclick="stopSageMakerJob('${escapeHtml(job.job_name)}')" class="btn btn-secondary">
                     <i class="fas fa-stop"></i> Stop
                 </button>` : ''}
                 ${job.mlflow_tracking_uri ? `
@@ -883,25 +883,25 @@ function displaySageMakerJobs(jobs) {
                     <i class="fas fa-flask"></i> MLflow
                 </button>` : ''}
                 ${terminal ? `
-                <button onclick="openCommentModal('${job.job_name}', \`${(job.comment||'').replace(/`/g,"'")}\`)" class="btn btn-secondary" title="Add comment">
+                <button onclick="openCommentModal('${escapeHtml(job.job_name)}', \`${(job.comment||'').replace(/`/g,"'")}\`)" class="btn btn-secondary" title="Add comment">
                     <i class="fas fa-comment-alt"></i> Comment
                 </button>
-                <button onclick="archiveSageMakerJob('${job.job_name}')" class="btn btn-secondary" title="Archive" ${job.archived || tab !== 'completed' ? 'style="display:none"' : ''}>
+                <button onclick="archiveSageMakerJob('${escapeHtml(job.job_name)}')" class="btn btn-secondary" title="Archive" ${job.archived || tab !== 'completed' ? 'style="display:none"' : ''}>
                     <i class="fas fa-archive"></i> Archive
                 </button>
                 ${job.status === 'Completed' && !job.result && job.model_artifacts && !job.artifacts_deleted ? `
-                <button onclick="loadJobResult('${job.job_name}')" class="btn btn-secondary" title="Load result.json from model artifacts">
+                <button onclick="loadJobResult('${escapeHtml(job.job_name)}')" class="btn btn-secondary" title="Load result.json from model artifacts">
                     <i class="fas fa-download"></i> Load Results
                 </button>` : ''}
                 ${job.status === 'Completed' && job.model_artifacts && !job.artifacts_deleted ? `
-                <button onclick="openFineTuneModal('${job.job_name}')" class="btn btn-finetune" title="Fine-tune from this checkpoint">
+                <button onclick="openFineTuneModal('${escapeHtml(job.job_name)}')" class="btn btn-finetune" title="Fine-tune from this checkpoint">
                     <i class="fas fa-sliders-h"></i> Fine-tune
                 </button>` : ''}
                 ${job.model_artifacts && !job.artifacts_deleted ? `
-                <button onclick="deleteJobArtifacts('${job.job_name}')" class="btn btn-secondary" title="Delete model.tar.gz from S3" style="color:#c62828;">
+                <button onclick="deleteJobArtifacts('${escapeHtml(job.job_name)}')" class="btn btn-secondary" title="Delete model.tar.gz from S3" style="color:#c62828;">
                     <i class="fas fa-trash"></i> Delete Artifacts
                 </button>` : ''}
-                <button onclick="removeSageMakerJob('${job.job_name}')" class="btn btn-secondary" style="color:#c62828;" title="Remove from list">
+                <button onclick="removeSageMakerJob('${escapeHtml(job.job_name)}')" class="btn btn-secondary" style="color:#c62828;" title="Remove from list">
                     <i class="fas fa-times"></i> Remove
                 </button>` : ''}
             </div>
@@ -944,7 +944,7 @@ async function deleteJobArtifacts(jobName) {
             const banner = document.createElement('div');
             banner.className = 'sm-status-banner sm-status-success';
             banner.style.cssText = 'margin:0.5rem 0; font-size:0.85rem;';
-            banner.innerHTML = `<i class="fas fa-check-circle"></i> Artifacts deleted: <code style="font-size:0.78rem;">${res.deleted_uri}</code>`;
+            banner.innerHTML = `<i class="fas fa-check-circle"></i> Artifacts deleted: <code style="font-size:0.78rem;">${escapeHtml(res.deleted_uri)}</code>`;
             jobEl.querySelector('.job-details').appendChild(banner);
             setTimeout(() => loadSageMakerJobs(), 2000);
         } else {
@@ -1006,18 +1006,18 @@ async function checkSageMakerStatus(jobName) {
 
         // Show detail panel
         if (detail) {
-            let html = `<div class="status-detail-row"><span>Status:</span><strong>${status.status}</strong></div>`;
-            if (status.creation_time) html += `<div class="status-detail-row"><span>Created:</span><strong>${status.creation_time}</strong></div>`;
-            if (status.training_end_time) html += `<div class="status-detail-row"><span>Ended:</span><strong>${status.training_end_time}</strong></div>`;
+            let html = `<div class="status-detail-row"><span>Status:</span><strong>${escapeHtml(status.status)}</strong></div>`;
+            if (status.creation_time) html += `<div class="status-detail-row"><span>Created:</span><strong>${escapeHtml(status.creation_time)}</strong></div>`;
+            if (status.training_end_time) html += `<div class="status-detail-row"><span>Ended:</span><strong>${escapeHtml(status.training_end_time)}</strong></div>`;
             if (status.billable_seconds) html += `<div class="status-detail-row"><span>Billable seconds:</span><strong>${status.billable_seconds}s</strong></div>`;
-            if (status.model_artifacts) html += `<div class="status-detail-row"><span>Artifacts:</span><strong>${status.model_artifacts}</strong></div>`;
-            if (status.failure_reason) html += `<div class="status-detail-row status-error"><span>Failure:</span><strong>${status.failure_reason}</strong></div>`;
+            if (status.model_artifacts) html += `<div class="status-detail-row"><span>Artifacts:</span><strong>${escapeHtml(status.model_artifacts)}</strong></div>`;
+            if (status.failure_reason) html += `<div class="status-detail-row status-error"><span>Failure:</span><strong>${escapeHtml(status.failure_reason)}</strong></div>`;
             detail.innerHTML = html;
             detail.style.display = 'block';
         }
     } catch (error) {
         if (detail) {
-            detail.innerHTML = `<div class="status-detail-row status-error"><span>Error:</span><strong>${error.message}</strong></div>`;
+            detail.innerHTML = `<div class="status-detail-row status-error"><span>Error:</span><strong>${escapeHtml(error.message)}</strong></div>`;
             detail.style.display = 'block';
         }
     } finally {
@@ -1127,7 +1127,7 @@ function populateContainerDropdown() {
     if (!select) return;
     const containers = loadContainers();
     select.innerHTML = containers.map(c =>
-        `<option value="${c.uri}">${c.label} — ${c.uri}</option>`
+        `<option value="${escapeHtml(c.uri)}">${escapeHtml(c.label)} — ${escapeHtml(c.uri)}</option>`
     ).join('');
 }
 
@@ -1282,9 +1282,9 @@ function openFineTuneModal(jobName) {
             </div>` : `<p style="color:#888; font-size:0.8rem; margin:0.5rem 0 0;">No metrics loaded — use "Load Results" on the job card first.</p>`;
 
         document.getElementById('ft-base-info').innerHTML = `
-            <div class="ft-info-row"><i class="fas fa-database" style="color:#16a085;"></i><span>Training data</span><code>${dataUri}</code></div>
-            <div class="ft-info-row"><i class="fas fa-microchip" style="color:#8e44ad;"></i><span>Model</span><strong>${cfg.model_name || '—'}</strong> &nbsp;·&nbsp; ${cfg.task_type || ''} ${cfg.dimension || ''}</div>
-            <div class="ft-info-row"><i class="fas fa-server" style="color:#1a6fa0;"></i><span>Instance</span><strong>${cfg.instance_type || '—'}</strong></div>
+            <div class="ft-info-row"><i class="fas fa-database" style="color:#16a085;"></i><span>Training data</span><code>${escapeHtml(dataUri)}</code></div>
+            <div class="ft-info-row"><i class="fas fa-microchip" style="color:#8e44ad;"></i><span>Model</span><strong>${escapeHtml(cfg.model_name || '—')}</strong> &nbsp;·&nbsp; ${escapeHtml(cfg.task_type || '')} ${escapeHtml(cfg.dimension || '')}</div>
+            <div class="ft-info-row"><i class="fas fa-server" style="color:#1a6fa0;"></i><span>Instance</span><strong>${escapeHtml(cfg.instance_type || '—')}</strong></div>
             ${metricsHtml}`;
 
         // Pre-fill form from base job config
@@ -1358,7 +1358,7 @@ async function submitFineTuneJob() {
             body: JSON.stringify(payload),
         });
         statusEl.className = 'sm-status-banner sm-status-success';
-        statusEl.innerHTML = `<i class="fas fa-check-circle"></i> Fine-tune job submitted: <strong>${res.job_name}</strong>`;
+        statusEl.innerHTML = `<i class="fas fa-check-circle"></i> Fine-tune job submitted: <strong>${escapeHtml(res.job_name)}</strong>`;
         statusEl.style.display = 'flex';
         setTimeout(() => {
             closeFineTuneModal();
@@ -1367,7 +1367,7 @@ async function submitFineTuneJob() {
         }, 1800);
     } catch (err) {
         statusEl.className = 'sm-status-banner sm-status-error';
-        statusEl.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${err.message}`;
+        statusEl.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${escapeHtml(err.message)}`;
         statusEl.style.display = 'flex';
     } finally {
         btn.disabled = false;
