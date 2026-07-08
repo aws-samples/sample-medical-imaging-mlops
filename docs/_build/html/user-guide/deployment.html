@@ -1,0 +1,350 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deployment Guide &mdash; MedML Training Dashboard  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Inference Guide" href="inference.html" />
+    <link rel="prev" title="Training Guide" href="training.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            MedML Training Dashboard
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">MedML Training Dashboard — User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="training.html">Training Guide</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Deployment Guide</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#deploy-a-model">Deploy a Model</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#step-1-open-the-deployment-tab">Step 1 — Open the Deployment tab</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-2-fill-out-the-deploy-form">Step 2 — Fill out the deploy form</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-3-submit">Step 3 — Submit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-4-wait-for-inservice">Step 4 — Wait for InService</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#real-time-vs-async-endpoints">Real-Time vs Async Endpoints</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#real-time-default">Real-time (default)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#async-endpoint">Async endpoint</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#enable-data-capture-at-deploy-time">Enable Data Capture at Deploy Time</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#import-an-existing-endpoint">Import an Existing Endpoint</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sync-from-aws">Sync from AWS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#delete-an-endpoint">Delete an Endpoint</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#from-the-dashboard">From the dashboard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#external-deletion-handling">External deletion handling</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="inference.html">Inference Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="evaluation.html">Evaluation Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="monitoring.html">Monitoring Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fairness.html">Fairness Analysis Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="report-generation.html">Report Generation Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#sections">Sections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#typical-workflow">Typical Workflow</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../api-reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../deployment-guide.html">Deployment Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development.html">Development Guide</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">MedML Training Dashboard</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">MedML Training Dashboard — User Guide</a></li>
+      <li class="breadcrumb-item active">Deployment Guide</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/user-guide/deployment.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="deployment-guide">
+<h1>Deployment Guide<a class="headerlink" href="#deployment-guide" title="Link to this heading"></a></h1>
+<p>This guide covers deploying trained models to SageMaker endpoints for real-time or asynchronous inference.</p>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>A completed training job with a <code class="docutils literal notranslate"><span class="pre">model.tar.gz</span></code> artifact in S3</p></li>
+<li><p>An inference container image pushed to ECR (classification or segmentation)</p></li>
+<li><p>A SageMaker execution role with endpoint creation permissions</p></li>
+</ul>
+</section>
+<section id="deploy-a-model">
+<h2>Deploy a Model<a class="headerlink" href="#deploy-a-model" title="Link to this heading"></a></h2>
+<section id="step-1-open-the-deployment-tab">
+<h3>Step 1 — Open the Deployment tab<a class="headerlink" href="#step-1-open-the-deployment-tab" title="Link to this heading"></a></h3>
+<p>Navigate to <code class="docutils literal notranslate"><span class="pre">http://localhost:8000</span></code> and click the <strong>Deployment</strong> tab.</p>
+</section>
+<section id="step-2-fill-out-the-deploy-form">
+<h3>Step 2 — Fill out the deploy form<a class="headerlink" href="#step-2-fill-out-the-deploy-form" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Example</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Endpoint Name</strong></p></td>
+<td><p>Unique name for the endpoint</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">spine-classifier-v2</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Model Artifacts</strong></p></td>
+<td><p>S3 URI of <code class="docutils literal notranslate"><span class="pre">model.tar.gz</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">s3://bucket/output/job/output/model.tar.gz</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Inference Image URI</strong></p></td>
+<td><p>ECR URI of the inference container</p></td>
+<td><p>from <code class="docutils literal notranslate"><span class="pre">.env.local</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Role ARN</strong></p></td>
+<td><p>SageMaker execution role</p></td>
+<td><p>from <code class="docutils literal notranslate"><span class="pre">.env.local</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Instance Type</strong></p></td>
+<td><p>Endpoint instance type</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ml.g5.xlarge</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="step-3-submit">
+<h3>Step 3 — Submit<a class="headerlink" href="#step-3-submit" title="Link to this heading"></a></h3>
+<p>Click <strong>Deploy</strong>. The dashboard creates three AWS resources in sequence:</p>
+<ol class="arabic simple">
+<li><p>SageMaker Model</p></li>
+<li><p>Endpoint Configuration</p></li>
+<li><p>Endpoint</p></li>
+</ol>
+<p>Status transitions: <code class="docutils literal notranslate"><span class="pre">Creating</span></code> → <code class="docutils literal notranslate"><span class="pre">InService</span></code> (or <code class="docutils literal notranslate"><span class="pre">Failed</span></code>).</p>
+</section>
+<section id="step-4-wait-for-inservice">
+<h3>Step 4 — Wait for InService<a class="headerlink" href="#step-4-wait-for-inservice" title="Link to this heading"></a></h3>
+<p>The deployment list auto-refreshes status from AWS. Once the endpoint shows <code class="docutils literal notranslate"><span class="pre">InService</span></code>, it is ready to receive inference requests.</p>
+</section>
+</section>
+<section id="real-time-vs-async-endpoints">
+<h2>Real-Time vs Async Endpoints<a class="headerlink" href="#real-time-vs-async-endpoints" title="Link to this heading"></a></h2>
+<section id="real-time-default">
+<h3>Real-time (default)<a class="headerlink" href="#real-time-default" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Synchronous request/response</p></li>
+<li><p>Best for single-image inference with low latency requirements</p></li>
+<li><p>Timeout: 300 seconds (sufficient for 3D segmentation)</p></li>
+</ul>
+</section>
+<section id="async-endpoint">
+<h3>Async endpoint<a class="headerlink" href="#async-endpoint" title="Link to this heading"></a></h3>
+<p>Set <code class="docutils literal notranslate"><span class="pre">async_endpoint:</span> <span class="pre">true</span></code> in the deploy request to create an asynchronous endpoint:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Required</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">async_endpoint</span></code></p></td>
+<td><p>yes</p></td>
+<td><p>Set to <code class="docutils literal notranslate"><span class="pre">true</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">output_s3_uri</span></code></p></td>
+<td><p>yes</p></td>
+<td><p>S3 prefix where results are written</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">max_concurrent</span></code></p></td>
+<td><p>no</p></td>
+<td><p>Max concurrent invocations per instance (default <code class="docutils literal notranslate"><span class="pre">10</span></code>)</p></td>
+</tr>
+</tbody>
+</table>
+<p>Async endpoints are useful for:</p>
+<ul class="simple">
+<li><p>Batch inference workloads</p></li>
+<li><p>Large 3D volumes that exceed real-time timeout limits</p></li>
+<li><p>Cost optimization (scale to zero when idle)</p></li>
+</ul>
+</section>
+</section>
+<section id="enable-data-capture-at-deploy-time">
+<h2>Enable Data Capture at Deploy Time<a class="headerlink" href="#enable-data-capture-at-deploy-time" title="Link to this heading"></a></h2>
+<p>Check <strong>Enable Data Capture</strong> before deploying to record all inference traffic from the first request:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Enable Data Capture</strong></p></td>
+<td><p>Check to activate</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Capture S3 URI</strong></p></td>
+<td><p>S3 prefix for captured traffic (e.g. <code class="docutils literal notranslate"><span class="pre">s3://bucket/capture/</span></code>)</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Capture Sampling %</strong></p></td>
+<td><p>Percentage of requests to capture (1-100, default <code class="docutils literal notranslate"><span class="pre">100</span></code>)</p></td>
+</tr>
+</tbody>
+</table>
+<p>This is equivalent to calling the monitoring data-capture API separately, but happens atomically during deployment.</p>
+</section>
+<section id="import-an-existing-endpoint">
+<h2>Import an Existing Endpoint<a class="headerlink" href="#import-an-existing-endpoint" title="Link to this heading"></a></h2>
+<p>To track an endpoint that was created outside the dashboard (e.g. via the AWS console or CLI):</p>
+<ol class="arabic simple">
+<li><p>Click <strong>Import Endpoint</strong> (or call <code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/deployment</span></code> with only the endpoint name)</p></li>
+<li><p>Omit <code class="docutils literal notranslate"><span class="pre">model_artifacts</span></code> — the dashboard registers the endpoint without creating a new artifact</p></li>
+<li><p>The endpoint appears in the deployment list and its status is polled from AWS</p></li>
+</ol>
+</section>
+<section id="sync-from-aws">
+<h2>Sync from AWS<a class="headerlink" href="#sync-from-aws" title="Link to this heading"></a></h2>
+<p>Click <strong>Sync from AWS</strong> to pull existing endpoints from your AWS account and merge them into the local store:</p>
+<ul class="simple">
+<li><p>Optional <code class="docutils literal notranslate"><span class="pre">?name_contains=</span></code> filter to narrow results</p></li>
+<li><p>Already-tracked endpoints have their status updated</p></li>
+<li><p>New endpoints are added with minimal records</p></li>
+</ul>
+</section>
+<section id="delete-an-endpoint">
+<h2>Delete an Endpoint<a class="headerlink" href="#delete-an-endpoint" title="Link to this heading"></a></h2>
+<section id="from-the-dashboard">
+<h3>From the dashboard<a class="headerlink" href="#from-the-dashboard" title="Link to this heading"></a></h3>
+<p>Click the <strong>Delete</strong> button on any endpoint in the list. This:</p>
+<ol class="arabic simple">
+<li><p>Deletes the SageMaker endpoint</p></li>
+<li><p>Deletes the endpoint configuration</p></li>
+<li><p>Deletes the SageMaker model resource</p></li>
+<li><p>Removes the local record from <code class="docutils literal notranslate"><span class="pre">data/deployments.json</span></code></p></li>
+</ol>
+<p>The local record is always cleaned up via <code class="docutils literal notranslate"><span class="pre">try/finally</span></code>, even if an AWS API call fails.</p>
+</section>
+<section id="external-deletion-handling">
+<h3>External deletion handling<a class="headerlink" href="#external-deletion-handling" title="Link to this heading"></a></h3>
+<p>If an endpoint is deleted outside the dashboard (AWS console, CLI, etc.):</p>
+<ul class="simple">
+<li><p>The next status poll detects the missing endpoint</p></li>
+<li><p>The local record is marked as <code class="docutils literal notranslate"><span class="pre">&quot;Deleted&quot;</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Deleted</span></code> entries are filtered out of the list response</p></li>
+</ul>
+</section>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Issue</p></th>
+<th class="head"><p>Cause</p></th>
+<th class="head"><p>Fix</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Endpoint stuck in <code class="docutils literal notranslate"><span class="pre">Creating</span></code></p></td>
+<td><p>Container startup failure</p></td>
+<td><p>Check CloudWatch logs for the endpoint</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">Failed</span></code> status</p></td>
+<td><p>Missing inference script or bad model</p></td>
+<td><p>Verify <code class="docutils literal notranslate"><span class="pre">model.tar.gz</span></code> contains <code class="docutils literal notranslate"><span class="pre">inference.py</span></code> and <code class="docutils literal notranslate"><span class="pre">best_model.pth</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Permission denied</p></td>
+<td><p>Role ARN lacks permissions</p></td>
+<td><p>Ensure the role has <code class="docutils literal notranslate"><span class="pre">sagemaker:CreateEndpoint</span></code>, <code class="docutils literal notranslate"><span class="pre">ecr:GetAuthorizationToken</span></code>, <code class="docutils literal notranslate"><span class="pre">s3:GetObject</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Timeout on invocation</p></td>
+<td><p>Model too large or slow</p></td>
+<td><p>Increase instance type or use async endpoint</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="training.html" class="btn btn-neutral float-left" title="Training Guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="inference.html" class="btn btn-neutral float-right" title="Inference Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, MedML Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

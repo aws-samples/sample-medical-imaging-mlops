@@ -93,7 +93,7 @@ The evaluation job writes four files to the output S3 URI:
 
 ### `predictions.csv` structure
 
-```csv
+```text
 file,true_class,predicted_class,prob_class_a,prob_class_b,prob_class_c
 image001.dcm,class_a,class_a,0.89,0.07,0.04
 image004.dcm,class_b,class_c,0.12,0.35,0.53

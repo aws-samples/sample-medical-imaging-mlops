@@ -12,8 +12,6 @@ author = 'MedML Team'
 # -- General configuration ---------------------------------------------------
 
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.viewcode',
     'myst_parser',
 ]
 
@@ -35,7 +33,7 @@ master_doc = 'index'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '.venv', 'venv', '**/node_modules']
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -45,4 +43,4 @@ try:
 except ImportError:
     html_theme = 'alabaster'
 
-html_static_path = ['_static']
+html_static_path = []

@@ -1,0 +1,807 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configuration &mdash; MedML Training Dashboard  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="MedML Training Dashboard — User Guide" href="user-guide/index.html" />
+    <link rel="prev" title="Getting Started" href="getting-started.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            MedML Training Dashboard
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#environment-files">1. Environment Files</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#initial-setup">Initial setup</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#general-config-env">2. General Config (<code class="docutils literal notranslate"><span class="pre">.env</span></code>)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#example-env">Example <code class="docutils literal notranslate"><span class="pre">.env</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#account-specific-config-env-local">3. Account-Specific Config (<code class="docutils literal notranslate"><span class="pre">.env.local</span></code>)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#example-env-local">Example <code class="docutils literal notranslate"><span class="pre">.env.local</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#aws-credentials">4. AWS Credentials</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#method-1-environment-variables-env-or-env-local">Method 1: Environment variables (<code class="docutils literal notranslate"><span class="pre">.env</span></code> or <code class="docutils literal notranslate"><span class="pre">.env.local</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#method-2-aws-credentials-file-aws-credentials">Method 2: AWS credentials file (<code class="docutils literal notranslate"><span class="pre">~/.aws/credentials</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#method-3-dashboard-ui">Method 3: Dashboard UI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#credential-priority">Credential priority</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#runtime-config-api">5. Runtime Config API</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#response">Response</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-it-works">How it works</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#frontend-usage">Frontend usage</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#docker-configuration">6. Docker Configuration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#docker-compose-yml"><code class="docutils literal notranslate"><span class="pre">docker-compose.yml</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#environment-variables-in-docker">Environment variables in Docker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#volume-mounts">Volume mounts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#exposed-ports">Exposed ports</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#sagemaker-iam-role">7. SageMaker IAM Role</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#required-permissions">Required permissions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#trust-policy">Trust policy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#creating-the-role-via-cli">Creating the role via CLI</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#ecr-repositories">8. ECR Repositories</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#repository-names">Repository names</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#build-and-push-commands">Build and push commands</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-the-training-image-contains">What the training image contains</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#after-building">After building</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#verifying-images">Verifying images</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#quick-reference">Quick Reference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#minimal-setup-local-development">Minimal setup (local development)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#full-setup-training-deployment">Full setup (training + deployment)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user-guide/index.html">MedML Training Dashboard — User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api-reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deployment-guide.html">Deployment Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="development.html">Development Guide</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">MedML Training Dashboard</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Configuration</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/configuration.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="configuration">
+<h1>Configuration<a class="headerlink" href="#configuration" title="Link to this heading"></a></h1>
+<p>This document covers all configuration options for the MedML Training Dashboard — environment files, AWS credentials, Docker setup, IAM permissions, and ECR image management.</p>
+<hr class="docutils" />
+<section id="environment-files">
+<h2>1. Environment Files<a class="headerlink" href="#environment-files" title="Link to this heading"></a></h2>
+<p>The application uses a two-layer environment variable system loaded by <code class="docutils literal notranslate"><span class="pre">python-dotenv</span></code> in <code class="docutils literal notranslate"><span class="pre">main.py</span></code>:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>File</p></th>
+<th class="head"><p>Purpose</p></th>
+<th class="head"><p>Committed to git?</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">.env</span></code></p></td>
+<td><p>General application config (region, MLflow URI, log settings)</p></td>
+<td><p>Yes (<code class="docutils literal notranslate"><span class="pre">.env.example</span></code> template)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">.env.local</span></code></p></td>
+<td><p>Account-specific secrets and identifiers (account ID, role ARN, ECR URIs)</p></td>
+<td><p><strong>No</strong> (gitignored)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">.env.local.example</span></code></p></td>
+<td><p>Template for <code class="docutils literal notranslate"><span class="pre">.env.local</span></code> with placeholder values</p></td>
+<td><p>Yes</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Load order:</strong> <code class="docutils literal notranslate"><span class="pre">.env</span></code> is loaded first, then <code class="docutils literal notranslate"><span class="pre">.env.local</span></code> overrides any overlapping keys:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">load_dotenv</span><span class="p">()</span>                          <span class="c1"># loads .env</span>
+<span class="n">load_dotenv</span><span class="p">(</span><span class="s2">&quot;.env.local&quot;</span><span class="p">,</span> <span class="n">override</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># loads .env.local, overriding duplicates</span>
+</pre></div>
+</div>
+<section id="initial-setup">
+<h3>Initial setup<a class="headerlink" href="#initial-setup" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cp<span class="w"> </span>.env.example<span class="w"> </span>.env
+cp<span class="w"> </span>.env.local.example<span class="w"> </span>.env.local
+<span class="c1"># Edit .env.local with your real AWS account ID, role ARN, and ECR URIs</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="general-config-env">
+<h2>2. General Config (<code class="docutils literal notranslate"><span class="pre">.env</span></code>)<a class="headerlink" href="#general-config-env" title="Link to this heading"></a></h2>
+<p>These variables control application behavior and third-party service endpoints.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Variable</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Example</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">AWS_ACCESS_KEY_ID</span></code></p></td>
+<td><p>AWS access key (optional if using <code class="docutils literal notranslate"><span class="pre">~/.aws/credentials</span></code> or IAM roles)</p></td>
+<td><p>—</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">AKIAIOSFODNN7EXAMPLE</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">AWS_SECRET_ACCESS_KEY</span></code></p></td>
+<td><p>AWS secret key</p></td>
+<td><p>—</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">AWS_DEFAULT_REGION</span></code></p></td>
+<td><p>AWS region for all boto3 clients</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">us-east-1</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">us-west-2</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">MLFLOW_TRACKING_URI</span></code></p></td>
+<td><p>MLflow server endpoint for experiment tracking</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">http://localhost:5000</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">http://mlflow.internal:5000</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">MLFLOW_EXPERIMENT_NAME</span></code></p></td>
+<td><p>Default MLflow experiment name</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">medical_imaging_experiments</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">spine-classification-v2</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">TENSORBOARD_LOG_DIR</span></code></p></td>
+<td><p>Directory for TensorBoard event files</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">./logs/tensorboard</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">/data/tb-logs</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">DEBUG</span></code></p></td>
+<td><p>Enable debug mode (verbose logging, auto-reload)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">True</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">False</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">LOG_LEVEL</span></code></p></td>
+<td><p>Python logging level</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">INFO</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">DEBUG</span></code>, <code class="docutils literal notranslate"><span class="pre">WARNING</span></code>, <code class="docutils literal notranslate"><span class="pre">ERROR</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<section id="example-env">
+<h3>Example <code class="docutils literal notranslate"><span class="pre">.env</span></code><a class="headerlink" href="#example-env" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># AWS Configuration (optional — can be configured via UI)</span>
+<span class="nv">AWS_ACCESS_KEY_ID</span><span class="o">=</span>your_access_key_here
+<span class="nv">AWS_SECRET_ACCESS_KEY</span><span class="o">=</span>your_secret_key_here
+<span class="nv">AWS_DEFAULT_REGION</span><span class="o">=</span>us-east-1
+
+<span class="c1"># MLflow Configuration</span>
+<span class="nv">MLFLOW_TRACKING_URI</span><span class="o">=</span>http://localhost:5000
+<span class="nv">MLFLOW_EXPERIMENT_NAME</span><span class="o">=</span>medical_imaging_experiments
+
+<span class="c1"># TensorBoard Configuration</span>
+<span class="nv">TENSORBOARD_LOG_DIR</span><span class="o">=</span>./logs/tensorboard
+
+<span class="c1"># Application Configuration</span>
+<span class="nv">DEBUG</span><span class="o">=</span>True
+<span class="nv">LOG_LEVEL</span><span class="o">=</span>INFO
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="account-specific-config-env-local">
+<h2>3. Account-Specific Config (<code class="docutils literal notranslate"><span class="pre">.env.local</span></code>)<a class="headerlink" href="#account-specific-config-env-local" title="Link to this heading"></a></h2>
+<p>These variables are unique to your AWS account and should never be committed.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Variable</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Example</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">AWS_ACCOUNT_ID</span></code></p></td>
+<td><p>Your 12-digit AWS account ID</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">123456789012</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SAGEMAKER_ROLE_ARN</span></code></p></td>
+<td><p>SageMaker execution role ARN</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">arn:aws:iam::123456789012:role/SageMakerExecutionRole</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">TRAINING_IMAGE_CLASSIFICATION</span></code></p></td>
+<td><p>ECR URI for the classification training container</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-classification:latest</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">TRAINING_IMAGE_SEGMENTATION</span></code></p></td>
+<td><p>ECR URI for the segmentation training container</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-segmentation:latest</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">INFERENCE_IMAGE_CLASSIFICATION</span></code></p></td>
+<td><p>ECR URI for the classification inference container</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">INFERENCE_IMAGE_SEGMENTATION</span></code></p></td>
+<td><p>ECR URI for the segmentation inference container</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-segmentation:latest</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">DEFAULT_DATA_S3_URI</span></code></p></td>
+<td><p>Default training data S3 URI (pre-populates the UI form)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">s3://medml-data/training/spine-xr/</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">TEST_IMAGE_S3_URI</span></code></p></td>
+<td><p>S3 URI of a test DICOM image for integration tests</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">s3://medml-data/test/sample.dcm</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">TEST_SEGMENTATION_S3_URI</span></code></p></td>
+<td><p>S3 URI of a test NIfTI volume for segmentation tests</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">s3://medml-data/test/volume.nii.gz</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<section id="example-env-local">
+<h3>Example <code class="docutils literal notranslate"><span class="pre">.env.local</span></code><a class="headerlink" href="#example-env-local" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Your AWS account ID (used for ECR image URIs)</span>
+<span class="nv">AWS_ACCOUNT_ID</span><span class="o">=</span><span class="m">123456789012</span>
+
+<span class="c1"># SageMaker execution role</span>
+<span class="nv">SAGEMAKER_ROLE_ARN</span><span class="o">=</span>arn:aws:iam::123456789012:role/SageMakerExecutionRole
+
+<span class="c1"># ECR image URIs (built via build_and_push.sh)</span>
+<span class="nv">TRAINING_IMAGE_CLASSIFICATION</span><span class="o">=</span><span class="m">123456789012</span>.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-classification:latest
+<span class="nv">TRAINING_IMAGE_SEGMENTATION</span><span class="o">=</span><span class="m">123456789012</span>.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-segmentation:latest
+<span class="nv">INFERENCE_IMAGE_CLASSIFICATION</span><span class="o">=</span><span class="m">123456789012</span>.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest
+<span class="nv">INFERENCE_IMAGE_SEGMENTATION</span><span class="o">=</span><span class="m">123456789012</span>.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-segmentation:latest
+
+<span class="c1"># Default data locations</span>
+<span class="nv">DEFAULT_DATA_S3_URI</span><span class="o">=</span>s3://medml-data/training/spine-xr/
+
+<span class="c1"># Test data locations</span>
+<span class="nv">TEST_IMAGE_S3_URI</span><span class="o">=</span>s3://medml-data/test/sample.dcm
+<span class="nv">TEST_SEGMENTATION_S3_URI</span><span class="o">=</span>s3://medml-data/test/volume.nii.gz
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="aws-credentials">
+<h2>4. AWS Credentials<a class="headerlink" href="#aws-credentials" title="Link to this heading"></a></h2>
+<p>The application supports three methods for providing AWS credentials, checked in this order:</p>
+<section id="method-1-environment-variables-env-or-env-local">
+<h3>Method 1: Environment variables (<code class="docutils literal notranslate"><span class="pre">.env</span></code> or <code class="docutils literal notranslate"><span class="pre">.env.local</span></code>)<a class="headerlink" href="#method-1-environment-variables-env-or-env-local" title="Link to this heading"></a></h3>
+<p>Set <code class="docutils literal notranslate"><span class="pre">AWS_ACCESS_KEY_ID</span></code> and <code class="docutils literal notranslate"><span class="pre">AWS_SECRET_ACCESS_KEY</span></code> in your <code class="docutils literal notranslate"><span class="pre">.env</span></code> file:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">AWS_ACCESS_KEY_ID</span><span class="o">=</span>AKIAIOSFODNN7EXAMPLE
+<span class="nv">AWS_SECRET_ACCESS_KEY</span><span class="o">=</span>wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+<span class="nv">AWS_DEFAULT_REGION</span><span class="o">=</span>us-east-1
+</pre></div>
+</div>
+<p>Best for: local development when you don’t have AWS CLI configured.</p>
+</section>
+<section id="method-2-aws-credentials-file-aws-credentials">
+<h3>Method 2: AWS credentials file (<code class="docutils literal notranslate"><span class="pre">~/.aws/credentials</span></code>)<a class="headerlink" href="#method-2-aws-credentials-file-aws-credentials" title="Link to this heading"></a></h3>
+<p>Configure the AWS CLI and the app picks up the default profile automatically:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>aws<span class="w"> </span>configure
+<span class="c1"># Enter: Access Key ID, Secret Access Key, Region, Output format</span>
+</pre></div>
+</div>
+<p>Or use a named profile by setting <code class="docutils literal notranslate"><span class="pre">AWS_PROFILE</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_PROFILE</span><span class="o">=</span>medml-dev
+python<span class="w"> </span>main.py
+</pre></div>
+</div>
+<p>Best for: developers who use multiple AWS accounts.</p>
+</section>
+<section id="method-3-dashboard-ui">
+<h3>Method 3: Dashboard UI<a class="headerlink" href="#method-3-dashboard-ui" title="Link to this heading"></a></h3>
+<p>Navigate to the <strong>AWS</strong> tab in the dashboard and enter credentials interactively. The dashboard calls <code class="docutils literal notranslate"><span class="pre">AWSService.configure_credentials()</span></code> which creates boto3 clients in memory — credentials are not persisted to disk.</p>
+<p>Best for: quick testing or demos without touching local config files.</p>
+</section>
+<section id="credential-priority">
+<h3>Credential priority<a class="headerlink" href="#credential-priority" title="Link to this heading"></a></h3>
+<p>If environment variables are set at startup, the <code class="docutils literal notranslate"><span class="pre">AWSService</span></code> automatically initializes boto3 clients. If they’re absent, the service remains unconfigured until credentials are provided via the UI.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="runtime-config-api">
+<h2>5. Runtime Config API<a class="headerlink" href="#runtime-config-api" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/config</span></code> endpoint serves non-secret configuration values to the frontend, allowing the UI to pre-populate forms with ECR URIs, role ARNs, and default data paths.</p>
+<section id="response">
+<h3>Response<a class="headerlink" href="#response" title="Link to this heading"></a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;aws_account_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;123456789012&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;aws_region&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;us-east-1&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;sagemaker_role_arn&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:iam::123456789012:role/SageMakerExecutionRole&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;training_image_classification&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-classification:latest&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;training_image_segmentation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-segmentation:latest&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;inference_image_classification&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;inference_image_segmentation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-segmentation:latest&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;default_data_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://medml-data/training/spine-xr/&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="how-it-works">
+<h3>How it works<a class="headerlink" href="#how-it-works" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Values come from environment variables (loaded from <code class="docutils literal notranslate"><span class="pre">.env.local</span></code>)</p></li>
+<li><p>If <code class="docutils literal notranslate"><span class="pre">AWS_ACCOUNT_ID</span></code> is set but specific image URIs are not, the endpoint auto-generates ECR URIs using the conventional naming scheme</p></li>
+<li><p>No secrets (access keys, secret keys) are ever exposed through this endpoint</p></li>
+</ul>
+</section>
+<section id="frontend-usage">
+<h3>Frontend usage<a class="headerlink" href="#frontend-usage" title="Link to this heading"></a></h3>
+<p>The dashboard JavaScript fetches <code class="docutils literal notranslate"><span class="pre">/api/config</span></code> on page load to pre-fill the SageMaker training form:</p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="kd">const</span><span class="w"> </span><span class="nx">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">fetch</span><span class="p">(</span><span class="s1">&#39;/api/config&#39;</span><span class="p">).</span><span class="nx">then</span><span class="p">(</span><span class="nx">r</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">r</span><span class="p">.</span><span class="nx">json</span><span class="p">());</span>
+<span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">&#39;image-uri&#39;</span><span class="p">).</span><span class="nx">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">config</span><span class="p">.</span><span class="nx">training_image_classification</span><span class="p">;</span>
+<span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">&#39;role-arn&#39;</span><span class="p">).</span><span class="nx">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">config</span><span class="p">.</span><span class="nx">sagemaker_role_arn</span><span class="p">;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="docker-configuration">
+<h2>6. Docker Configuration<a class="headerlink" href="#docker-configuration" title="Link to this heading"></a></h2>
+<section id="docker-compose-yml">
+<h3><code class="docutils literal notranslate"><span class="pre">docker-compose.yml</span></code><a class="headerlink" href="#docker-compose-yml" title="Link to this heading"></a></h3>
+<p>The single-container setup runs FastAPI, MLflow, and TensorBoard together:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;3.8&#39;</span>
+
+<span class="nt">services</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">medml-platform</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">build</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.</span>
+<span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;8000:8000&quot;</span><span class="w">  </span><span class="c1"># FastAPI application</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;5000:5000&quot;</span><span class="w">  </span><span class="c1"># MLflow</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;6006:6006&quot;</span><span class="w">  </span><span class="c1"># TensorBoard</span>
+<span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DEBUG=True</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">LOG_LEVEL=INFO</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MLFLOW_TRACKING_URI=http://localhost:5000</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">TENSORBOARD_LOG_DIR=./logs/tensorboard</span>
+<span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./data:/app/data</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./logs:/app/logs</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./models:/app/models</span>
+<span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">unless-stopped</span>
+</pre></div>
+</div>
+</section>
+<section id="environment-variables-in-docker">
+<h3>Environment variables in Docker<a class="headerlink" href="#environment-variables-in-docker" title="Link to this heading"></a></h3>
+<p>Pass AWS credentials and account config at run time (never bake them into the image):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker-compose<span class="w"> </span>run<span class="w"> </span>-e<span class="w"> </span><span class="nv">AWS_ACCESS_KEY_ID</span><span class="o">=</span><span class="nv">$AWS_ACCESS_KEY_ID</span><span class="w"> </span><span class="se">\</span>
+<span class="w">                   </span>-e<span class="w"> </span><span class="nv">AWS_SECRET_ACCESS_KEY</span><span class="o">=</span><span class="nv">$AWS_SECRET_ACCESS_KEY</span><span class="w"> </span><span class="se">\</span>
+<span class="w">                   </span>-e<span class="w"> </span><span class="nv">AWS_DEFAULT_REGION</span><span class="o">=</span>us-east-1<span class="w"> </span><span class="se">\</span>
+<span class="w">                   </span>medml-platform
+</pre></div>
+</div>
+<p>Or use an env file:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># docker-compose.override.yml</span>
+services:
+<span class="w">  </span>medml-platform:
+<span class="w">    </span>env_file:
+<span class="w">      </span>-<span class="w"> </span>.env
+<span class="w">      </span>-<span class="w"> </span>.env.local
+</pre></div>
+</div>
+</section>
+<section id="volume-mounts">
+<h3>Volume mounts<a class="headerlink" href="#volume-mounts" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Host path</p></th>
+<th class="head"><p>Container path</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">./data</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">/app/data</span></code></p></td>
+<td><p>Persisted job records, training reports, imported models</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">./logs</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">/app/logs</span></code></p></td>
+<td><p>TensorBoard event files</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">./models</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">/app/models</span></code></p></td>
+<td><p>Downloaded model artifacts</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="exposed-ports">
+<h3>Exposed ports<a class="headerlink" href="#exposed-ports" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Port</p></th>
+<th class="head"><p>Service</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>8000</p></td>
+<td><p>FastAPI dashboard</p></td>
+</tr>
+<tr class="row-odd"><td><p>5000</p></td>
+<td><p>MLflow tracking server</p></td>
+</tr>
+<tr class="row-even"><td><p>6006</p></td>
+<td><p>TensorBoard</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<hr class="docutils" />
+<section id="sagemaker-iam-role">
+<h2>7. SageMaker IAM Role<a class="headerlink" href="#sagemaker-iam-role" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">SAGEMAKER_ROLE_ARN</span></code> must have permissions to run training jobs, deploy endpoints, access S3 data, pull ECR images, and write logs.</p>
+<section id="required-permissions">
+<h3>Required permissions<a class="headerlink" href="#required-permissions" title="Link to this heading"></a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;Version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2012-10-17&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;Statement&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;S3Access&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;s3:GetObject&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;s3:PutObject&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;s3:DeleteObject&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;s3:ListBucket&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;s3:GetBucketLocation&quot;</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;arn:aws:s3:::your-data-bucket&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;arn:aws:s3:::your-data-bucket/*&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;arn:aws:s3:::sagemaker-*&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;arn:aws:s3:::sagemaker-*/*&quot;</span>
+<span class="w">      </span><span class="p">]</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SageMakerFullAccess&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;sagemaker:CreateTrainingJob&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;sagemaker:DescribeTrainingJob&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;sagemaker:ListTrainingJobs&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;sagemaker:StopTrainingJob&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;sagemaker:CreateModel&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;sagemaker:DeleteModel&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;sagemaker:CreateEndpointConfig&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;sagemaker:DeleteEndpointConfig&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;sagemaker:CreateEndpoint&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;sagemaker:DeleteEndpoint&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;sagemaker:DescribeEndpoint&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;sagemaker:UpdateEndpoint&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;sagemaker:InvokeEndpoint&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;sagemaker:CreateProcessingJob&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;sagemaker:DescribeProcessingJob&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;sagemaker:ListProcessingJobs&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;sagemaker:CreateMonitoringSchedule&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;sagemaker:DeleteMonitoringSchedule&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;sagemaker:DescribeMonitoringSchedule&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;sagemaker:ListMonitoringSchedules&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;sagemaker:ListMonitoringExecutions&quot;</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;*&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ECRAccess&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;ecr:GetDownloadUrlForLayer&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;ecr:BatchGetImage&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;ecr:BatchCheckLayerAvailability&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;ecr:GetAuthorizationToken&quot;</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;*&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CloudWatchLogs&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;logs:CreateLogGroup&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;logs:CreateLogStream&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;logs:PutLogEvents&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;logs:DescribeLogStreams&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;logs:GetLogEvents&quot;</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:logs:*:*:log-group:/aws/sagemaker/*&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PassRole&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;iam:PassRole&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:iam::YOUR_ACCOUNT_ID:role/SageMakerExecutionRole&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Condition&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;StringEquals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">&quot;iam:PassedToService&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sagemaker.amazonaws.com&quot;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="trust-policy">
+<h3>Trust policy<a class="headerlink" href="#trust-policy" title="Link to this heading"></a></h3>
+<p>The role must trust the SageMaker service:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;Version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2012-10-17&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;Statement&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Principal&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;Service&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sagemaker.amazonaws.com&quot;</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sts:AssumeRole&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="creating-the-role-via-cli">
+<h3>Creating the role via CLI<a class="headerlink" href="#creating-the-role-via-cli" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create the role</span>
+aws<span class="w"> </span>iam<span class="w"> </span>create-role<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--role-name<span class="w"> </span>SageMakerExecutionRole<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--assume-role-policy-document<span class="w"> </span>file://trust-policy.json
+
+<span class="c1"># Attach the custom policy</span>
+aws<span class="w"> </span>iam<span class="w"> </span>put-role-policy<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--role-name<span class="w"> </span>SageMakerExecutionRole<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--policy-name<span class="w"> </span>MedMLSageMakerPolicy<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--policy-document<span class="w"> </span>file://sagemaker-policy.json
+
+<span class="c1"># Or use the AWS managed policy for broader access (development only)</span>
+aws<span class="w"> </span>iam<span class="w"> </span>attach-role-policy<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--role-name<span class="w"> </span>SageMakerExecutionRole<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--policy-arn<span class="w"> </span>arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="ecr-repositories">
+<h2>8. ECR Repositories<a class="headerlink" href="#ecr-repositories" title="Link to this heading"></a></h2>
+<p>Four ECR repositories are required — two for training (classification + segmentation) and two for inference.</p>
+<section id="repository-names">
+<h3>Repository names<a class="headerlink" href="#repository-names" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Repository</p></th>
+<th class="head"><p>Purpose</p></th>
+<th class="head"><p>Build script</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sm-training-byoc-classification</span></code></p></td>
+<td><p>Classification training container</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">build_and_push.sh</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">sm-training-byoc-segmentation</span></code></p></td>
+<td><p>Segmentation training container</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">build_and_push.sh</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sm-inference-byoc-classification</span></code></p></td>
+<td><p>Classification inference container</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">build_and_push_inference.sh</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">sm-inference-byoc-segmentation</span></code></p></td>
+<td><p>Segmentation inference container</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">build_and_push_inference.sh</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="prerequisites">
+<h3>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p>Docker installed and running</p></li>
+<li><p>AWS CLI configured with ECR push permissions</p></li>
+<li><p>Login to the AWS Deep Learning Containers registry (base image source):</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>aws<span class="w"> </span>ecr<span class="w"> </span>get-login-password<span class="w"> </span>--region<span class="w"> </span>us-east-1<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="p">|</span><span class="w"> </span>docker<span class="w"> </span>login<span class="w"> </span>--username<span class="w"> </span>AWS<span class="w"> </span>--password-stdin<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="m">763104351884</span>.dkr.ecr.us-east-1.amazonaws.com
+</pre></div>
+</div>
+<blockquote>
+<div><p>This is required on every new machine. Without it, Docker cannot pull the PyTorch base image and the build fails with <code class="docutils literal notranslate"><span class="pre">403</span> <span class="pre">Forbidden</span></code>.</p>
+</div></blockquote>
+</section>
+<section id="build-and-push-commands">
+<h3>Build and push commands<a class="headerlink" href="#build-and-push-commands" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Classification training image</span>
+./build_and_push.sh<span class="w"> </span><span class="m">123456789012</span><span class="w"> </span>us-east-1<span class="w"> </span>classification
+
+<span class="c1"># Segmentation training image</span>
+./build_and_push.sh<span class="w"> </span><span class="m">123456789012</span><span class="w"> </span>us-east-1<span class="w"> </span>segmentation
+
+<span class="c1"># Classification inference image</span>
+./build_and_push_inference.sh<span class="w"> </span><span class="m">123456789012</span><span class="w"> </span>us-east-1<span class="w"> </span>classification
+
+<span class="c1"># Segmentation inference image</span>
+./build_and_push_inference.sh<span class="w"> </span><span class="m">123456789012</span><span class="w"> </span>us-east-1<span class="w"> </span>segmentation
+</pre></div>
+</div>
+<p>Each script automatically:</p>
+<ol class="arabic simple">
+<li><p>Builds the Docker image from the appropriate Dockerfile</p></li>
+<li><p>Logs into your ECR registry</p></li>
+<li><p>Creates the repository if it doesn’t exist</p></li>
+<li><p>Pushes the image</p></li>
+</ol>
+</section>
+<section id="what-the-training-image-contains">
+<h3>What the training image contains<a class="headerlink" href="#what-the-training-image-contains" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">Dockerfile.sagemaker</span></code> builds on the AWS PyTorch DLC base image and installs task-specific dependencies:</p>
+<div class="highlight-dockerfile notranslate"><div class="highlight"><pre><span></span><span class="k">ARG</span><span class="w"> </span><span class="nv">TASK</span><span class="o">=</span>classification
+<span class="k">FROM</span><span class="w"> </span><span class="s">763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-training:2.9.0-gpu-py312-cu130-ubuntu22.04-sagemaker</span>
+<span class="k">ARG</span><span class="w"> </span>TASK
+<span class="k">COPY</span><span class="w"> </span>src/<span class="si">${</span><span class="nv">TASK</span><span class="si">}</span>/requirements.txt<span class="w"> </span>/tmp/requirements.txt
+<span class="k">RUN</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--no-cache-dir<span class="w"> </span>-r<span class="w"> </span>/tmp/requirements.txt
+<span class="k">COPY</span><span class="w"> </span>src/<span class="si">${</span><span class="nv">TASK</span><span class="si">}</span>/<span class="w"> </span>/opt/program/
+<span class="k">ENV</span><span class="w"> </span>SAGEMAKER_PROGRAM<span class="w"> </span>train.py
+</pre></div>
+</div>
+<p>Key packages bundled: <code class="docutils literal notranslate"><span class="pre">monai</span></code>, <code class="docutils literal notranslate"><span class="pre">torch</span></code>, <code class="docutils literal notranslate"><span class="pre">torchvision</span></code>, <code class="docutils literal notranslate"><span class="pre">nibabel</span></code>, <code class="docutils literal notranslate"><span class="pre">SimpleITK</span></code>, <code class="docutils literal notranslate"><span class="pre">pydicom</span></code>, <code class="docutils literal notranslate"><span class="pre">mlflow</span></code>, <code class="docutils literal notranslate"><span class="pre">tensorboard</span></code>.</p>
+</section>
+<section id="after-building">
+<h3>After building<a class="headerlink" href="#after-building" title="Link to this heading"></a></h3>
+<p>Update <code class="docutils literal notranslate"><span class="pre">.env.local</span></code> with the resulting image URIs:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">TRAINING_IMAGE_CLASSIFICATION</span><span class="o">=</span><span class="m">123456789012</span>.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-classification:latest
+<span class="nv">TRAINING_IMAGE_SEGMENTATION</span><span class="o">=</span><span class="m">123456789012</span>.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-segmentation:latest
+<span class="nv">INFERENCE_IMAGE_CLASSIFICATION</span><span class="o">=</span><span class="m">123456789012</span>.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest
+<span class="nv">INFERENCE_IMAGE_SEGMENTATION</span><span class="o">=</span><span class="m">123456789012</span>.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-segmentation:latest
+</pre></div>
+</div>
+</section>
+<section id="verifying-images">
+<h3>Verifying images<a class="headerlink" href="#verifying-images" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># List images in a repository</span>
+aws<span class="w"> </span>ecr<span class="w"> </span>describe-images<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--repository-name<span class="w"> </span>sm-training-byoc-classification<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--region<span class="w"> </span>us-east-1<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--query<span class="w"> </span><span class="s1">&#39;imageDetails[*].{Tags:imageTags,Pushed:imagePushedAt,Size:imageSizeInBytes}&#39;</span>
+
+<span class="c1"># Pull and test locally</span>
+docker<span class="w"> </span>pull<span class="w"> </span><span class="m">123456789012</span>.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-classification:latest
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-it<span class="w"> </span>&lt;image-uri&gt;<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import torch; import monai; print(f&#39;PyTorch {torch.__version__}, MONAI {monai.__version__}&#39;)&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="quick-reference">
+<h2>Quick Reference<a class="headerlink" href="#quick-reference" title="Link to this heading"></a></h2>
+<section id="minimal-setup-local-development">
+<h3>Minimal setup (local development)<a class="headerlink" href="#minimal-setup-local-development" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cp<span class="w"> </span>.env.example<span class="w"> </span>.env
+cp<span class="w"> </span>.env.local.example<span class="w"> </span>.env.local
+<span class="c1"># Edit .env.local:</span>
+<span class="c1">#   AWS_ACCOUNT_ID=123456789012</span>
+<span class="c1">#   SAGEMAKER_ROLE_ARN=arn:aws:iam::123456789012:role/SageMakerExecutionRole</span>
+python<span class="w"> </span>main.py
+</pre></div>
+</div>
+</section>
+<section id="full-setup-training-deployment">
+<h3>Full setup (training + deployment)<a class="headerlink" href="#full-setup-training-deployment" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># 1. Configure environment</span>
+cp<span class="w"> </span>.env.example<span class="w"> </span>.env
+cp<span class="w"> </span>.env.local.example<span class="w"> </span>.env.local
+vim<span class="w"> </span>.env.local<span class="w">  </span><span class="c1"># fill in all values</span>
+
+<span class="c1"># 2. Build and push Docker images</span>
+aws<span class="w"> </span>ecr<span class="w"> </span>get-login-password<span class="w"> </span>--region<span class="w"> </span>us-east-1<span class="w"> </span><span class="p">|</span><span class="w"> </span>docker<span class="w"> </span>login<span class="w"> </span>--username<span class="w"> </span>AWS<span class="w"> </span>--password-stdin<span class="w"> </span><span class="m">763104351884</span>.dkr.ecr.us-east-1.amazonaws.com
+./build_and_push.sh<span class="w"> </span>YOUR_ACCOUNT_ID<span class="w"> </span>us-east-1<span class="w"> </span>classification
+./build_and_push.sh<span class="w"> </span>YOUR_ACCOUNT_ID<span class="w"> </span>us-east-1<span class="w"> </span>segmentation
+./build_and_push_inference.sh<span class="w"> </span>YOUR_ACCOUNT_ID<span class="w"> </span>us-east-1<span class="w"> </span>classification
+./build_and_push_inference.sh<span class="w"> </span>YOUR_ACCOUNT_ID<span class="w"> </span>us-east-1<span class="w"> </span>segmentation
+
+<span class="c1"># 3. Start the dashboard</span>
+python<span class="w"> </span>main.py
+
+<span class="c1"># 4. Open http://localhost:8000 and sync from AWS</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="getting-started.html" class="btn btn-neutral float-left" title="Getting Started" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="user-guide/index.html" class="btn btn-neutral float-right" title="MedML Training Dashboard — User Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, MedML Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

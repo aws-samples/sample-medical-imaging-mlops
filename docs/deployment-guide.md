@@ -228,7 +228,7 @@ All account-specific configuration goes in `.env.local` (gitignored):
 - ECR image URIs for training and inference
 - `DEFAULT_DATA_S3_URI`
 
-See the [README](../README.md#environment-variables) for the full list.
+See the [Configuration](configuration.md) page for the full list.
 
 #### Persistent state
 

@@ -1,10 +1,23 @@
 # MedML Training Dashboard — User Guide
 
+```{toctree}
+:maxdepth: 2
+:caption: User Guide
+
+training
+deployment
+inference
+evaluation
+monitoring
+fairness
+report-generation
+```
+
 This guide covers the end-to-end workflow for training, deploying, and monitoring medical image classification and segmentation models using the MedML Training Dashboard.
 
 ## Prerequisites
 
-- Dashboard running at `http://localhost:8000` (see [README](../../README.md) for setup)
+- Dashboard running at `http://localhost:8000` (see [Getting Started](../getting-started.md) for setup)
 - AWS credentials configured (environment variables or entered via the dashboard)
 - S3 bucket with training data uploaded
 - SageMaker execution role ARN with appropriate permissions

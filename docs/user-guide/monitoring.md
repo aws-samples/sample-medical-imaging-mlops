@@ -82,7 +82,7 @@ Returns:
   "class_distribution": {"0": 15, "1": 8, "2": 12},
   "confidence_histogram": [0, 2, 1, 0, 3, 5, 8, 10, 6, 0],
   "avg_confidence": 0.72,
-  "recent_records": [...]
+  "recent_records": []
 }
 ```
 

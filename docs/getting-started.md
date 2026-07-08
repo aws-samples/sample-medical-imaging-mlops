@@ -102,7 +102,7 @@ The dashboard starts at **http://localhost:8000**.
 
 Open it in your browser — you'll see the main dashboard with tabs for Training, Deployment, Inference, Monitoring, and more.
 
-> On first launch with empty data stores, the local job and deployment lists will be empty. See [Initial Setup](#initial-setup) to populate them from AWS.
+> On first launch with empty data stores, the local job and deployment lists will be empty. See the Initial Setup section below to populate them from AWS.
 
 ## Initial Setup
 

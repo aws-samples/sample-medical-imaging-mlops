@@ -201,7 +201,7 @@ Import a pre-trained model artifact from S3.
 List all imported models.
 
 **Response:**
-```json
+```text
 {"models": [...]}
 ```
 
@@ -825,7 +825,7 @@ Submit a SageMaker Processing Job to evaluate a deployed endpoint against a labe
 List all evaluation jobs. In-progress jobs are refreshed from AWS.
 
 **Response:**
-```json
+```text
 {"jobs": [...]}
 ```
 
@@ -1096,7 +1096,7 @@ List all monitoring schedules (newest first).
 | `local_only` | bool | `false` | Skip AWS refresh |
 
 **Response:**
-```json
+```text
 {"schedules": [...]}
 ```
 
@@ -1112,7 +1112,7 @@ List all baseline jobs.
 | `local_only` | bool | `false` | Skip AWS refresh for in-progress baselines |
 
 **Response:**
-```json
+```text
 {"baselines": [...]}
 ```
 
@@ -1262,4 +1262,3 @@ Generate structured academic paper sections from selected jobs.
 }
 ```
 
-Available sections: `abstract`, `methods`, `results`, `discussion`. When `include_fairness` is `true`, fairness analysis results are incorporated into the generated text.
