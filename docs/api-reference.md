@@ -331,12 +331,12 @@ Start a SageMaker BYOC training job.
   "instance_type": "ml.g5.xlarge",
   "instance_count": 1,
   "image_uri": "123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-classification:latest",
-  "data_s3_uri": "s3://bucket/training-data/",
+  "data_s3_uri": "s3://<your-bucket-name>/training-data/",
   "role_arn": "arn:aws:iam::123456789012:role/SageMakerRole",
   "source_dir": "src/classification",
   "entry_point": "train.py",
   "mlflow_tracking_uri": "arn:aws:sagemaker:us-east-1:123456789012:mlflow-tracking-server/my-server",
-  "output_s3_uri": "s3://bucket/output/"
+  "output_s3_uri": "s3://<your-bucket-name>/output/"
 }
 ```
 
@@ -370,7 +370,7 @@ List all SageMaker training jobs. Active jobs (`InProgress`, `Stopping`) are ref
       "model_name": "densenet121",
       "task_type": "classification",
       "instance_type": "ml.g5.xlarge",
-      "model_artifacts": "s3://bucket/output/my-training-2024-06-15/output/model.tar.gz",
+      "model_artifacts": "s3://<your-bucket-name>/output/my-training-2024-06-15/output/model.tar.gz",
       "creation_time": "2024-06-15T10:30:00Z",
       "training_end_time": "2024-06-15T11:15:00Z",
       "billable_seconds": 2700,
@@ -432,7 +432,7 @@ Fetch `result.json` from the job's `model.tar.gz`. Downloads from S3 on first ca
     "train_accuracy": 0.95,
     "val_accuracy": 0.91,
     "best_val_accuracy": 0.92,
-    "data_s3_uri": "s3://bucket/data/",
+    "data_s3_uri": "s3://<your-bucket-name>/data/",
     "task_type": "classification",
     "dimension": "2D",
     "learning_rate": 0.001,
@@ -491,7 +491,7 @@ Delete `model.tar.gz` from S3 for a completed job.
 
 **Response:**
 ```json
-{"job_name": "my-training-2024-06-15", "deleted_uri": "s3://bucket/output/model.tar.gz"}
+{"job_name": "my-training-2024-06-15", "deleted_uri": "s3://<your-bucket-name>/output/model.tar.gz"}
 ```
 
 ---
@@ -503,7 +503,7 @@ Start a fine-tuning job from a completed job's checkpoint.
 **Request body:** Same as `/sagemaker/start` with these additional fields:
 ```json
 {
-  "checkpoint_s3_uri": "s3://bucket/output/previous-job/output/model.tar.gz",
+  "checkpoint_s3_uri": "s3://<your-bucket-name>/output/previous-job/output/model.tar.gz",
   "fine_tuned_from": "previous-job-name"
 }
 ```
@@ -569,7 +569,7 @@ Create a SageMaker endpoint or import/track an existing one.
 ```json
 {
   "endpoint_name": "my-classifier-endpoint",
-  "model_artifacts": "s3://bucket/output/job/output/model.tar.gz",
+  "model_artifacts": "s3://<your-bucket-name>/output/job/output/model.tar.gz",
   "image_uri": "123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest",
   "role_arn": "arn:aws:iam::123456789012:role/SageMakerRole",
   "instance_type": "ml.m5.xlarge",
@@ -671,15 +671,15 @@ Submit an async inference request to a SageMaker async endpoint.
 ```json
 {
   "endpoint_name": "my-async-endpoint",
-  "input_s3_uri": "s3://bucket/inputs/request.json",
-  "output_s3_uri": "s3://bucket/outputs/"
+  "input_s3_uri": "s3://<your-bucket-name>/inputs/request.json",
+  "output_s3_uri": "s3://<your-bucket-name>/outputs/"
 }
 ```
 
 **Response:**
 ```json
 {
-  "output_location": "s3://bucket/outputs/uuid.out",
+  "output_location": "s3://<your-bucket-name>/outputs/uuid.out",
   "inference_id": "uuid-string"
 }
 ```
@@ -717,8 +717,8 @@ Invoke a SageMaker real-time endpoint with a JSON payload.
   "endpoint_name": "my-classifier-endpoint",
   "task_type": "classification",
   "input_type": "s3_uri",
-  "input_value": "s3://bucket/images/scan.dcm",
-  "output_s3_uri": "s3://bucket/results/"
+  "input_value": "s3://<your-bucket-name>/images/scan.dcm",
+  "output_s3_uri": "s3://<your-bucket-name>/results/"
 }
 ```
 
@@ -735,7 +735,7 @@ Invoke a SageMaker real-time endpoint with a JSON payload.
   "predicted_class": [7],
   "confidence": [0.1713],
   "task_type": "classification",
-  "s3_result_path": "s3://bucket/results/my-classifier-endpoint-result.json"
+  "s3_result_path": "s3://<your-bucket-name>/results/my-classifier-endpoint-result.json"
 }
 ```
 
@@ -794,8 +794,8 @@ Submit a SageMaker Processing Job to evaluate a deployed endpoint against a labe
 ```json
 {
   "endpoint_name": "my-classifier-endpoint",
-  "data_s3_uri": "s3://bucket/test-data/",
-  "output_s3_uri": "s3://bucket/eval-results/my-eval",
+  "data_s3_uri": "s3://<your-bucket-name>/test-data/",
+  "output_s3_uri": "s3://<your-bucket-name>/eval-results/my-eval",
   "image_uri": "123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest",
   "role_arn": "arn:aws:iam::123456789012:role/SageMakerRole",
   "instance_type": "ml.m5.xlarge",
@@ -811,8 +811,8 @@ Submit a SageMaker Processing Job to evaluate a deployed endpoint against a labe
   "job_name": "eval-my-classifier-20240615-103000",
   "status": "InProgress",
   "endpoint_name": "my-classifier-endpoint",
-  "data_s3_uri": "s3://bucket/test-data/",
-  "output_s3_uri": "s3://bucket/eval-results/my-eval",
+  "data_s3_uri": "s3://<your-bucket-name>/test-data/",
+  "output_s3_uri": "s3://<your-bucket-name>/eval-results/my-eval",
   "task_type": "classification",
   "created_at": "2024-06-15T10:30:00Z"
 }
@@ -885,7 +885,7 @@ Return local cache URLs for plot files.
     "roc_auc.png": "/evaluation-results/job-name/roc_auc.png"
   },
   "task_type": "classification",
-  "output_s3_uri": "s3://bucket/eval-results/my-eval",
+  "output_s3_uri": "s3://<your-bucket-name>/eval-results/my-eval",
   "source": "cache"
 }
 ```
@@ -968,7 +968,7 @@ Enable or update data capture on an existing SageMaker endpoint.
 ```json
 {
   "endpoint_name": "my-classifier-endpoint",
-  "capture_s3_uri": "s3://bucket/capture-data/",
+  "capture_s3_uri": "s3://<your-bucket-name>/capture-data/",
   "sampling_percentage": 100
 }
 ```
@@ -980,7 +980,7 @@ Enable or update data capture on an existing SageMaker endpoint.
 {
   "endpoint_name": "my-classifier-endpoint",
   "status": "Updating",
-  "capture_s3_uri": "s3://bucket/capture-data/"
+  "capture_s3_uri": "s3://<your-bucket-name>/capture-data/"
 }
 ```
 
@@ -995,8 +995,8 @@ Submit a SageMaker Processing Job to compute data quality baseline statistics an
 **Request body:**
 ```json
 {
-  "baseline_data_s3_uri": "s3://bucket/baseline-data/",
-  "output_s3_uri": "s3://bucket/baseline-output/",
+  "baseline_data_s3_uri": "s3://<your-bucket-name>/baseline-data/",
+  "output_s3_uri": "s3://<your-bucket-name>/baseline-output/",
   "role_arn": "arn:aws:iam::123456789012:role/SageMakerRole",
   "instance_type": "ml.m5.xlarge",
   "job_name": "dq-baseline-20240615"
@@ -1011,7 +1011,7 @@ Submit a SageMaker Processing Job to compute data quality baseline statistics an
   "job_name": "dq-baseline-20240615",
   "status": "InProgress",
   "type": "baseline",
-  "output_s3_uri": "s3://bucket/baseline-output/",
+  "output_s3_uri": "s3://<your-bucket-name>/baseline-output/",
   "created_at": "2024-06-15T10:30:00Z"
 }
 ```
@@ -1027,9 +1027,9 @@ Create a data quality monitoring schedule.
 {
   "schedule_name": "my-dq-schedule",
   "endpoint_name": "my-classifier-endpoint",
-  "baseline_constraints_s3_uri": "s3://bucket/baseline-output/constraints.json",
-  "baseline_statistics_s3_uri": "s3://bucket/baseline-output/statistics.json",
-  "output_s3_uri": "s3://bucket/monitor-output/",
+  "baseline_constraints_s3_uri": "s3://<your-bucket-name>/baseline-output/constraints.json",
+  "baseline_statistics_s3_uri": "s3://<your-bucket-name>/baseline-output/statistics.json",
+  "output_s3_uri": "s3://<your-bucket-name>/monitor-output/",
   "role_arn": "arn:aws:iam::123456789012:role/SageMakerRole",
   "instance_type": "ml.m5.xlarge",
   "schedule_expression": "cron(0 * ? * * *)"
@@ -1059,8 +1059,8 @@ Create a model quality monitoring schedule.
 {
   "schedule_name": "my-mq-schedule",
   "endpoint_name": "my-classifier-endpoint",
-  "ground_truth_s3_uri": "s3://bucket/ground-truth/",
-  "output_s3_uri": "s3://bucket/mq-output/",
+  "ground_truth_s3_uri": "s3://<your-bucket-name>/ground-truth/",
+  "output_s3_uri": "s3://<your-bucket-name>/mq-output/",
   "role_arn": "arn:aws:iam::123456789012:role/SageMakerRole",
   "instance_type": "ml.m5.xlarge",
   "schedule_expression": "cron(0 * ? * * *)",
@@ -1167,7 +1167,7 @@ Scan DICOM files under an S3 prefix and extract demographic distributions for bi
 **Request body:**
 ```json
 {
-  "s3_uri": "s3://bucket/dicom-data/",
+  "s3_uri": "s3://<your-bucket-name>/dicom-data/",
   "max_files": 200
 }
 ```

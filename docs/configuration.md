@@ -80,9 +80,9 @@ These variables are unique to your AWS account and should never be committed.
 | `TRAINING_IMAGE_SEGMENTATION` | ECR URI for the segmentation training container | `123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-segmentation:latest` |
 | `INFERENCE_IMAGE_CLASSIFICATION` | ECR URI for the classification inference container | `123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest` |
 | `INFERENCE_IMAGE_SEGMENTATION` | ECR URI for the segmentation inference container | `123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-segmentation:latest` |
-| `DEFAULT_DATA_S3_URI` | Default training data S3 URI (pre-populates the UI form) | `s3://medml-data/training/spine-xr/` |
-| `TEST_IMAGE_S3_URI` | S3 URI of a test DICOM image for integration tests | `s3://medml-data/test/sample.dcm` |
-| `TEST_SEGMENTATION_S3_URI` | S3 URI of a test NIfTI volume for segmentation tests | `s3://medml-data/test/volume.nii.gz` |
+| `DEFAULT_DATA_S3_URI` | Default training data S3 URI (pre-populates the UI form) | `s3://<your-bucket-name>/training/spine-xr/` |
+| `TEST_IMAGE_S3_URI` | S3 URI of a test DICOM image for integration tests | `s3://<your-bucket-name>/test/sample.dcm` |
+| `TEST_SEGMENTATION_S3_URI` | S3 URI of a test NIfTI volume for segmentation tests | `s3://<your-bucket-name>/test/volume.nii.gz` |
 
 ### Example `.env.local`
 
@@ -100,11 +100,11 @@ INFERENCE_IMAGE_CLASSIFICATION=123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-i
 INFERENCE_IMAGE_SEGMENTATION=123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-segmentation:latest
 
 # Default data locations
-DEFAULT_DATA_S3_URI=s3://medml-data/training/spine-xr/
+DEFAULT_DATA_S3_URI=s3://<your-bucket-name>/training/spine-xr/
 
 # Test data locations
-TEST_IMAGE_S3_URI=s3://medml-data/test/sample.dcm
-TEST_SEGMENTATION_S3_URI=s3://medml-data/test/volume.nii.gz
+TEST_IMAGE_S3_URI=s3://<your-bucket-name>/test/sample.dcm
+TEST_SEGMENTATION_S3_URI=s3://<your-bucket-name>/test/volume.nii.gz
 ```
 
 ---
@@ -170,7 +170,7 @@ The `GET /api/config` endpoint serves non-secret configuration values to the fro
   "training_image_segmentation": "123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-segmentation:latest",
   "inference_image_classification": "123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest",
   "inference_image_segmentation": "123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-segmentation:latest",
-  "default_data_s3_uri": "s3://medml-data/training/spine-xr/"
+  "default_data_s3_uri": "s3://<your-bucket-name>/training/spine-xr/"
 }
 ```
 
@@ -313,18 +313,24 @@ The `SAGEMAKER_ROLE_ARN` must have permissions to run training jobs, deploy endp
         "sagemaker:ListMonitoringSchedules",
         "sagemaker:ListMonitoringExecutions"
       ],
+      "Resource": "arn:aws:sagemaker:${REGION}:${ACCOUNT}:*",
+      "Comment": "Narrow further by replacing the trailing wildcard with specific resource types, e.g. training-job/medml-*, endpoint/medml-*, etc."
+    },
+    {
+      "Sid": "ECRAuthToken",
+      "Effect": "Allow",
+      "Action": "ecr:GetAuthorizationToken",
       "Resource": "*"
     },
     {
-      "Sid": "ECRAccess",
+      "Sid": "ECRImagePull",
       "Effect": "Allow",
       "Action": [
         "ecr:GetDownloadUrlForLayer",
         "ecr:BatchGetImage",
-        "ecr:BatchCheckLayerAvailability",
-        "ecr:GetAuthorizationToken"
+        "ecr:BatchCheckLayerAvailability"
       ],
-      "Resource": "*"
+      "Resource": "arn:aws:ecr:${REGION}:${ACCOUNT}:repository/sm-*"
     },
     {
       "Sid": "CloudWatchLogs",

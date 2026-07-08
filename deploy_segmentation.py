@@ -30,6 +30,12 @@ Usage:
         --endpoint-name aorta-segmentation \
         --cleanup
 """
+# ── Medical AI Safety Notice ─────────────────────────────────────────────────
+# This script deploys medical imaging segmentation models for RESEARCH AND
+# DEVELOPMENT purposes only. Model outputs must not be used as the sole basis
+# for clinical decisions without review by qualified healthcare professionals.
+# Clinical deployment requires regulatory approval and clinical validation.
+# ─────────────────────────────────────────────────────────────────────────────
 import argparse
 import base64
 import json

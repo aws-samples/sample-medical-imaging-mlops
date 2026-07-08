@@ -22,6 +22,9 @@ try:
 except ImportError:
     pass
 
+# Make external links open in new tab with noopener
+myst_links_external_new_tab = True
+
 # Source file suffixes
 source_suffix = {
     '.rst': 'restructuredtext',

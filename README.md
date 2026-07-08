@@ -1,5 +1,7 @@
 # MedML Training Dashboard
 
+> **⚠️ Research Use Only** — This platform is intended for research and development of medical imaging AI models. Model outputs must not be used as the sole basis for clinical decisions without review by qualified healthcare professionals. Clinical deployment requires regulatory approval (e.g. FDA clearance), clinical validation studies, and human-in-the-loop oversight. See the [Responsible AI](#responsible-ai) section below.
+
 A FastAPI web dashboard for managing medical image classification workflows on AWS. Provides a UI for data ingestion, model training (local and SageMaker), and deployment.
 
 ## Features
@@ -447,6 +449,17 @@ This starts MLflow, TensorBoard, and the FastAPI app together.
 ├── Dockerfile
 └── docker-compose.yml
 ```
+
+## Responsible AI
+
+This platform processes medical imaging data for AI model training and evaluation. Important considerations:
+
+- **Not a medical device** — AI outputs are for research purposes only and must not be used as the sole basis for clinical decisions.
+- **Human oversight required** — Any clinical deployment requires qualified healthcare professional review of all AI predictions.
+- **Regulatory compliance** — Production medical AI systems require appropriate regulatory clearances (FDA, CE marking) and institutional review board approval.
+- **Fairness and bias** — Use the built-in Fairness Analysis feature to audit demographic representation in training data. Monitor model performance across subgroups.
+- **Validation** — Models must undergo clinical validation studies before use in patient care settings.
+- **Data privacy** — Ensure compliance with HIPAA, GDPR, and applicable data protection regulations when handling patient data.
 
 ## Testing
 

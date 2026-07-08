@@ -1,5 +1,7 @@
 # Getting Started
 
+> **Note:** All `http://localhost` URLs in this documentation refer to the local development server and are not exposed to the public internet.
+
 This guide walks you through setting up and running the MedML Training Dashboard — a FastAPI web application for managing medical image classification and segmentation workflows on AWS.
 
 ## Prerequisites

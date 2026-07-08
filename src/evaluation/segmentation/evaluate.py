@@ -12,6 +12,13 @@ Outputs written to /opt/ml/processing/output:
     predictions.csv       — per-subject ground truth vs predicted Dice/IoU
 """
 
+# ── Medical AI Safety Notice ─────────────────────────────────────────────────
+# This evaluation script assesses model performance for RESEARCH purposes only.
+# Evaluation metrics do not constitute clinical validation. Production medical
+# AI systems require regulatory clearance, clinical validation studies, and
+# human-in-the-loop oversight before deployment in patient care settings.
+# ─────────────────────────────────────────────────────────────────────────────
+
 import argparse
 import json
 import logging
