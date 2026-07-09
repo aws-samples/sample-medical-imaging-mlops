@@ -42,7 +42,7 @@ async function runFairnessScan(e) {
         });
 
         status.className = 'sm-status-banner sm-status-success';
-        status.innerHTML = `<i class="fas fa-check-circle"></i> Scanned <strong>${data.total_scanned}</strong> of <strong>${data.total_found}</strong> DICOM files${data.errors ? ` (${data.errors} unreadable)` : ''}`;
+        status.innerHTML = `<i class="fas fa-check-circle"></i> Scanned <strong>${escapeHtml(String(data.total_scanned))}</strong> of <strong>${escapeHtml(String(data.total_found))}</strong> DICOM files${data.errors ? ` (${escapeHtml(String(data.errors))} unreadable)` : ''}`;
 
         renderFairnessResults(data);
         results.style.display = 'block';

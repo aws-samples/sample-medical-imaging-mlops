@@ -43,7 +43,7 @@ async function loadCaptureViewer() {
         );
 
         if (!data.total_records) {
-            showMonitorBanner(banner, 'error', `<i class="fas fa-info-circle"></i> ${data.message || 'No capture records found'}`);
+            showMonitorBanner(banner, 'error', `<i class="fas fa-info-circle"></i> ${escapeHtml(data.message || 'No capture records found')}`);
             return;
         }
 
@@ -54,7 +54,7 @@ async function loadCaptureViewer() {
         renderCaptureViewer(data);
         if (results) results.style.display = 'block';
     } catch (err) {
-        showMonitorBanner(banner, 'error', `<i class="fas fa-exclamation-circle"></i> ${err.message}`);
+        showMonitorBanner(banner, 'error', `<i class="fas fa-exclamation-circle"></i> ${escapeHtml(err.message)}`);
     }
 }
 
@@ -252,7 +252,7 @@ async function enableDataCapture(e) {
         showMonitorBanner(banner, 'success',
             `<i class="fas fa-check-circle"></i> Data capture enabled on <strong>${result.endpoint_name}</strong> — endpoint updating`);
     } catch (err) {
-        showMonitorBanner(banner, 'error', `<i class="fas fa-exclamation-circle"></i> ${err.message}`);
+        showMonitorBanner(banner, 'error', `<i class="fas fa-exclamation-circle"></i> ${escapeHtml(err.message)}`);
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-camera"></i> Enable Data Capture';
@@ -286,7 +286,7 @@ async function runBaseline(e) {
         loadBaselineJobs();
         refreshDQBaselinePicker();
     } catch (err) {
-        showMonitorBanner(banner, 'error', `<i class="fas fa-exclamation-circle"></i> ${err.message}`);
+        showMonitorBanner(banner, 'error', `<i class="fas fa-exclamation-circle"></i> ${escapeHtml(err.message)}`);
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-play"></i> Run Baseline Job';
@@ -321,7 +321,7 @@ async function createDQSchedule(e) {
             `<i class="fas fa-check-circle"></i> Schedule <strong>${result.schedule_name}</strong> created`);
         loadMonitorSchedules();
     } catch (err) {
-        showMonitorBanner(banner, 'error', `<i class="fas fa-exclamation-circle"></i> ${err.message}`);
+        showMonitorBanner(banner, 'error', `<i class="fas fa-exclamation-circle"></i> ${escapeHtml(err.message)}`);
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-clock"></i> Create Schedule';
@@ -355,7 +355,7 @@ async function createMQSchedule(e) {
             `<i class="fas fa-check-circle"></i> Schedule <strong>${result.schedule_name}</strong> created`);
         loadMonitorSchedules();
     } catch (err) {
-        showMonitorBanner(banner, 'error', `<i class="fas fa-exclamation-circle"></i> ${err.message}`);
+        showMonitorBanner(banner, 'error', `<i class="fas fa-exclamation-circle"></i> ${escapeHtml(err.message)}`);
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-clock"></i> Create Schedule';

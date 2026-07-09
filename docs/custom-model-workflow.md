@@ -1,5 +1,7 @@
 # Custom Model Workflow
 
+> **⚠️ Research Use Only** — Models trained and deployed through this platform are for research and development purposes. Clinical deployment requires regulatory review, validation against clinical standards, and human oversight. AI predictions must not be used as the sole basis for medical decisions.
+
 A guide for AI researchers who want to add custom models to the MedML Training Dashboard without modifying the backend code.
 
 ## What You Provide (Zip File)

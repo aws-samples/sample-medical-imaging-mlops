@@ -1,5 +1,7 @@
 # Monitoring Guide
 
+> **⚠️ Research Use Only** — Models trained and deployed through this platform are for research and development purposes. Clinical deployment requires regulatory review, validation against clinical standards, and human oversight. AI predictions must not be used as the sole basis for medical decisions.
+
 This guide covers the full SageMaker Model Monitor lifecycle: data capture, traffic analysis, baselines, and monitoring schedules.
 
 ## Overview

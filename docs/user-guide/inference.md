@@ -28,7 +28,7 @@ curl -X POST http://localhost:8000/api/inference/invoke \
     "endpoint_name": "spine-classifier-v2",
     "task_type": "classification",
     "input_type": "s3_uri",
-    "input_value": "s3://my-bucket/test/image.dcm"
+    "input_value": "s3://<your-bucket-name>/test/image.dcm"
   }'
 ```
 
@@ -50,8 +50,8 @@ curl -X POST http://localhost:8000/api/inference/invoke \
     "endpoint_name": "spine-classifier-v2",
     "task_type": "classification",
     "input_type": "s3_uri",
-    "input_value": "s3://my-bucket/test/image.dcm",
-    "output_s3_uri": "s3://my-bucket/results/"
+    "input_value": "s3://<your-bucket-name>/test/image.dcm",
+    "output_s3_uri": "s3://<your-bucket-name>/results/"
   }'
 ```
 

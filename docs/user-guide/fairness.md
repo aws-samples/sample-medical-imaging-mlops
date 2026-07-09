@@ -1,5 +1,7 @@
 # Fairness Analysis Guide
 
+> **⚠️ Research Use Only** — Models trained and deployed through this platform are for research and development purposes. Clinical deployment requires regulatory review, validation against clinical standards, and human oversight. AI predictions must not be used as the sole basis for medical decisions.
+
 This guide covers scanning DICOM datasets for demographic distributions and identifying potential biases in your training data.
 
 ## Overview

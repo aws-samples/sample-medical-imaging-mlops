@@ -1,5 +1,7 @@
 # Report Generation Guide
 
+> **⚠️ Research Use Only** — Models trained and deployed through this platform are for research and development purposes. Clinical deployment requires regulatory review, validation against clinical standards, and human oversight. AI predictions must not be used as the sole basis for medical decisions.
+
 This guide covers generating structured academic paper sections from completed training and evaluation jobs.
 
 ## Overview

@@ -1,5 +1,7 @@
 # Configuration
 
+> **⚠️ Research Use Only** — Models trained and deployed through this platform are for research and development purposes. Clinical deployment requires regulatory review, validation against clinical standards, and human oversight. AI predictions must not be used as the sole basis for medical decisions.
+
 This document covers all configuration options for the MedML Training Dashboard — environment files, AWS credentials, Docker setup, IAM permissions, and ECR image management.
 
 ---
