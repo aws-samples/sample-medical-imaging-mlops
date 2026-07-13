@@ -24,13 +24,32 @@ let _cvConfChart  = null;
 async function loadCaptureViewer() {
     const select       = document.getElementById('cv-endpoint-select');
     const endpointName = select?.value?.trim();
-    const captureS3    = document.getElementById('cv-capture-s3')?.value?.trim();
+    let   captureS3    = '';
     const maxFiles     = document.getElementById('cv-max-files')?.value || '20';
     const banner       = document.getElementById('cv-status-banner');
     const results      = document.getElementById('cv-results');
 
-    if (!endpointName || !captureS3) {
-        showMonitorBanner(banner, 'error', '<i class="fas fa-exclamation-circle"></i> Select an endpoint and enter a capture S3 URI');
+    if (!endpointName) {
+        showMonitorBanner(banner, 'error', '<i class="fas fa-exclamation-circle"></i> Select an endpoint');
+        return;
+    }
+
+    // Resolve capture S3 URI from dropdown data attribute
+    const selected = select.options[select.selectedIndex];
+    captureS3 = selected?.dataset?.capture || '';
+
+    // If still empty, try fetching from the deployment status
+    if (!captureS3) {
+        try {
+            const status = await apiCall(`/api/deployment/deployments/${encodeURIComponent(endpointName)}/status`);
+            if (status.capture_s3_uri) {
+                captureS3 = status.capture_s3_uri;
+            }
+        } catch (_) {}
+    }
+
+    if (!captureS3) {
+        showMonitorBanner(banner, 'error', '<i class="fas fa-exclamation-circle"></i> No capture S3 URI found for this endpoint. Enable data capture first.');
         return;
     }
 

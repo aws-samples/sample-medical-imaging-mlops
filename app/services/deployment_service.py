@@ -204,6 +204,22 @@ class DeploymentService:
             )
             if status == "Failed":
                 record["failure_reason"] = response.get("FailureReason")
+
+            # Check data capture config from the endpoint config
+            config_name = response.get("EndpointConfigName")
+            if config_name:
+                try:
+                    cfg_resp = sagemaker_client.describe_endpoint_config(EndpointConfigName=config_name)
+                    dc = cfg_resp.get("DataCaptureConfig", {})
+                    if dc.get("EnableCapture"):
+                        record["data_capture_enabled"] = True
+                        record["capture_s3_uri"] = dc.get("DestinationS3Uri", "")
+                        record["capture_sampling_pct"] = dc.get("InitialSamplingPercentage", 100)
+                    else:
+                        record["data_capture_enabled"] = False
+                except Exception:
+                    pass
+
             self.deployments[endpoint_name] = record
             self._save()
             return record

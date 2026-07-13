@@ -42,7 +42,7 @@ app.include_router(monitoring_router.router, prefix="/api/monitoring", tags=["Mo
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="index.html")
 
 @app.get("/api/config")
 async def get_config():
