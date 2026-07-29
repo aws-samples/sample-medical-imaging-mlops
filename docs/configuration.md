@@ -77,7 +77,7 @@ These variables are unique to your AWS account and should never be committed.
 | Variable | Description | Example |
 |---|---|---|
 | `AWS_ACCOUNT_ID` | Your 12-digit AWS account ID | `123456789012` |
-| `SAGEMAKER_ROLE_ARN` | SageMaker execution role ARN | `arn:aws:iam::123456789012:role/SageMakerExecutionRole` |
+| `SAGEMAKER_ROLE_ARN` | SageMaker execution role ARN | `arn:aws:iam::123456789012:role/AmazonSageMaker-ExecutionRole-sgm` |
 | `TRAINING_IMAGE_CLASSIFICATION` | ECR URI for the classification training container | `123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-classification:latest` |
 | `TRAINING_IMAGE_SEGMENTATION` | ECR URI for the segmentation training container | `123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-segmentation:latest` |
 | `INFERENCE_IMAGE_CLASSIFICATION` | ECR URI for the classification inference container | `123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest` |
@@ -92,8 +92,8 @@ These variables are unique to your AWS account and should never be committed.
 # Your AWS account ID (used for ECR image URIs)
 AWS_ACCOUNT_ID=123456789012
 
-# SageMaker execution role
-SAGEMAKER_ROLE_ARN=arn:aws:iam::123456789012:role/SageMakerExecutionRole
+# SageMaker execution role (created by ./create-sagemaker-role.sh)
+SAGEMAKER_ROLE_ARN=arn:aws:iam::123456789012:role/AmazonSageMaker-ExecutionRole-sgm
 
 # ECR image URIs (built via build_and_push.sh)
 TRAINING_IMAGE_CLASSIFICATION=123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-classification:latest
@@ -167,7 +167,7 @@ The `GET /api/config` endpoint serves non-secret configuration values to the fro
 {
   "aws_account_id": "123456789012",
   "aws_region": "us-east-1",
-  "sagemaker_role_arn": "arn:aws:iam::123456789012:role/SageMakerExecutionRole",
+  "sagemaker_role_arn": "arn:aws:iam::123456789012:role/AmazonSageMaker-ExecutionRole-sgm",
   "training_image_classification": "123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-classification:latest",
   "training_image_segmentation": "123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-segmentation:latest",
   "inference_image_classification": "123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest",
@@ -264,106 +264,37 @@ services:
 
 ## 7. SageMaker IAM Role
 
-The `SAGEMAKER_ROLE_ARN` must have permissions to run training jobs, deploy endpoints, access S3 data, pull ECR images, and write logs.
+The `SAGEMAKER_ROLE_ARN` must have permissions to run training jobs, deploy endpoints, access S3 data, pull ECR images, write logs, and track experiments with MLflow.
 
-### Required permissions
+### Role creation script
 
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "S3Access",
-      "Effect": "Allow",
-      "Action": [
-        "s3:GetObject",
-        "s3:PutObject",
-        "s3:DeleteObject",
-        "s3:ListBucket",
-        "s3:GetBucketLocation"
-      ],
-      "Resource": [
-        "arn:aws:s3:::your-data-bucket",
-        "arn:aws:s3:::your-data-bucket/*",
-        "arn:aws:s3:::sagemaker-*",
-        "arn:aws:s3:::sagemaker-*/*"
-      ]
-    },
-    {
-      "Sid": "SageMakerFullAccess",
-      "Effect": "Allow",
-      "Action": [
-        "sagemaker:CreateTrainingJob",
-        "sagemaker:DescribeTrainingJob",
-        "sagemaker:ListTrainingJobs",
-        "sagemaker:StopTrainingJob",
-        "sagemaker:CreateModel",
-        "sagemaker:DeleteModel",
-        "sagemaker:CreateEndpointConfig",
-        "sagemaker:DeleteEndpointConfig",
-        "sagemaker:CreateEndpoint",
-        "sagemaker:DeleteEndpoint",
-        "sagemaker:DescribeEndpoint",
-        "sagemaker:UpdateEndpoint",
-        "sagemaker:InvokeEndpoint",
-        "sagemaker:CreateProcessingJob",
-        "sagemaker:DescribeProcessingJob",
-        "sagemaker:ListProcessingJobs",
-        "sagemaker:CreateMonitoringSchedule",
-        "sagemaker:DeleteMonitoringSchedule",
-        "sagemaker:DescribeMonitoringSchedule",
-        "sagemaker:ListMonitoringSchedules",
-        "sagemaker:ListMonitoringExecutions"
-      ],
-      "Resource": "arn:aws:sagemaker:${REGION}:${ACCOUNT}:*",
-      "Comment": "Narrow further by replacing the trailing wildcard with specific resource types, e.g. training-job/medml-*, endpoint/medml-*, etc."
-    },
-    {
-      "Sid": "ECRAuthToken",
-      "Effect": "Allow",
-      "Action": "ecr:GetAuthorizationToken",
-      "Resource": "*"
-    },
-    {
-      "Sid": "ECRImagePull",
-      "Effect": "Allow",
-      "Action": [
-        "ecr:GetDownloadUrlForLayer",
-        "ecr:BatchGetImage",
-        "ecr:BatchCheckLayerAvailability"
-      ],
-      "Resource": "arn:aws:ecr:${REGION}:${ACCOUNT}:repository/sm-*"
-    },
-    {
-      "Sid": "CloudWatchLogs",
-      "Effect": "Allow",
-      "Action": [
-        "logs:CreateLogGroup",
-        "logs:CreateLogStream",
-        "logs:PutLogEvents",
-        "logs:DescribeLogStreams",
-        "logs:GetLogEvents"
-      ],
-      "Resource": "arn:aws:logs:*:*:log-group:/aws/sagemaker/*"
-    },
-    {
-      "Sid": "PassRole",
-      "Effect": "Allow",
-      "Action": "iam:PassRole",
-      "Resource": "arn:aws:iam::YOUR_ACCOUNT_ID:role/SageMakerExecutionRole",
-      "Condition": {
-        "StringEquals": {
-          "iam:PassedToService": "sagemaker.amazonaws.com"
-        }
-      }
-    }
-  ]
-}
+The `create-sagemaker-role.sh` script is the bash equivalent of the shared Python `get_or_create_role()` utility (found in `utils.py`). It creates a role with managed AWS policies and an inline MLflow policy.
+
+```bash
+# Create with the default role name (AmazonSageMaker-ExecutionRole-sgm)
+./create-sagemaker-role.sh
+
+# Or specify a custom role name
+./create-sagemaker-role.sh MyCustomRoleName
 ```
+
+The script also runs via the setup helper:
+
+```bash
+./setup.sh --role
+```
+
+If the role already exists, the script updates the trust policy and re-attaches all policies (idempotent).
+
+### Default role name
+
+`AmazonSageMaker-ExecutionRole-sgm`
+
+This matches the Python `get_or_create_role()` default, so both the bash script and Python notebooks produce the same role.
 
 ### Trust policy
 
-The role must trust the SageMaker service:
+The role trusts the SageMaker service to assume it:
 
 ```json
 {
@@ -380,24 +311,81 @@ The role must trust the SageMaker service:
 }
 ```
 
-### Creating the role via CLI
+### Managed policies attached
+
+The script attaches the following AWS managed policies:
+
+| Policy | Purpose |
+|---|---|
+| `AmazonSageMakerFullAccess` | Training jobs, endpoints, processing, monitoring |
+| `AmazonS3FullAccess` | Read/write training data, model artifacts, capture logs |
+| `AmazonRekognitionFullAccess` | Image analysis capabilities |
+| `ComprehendFullAccess` | NLP text analysis |
+| `ComprehendMedicalFullAccess` | Medical text extraction |
+| `AmazonElasticContainerRegistryPublicFullAccess` | Pull/push container images |
+| `AmazonSageMakerCanvasFullAccess` | SageMaker Canvas no-code ML |
+| `AmazonSageMakerCanvasAIServicesAccess` | Canvas AI services integration |
+| `AmazonSageMakerCanvasSMDataScienceAssistantAccess` | Canvas data science assistant |
+| `AmazonSageMakerCanvasDataPrepFullAccess` | Canvas data preparation |
+
+> **Production note:** For production deployments, replace `FullAccess` policies with scoped policies restricted to specific bucket ARNs, repository ARNs, and resource prefixes. The broad policies above are suitable for development and experimentation.
+
+### Inline MLflow policy
+
+An inline policy named `mlflow-policy` is added for SageMaker MLflow experiment tracking:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["sagemaker-mlflow:*"],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+### When to use which approach
+
+| Context | Method |
+|---|---|
+| Running outside SageMaker (EC2, local, CI/CD) | `./create-sagemaker-role.sh` or Python `get_or_create_role()` |
+| Running inside SageMaker (Studio, notebook instances) | `sagemaker.get_execution_role()` — retrieves the pre-assigned role from instance metadata |
+
+### Creating the role manually
+
+If you prefer not to use the script:
 
 ```bash
-# Create the role
+# 1. Create the role with trust policy
 aws iam create-role \
-  --role-name SageMakerExecutionRole \
-  --assume-role-policy-document file://trust-policy.json
+  --role-name AmazonSageMaker-ExecutionRole-sgm \
+  --assume-role-policy-document file://trust-policy.json \
+  --description "SageMaker execution role for medical imaging training"
 
-# Attach the custom policy
-aws iam put-role-policy \
-  --role-name SageMakerExecutionRole \
-  --policy-name MedMLSageMakerPolicy \
-  --policy-document file://sagemaker-policy.json
-
-# Or use the AWS managed policy for broader access (development only)
-aws iam attach-role-policy \
-  --role-name SageMakerExecutionRole \
+# 2. Attach managed policies
+aws iam attach-role-policy --role-name AmazonSageMaker-ExecutionRole-sgm \
   --policy-arn arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
+aws iam attach-role-policy --role-name AmazonSageMaker-ExecutionRole-sgm \
+  --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
+# ... (attach remaining policies as listed above)
+
+# 3. Add inline MLflow policy
+aws iam put-role-policy \
+  --role-name AmazonSageMaker-ExecutionRole-sgm \
+  --policy-name mlflow-policy \
+  --policy-document file://mlflow-policy.json
+```
+
+### After role creation
+
+The script automatically updates `SAGEMAKER_ROLE_ARN` in `.env.local`. If you created the role manually, update it yourself:
+
+```bash
+# In .env.local
+SAGEMAKER_ROLE_ARN=arn:aws:iam::<your-account-id>:role/AmazonSageMaker-ExecutionRole-sgm
 ```
 
 ---
@@ -432,18 +420,25 @@ aws ecr get-login-password --region us-east-1 \
 ### Build and push commands
 
 ```bash
+# All images at once (recommended)
+./setup.sh --images
+
+# Or individually:
+
 # Classification training image
-./build_and_push.sh 123456789012 us-east-1 classification
+./build_and_push.sh classification
 
 # Segmentation training image
-./build_and_push.sh 123456789012 us-east-1 segmentation
+./build_and_push.sh segmentation
 
 # Classification inference image
-./build_and_push_inference.sh 123456789012 us-east-1 classification
+./build_and_push_inference.sh classification
 
 # Segmentation inference image
-./build_and_push_inference.sh 123456789012 us-east-1 segmentation
+./build_and_push_inference.sh segmentation
 ```
+
+All scripts read `AWS_ACCOUNT_ID` and `AWS_DEFAULT_REGION` from `.env.local`.
 
 Each script automatically:
 1. Builds the Docker image from the appropriate Dockerfile
@@ -503,7 +498,9 @@ cp .env.example .env
 cp .env.local.example .env.local
 # Edit .env.local:
 #   AWS_ACCOUNT_ID=123456789012
-#   SAGEMAKER_ROLE_ARN=arn:aws:iam::123456789012:role/SageMakerExecutionRole
+# Then create the role:
+./create-sagemaker-role.sh
+# Start the dashboard:
 python main.py
 ```
 

@@ -56,6 +56,31 @@ cp .env.local.example .env.local
 
 Edit both files with your configuration (see [Configuration](#configuration) below).
 
+## Quick Setup
+
+Once `.env.local` is configured with your `AWS_ACCOUNT_ID`, run the setup script to create the SageMaker IAM role and build/push all Docker images in one step:
+
+```bash
+./setup.sh
+```
+
+Or run individual steps:
+
+```bash
+./setup.sh --role    # Only create the SageMaker execution role
+./setup.sh --images  # Only build and push Docker images
+```
+
+The role creation script (`create-sagemaker-role.sh`) mirrors the Python `get_or_create_role()` utility from `utils.py`. It creates a role named `AmazonSageMaker-ExecutionRole-sgm` with the same managed policies and inline MLflow policy, so the behavior is identical whether you run the bash script or use the Python helper in notebooks.
+
+```bash
+# Equivalent standalone usage:
+./create-sagemaker-role.sh                          # Uses default name
+./create-sagemaker-role.sh MyCustomRoleName         # Custom name
+```
+
+The setup script reads all account-specific values from `.env.local` — no positional arguments needed.
+
 ## Configuration
 
 The application loads environment variables in two layers:
@@ -81,7 +106,7 @@ The application loads environment variables in two layers:
 | Variable | Description | Example |
 |---|---|---|
 | `AWS_ACCOUNT_ID` | Your 12-digit AWS account ID | `123456789012` |
-| `SAGEMAKER_ROLE_ARN` | IAM role ARN that SageMaker assumes for training and deployment | `arn:aws:iam::123456789012:role/SageMakerRole` |
+| `SAGEMAKER_ROLE_ARN` | IAM role ARN that SageMaker assumes for training and deployment | `arn:aws:iam::123456789012:role/AmazonSageMaker-ExecutionRole-sgm` |
 | `TRAINING_IMAGE_CLASSIFICATION` | ECR URI for the classification training container | `123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-classification:latest` |
 | `TRAINING_IMAGE_SEGMENTATION` | ECR URI for the segmentation training container | `123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-segmentation:latest` |
 | `INFERENCE_IMAGE_CLASSIFICATION` | ECR URI for the classification inference container | `123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest` |
@@ -255,7 +280,7 @@ Set up Model Monitor to track prediction drift:
 | Issue | Solution |
 |---|---|
 | `ValueError: AWS credentials not configured` | Set credentials in `.env`, environment, or `~/.aws/credentials` |
-| SageMaker job fails immediately | Check that `SAGEMAKER_ROLE_ARN` has the necessary permissions and the ECR image URI is correct |
+| SageMaker job fails immediately | Check that `SAGEMAKER_ROLE_ARN` has the necessary permissions (run `./create-sagemaker-role.sh` to create/fix it) and the ECR image URI is correct |
 | Endpoint stuck in `Creating` | Wait up to 10 minutes; check the SageMaker console for errors |
 | MLflow not tracking | Ensure `MLFLOW_TRACKING_URI` points to a running MLflow server (or use Docker Compose) |
 | Docker build fails with `403 Forbidden` | Run `aws ecr get-login-password` to authenticate with the AWS Deep Learning Containers ECR (see README) |
