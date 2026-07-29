@@ -1060,7 +1060,9 @@ async function openMlflowDashboard(btnOrUri) {
         window.open(res.url, '_blank');
     } catch (e) {
         let msg;
-        if (e.message.includes('does not exist') || e.message.includes('not found')) {
+        if (e.message.includes('expired') || e.message.includes('Expired') || e.message.includes('Invalid')) {
+            msg = 'Your MLflow session has expired.\n\nClick "Open MLflow" again to get a fresh session (valid for 12 hours).';
+        } else if (e.message.includes('does not exist') || e.message.includes('not found')) {
             msg = `MLflow tracking server not found.\n\nThe server may have been deleted or the ARN is outdated.\nARN: ${uri}\n\nOpen SageMaker Studio manually and navigate to the MLflow app.`;
         } else if (e.message.includes('Studio')) {
             msg = `${e.message}\n\nOpen SageMaker Studio manually and navigate to the MLflow app.`;
