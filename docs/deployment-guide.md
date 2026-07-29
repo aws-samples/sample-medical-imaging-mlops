@@ -102,15 +102,29 @@ This provides the `serve` entrypoint, nginx, gunicorn, and the multi-model serve
 
 ## Building Training Images
 
+### Using setup.sh (recommended)
+
+The easiest way to build and push all images is the unified setup script:
+
+```bash
+./setup.sh --images
+```
+
+This builds and pushes all four images (training + inference, classification + segmentation), reading `AWS_ACCOUNT_ID` and region from `.env.local`.
+
 ### Using build_and_push.sh
+
+To build a single training image:
 
 ```bash
 # Classification training image
-./build_and_push.sh <AWS_ACCOUNT_ID> <REGION> classification
+./build_and_push.sh classification
 
 # Segmentation training image
-./build_and_push.sh <AWS_ACCOUNT_ID> <REGION> segmentation
+./build_and_push.sh segmentation
 ```
+
+The script reads `AWS_ACCOUNT_ID` and `AWS_DEFAULT_REGION` from `.env.local`. No positional arguments for account ID or region are needed.
 
 **What it does:**
 1. Builds the Docker image from `Dockerfile.sagemaker` with the `TASK` build arg
@@ -149,11 +163,13 @@ Notes:
 
 ```bash
 # Classification inference image
-./build_and_push_inference.sh <AWS_ACCOUNT_ID> <REGION> classification
+./build_and_push_inference.sh classification
 
 # Segmentation inference image
-./build_and_push_inference.sh <AWS_ACCOUNT_ID> <REGION> segmentation
+./build_and_push_inference.sh segmentation
 ```
+
+The script reads `AWS_ACCOUNT_ID` and `AWS_DEFAULT_REGION` from `.env.local`.
 
 ### Dockerfile.inference structure
 

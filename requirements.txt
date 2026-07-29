@@ -7,8 +7,8 @@ python-multipart>=0.0.7
 aiofiles==23.2.1
 mlflow==2.8.1
 tensorboard==2.15.1
-torch>=2.9.0
-torchvision>=0.21.0
+torch>=2.0.0
+torchvision>=0.15.0
 pillow==10.1.0
 numpy>=1.26.0
 pandas==2.1.4

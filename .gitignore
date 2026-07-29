@@ -27,6 +27,9 @@ logs/
 data/
 mlflow.db
 
+# Docs build output
+docs/_build/
+
 # OS
 .DS_Store
 Thumbs.db
