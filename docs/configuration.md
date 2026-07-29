@@ -450,6 +450,89 @@ Each script automatically:
 >
 > **Note:** SageMaker's `CreateModel` operation (used for inference/deployment) is stricter about manifest formats than `CreateTrainingJob`. You may find that training images built with OCI manifests work fine, but the same format fails at deployment time. Always use Docker V2 manifests for both training and inference images to avoid surprises.
 
+#### Debugging: OCI Manifest Errors
+
+If you encounter `Unsupported manifest media type application/vnd.oci.image.manifest.v1+json` when deploying, follow these steps:
+
+**1. Verify the manifest type in ECR:**
+
+```bash
+aws ecr batch-get-image \
+  --repository-name sm-inference-byoc-classification \
+  --region us-east-1 \
+  --image-ids imageTag=latest \
+  --query 'images[0].imageManifestMediaType' \
+  --output text
+```
+
+Expected: `application/vnd.docker.distribution.manifest.v2+json`
+Problem: `application/vnd.oci.image.manifest.v1+json`
+
+**2. Why this happens:**
+
+- Docker 23+ uses BuildKit by default, which outputs OCI format images
+- SageMaker's `CreateModel` API (inference/deployment) validates the manifest type and rejects OCI
+- SageMaker's `CreateTrainingJob` API does **not** perform this check — training images with OCI manifests work fine because the container runtime (containerd) on training instances supports both formats
+- This inconsistency means the same build process can produce images that work for training but fail at deployment
+
+**3. Fix — delete from ECR, rebuild, and push:**
+
+```bash
+# Delete the OCI image from ECR
+aws ecr batch-delete-image \
+  --repository-name sm-inference-byoc-classification \
+  --region us-east-1 \
+  --image-ids imageTag=latest
+
+# Remove cached local images (base image may also be OCI)
+docker rmi 811260109607.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest
+docker rmi 763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-inference:2.6.0-gpu-py312-cu124-ubuntu22.04-sagemaker
+
+# Re-pull base image without BuildKit
+DOCKER_BUILDKIT=0 docker pull 763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-inference:2.6.0-gpu-py312-cu124-ubuntu22.04-sagemaker
+
+# Rebuild without BuildKit and without cache
+DOCKER_BUILDKIT=0 docker build --no-cache --platform linux/amd64 \
+  -f Dockerfile.inference --build-arg TASK=classification \
+  -t 811260109607.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest .
+
+# Push
+docker push 811260109607.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest
+```
+
+**4. If `DOCKER_BUILDKIT=0` still produces OCI manifests:**
+
+Use `docker save/load` to force conversion:
+
+```bash
+docker save <image-uri>:latest -o /tmp/inference.tar
+docker rmi <image-uri>:latest
+docker load -i /tmp/inference.tar
+docker push <image-uri>:latest
+rm /tmp/inference.tar
+```
+
+Or configure the Docker daemon to disable OCI output:
+
+```bash
+sudo tee /etc/docker/daemon.json <<'EOF'
+{
+  "features": {
+    "containerd-snapshotter": false
+  }
+}
+EOF
+sudo systemctl restart docker
+```
+
+**5. References:**
+
+- [AWS re:Post — OCI format unsupported when creating a SageMaker model](https://repost.aws/questions/QUQgFRXiCYTjCtyxH_e2x9yg/oci-format-unsupported-when-creating-a-sagemaker-model)
+- [AWS re:Post — Manifest error when staging ML model](https://repost.aws/questions/QUYwYL0SKaTQWvQMyqCSBvdQ/manifest-error-when-staging-ml-model)
+- [Stack Overflow — Error when using CreateModel for SageMaker](https://stackoverflow.com/questions/74229726/error-when-using-createmodel-function-for-sagemaker)
+- [MLflow GitHub Issue #13834 — Unsupported manifest media type](https://github.com/mlflow/mlflow/issues/13834)
+- [AWS re:Post — SageMaker Docker OCI manifests support (feature request)](https://repost.aws/questions/QUkzwkEHI-SgeXyjybgq3vLw/sagemaker-docker-oci-manifests-support)
+
 ### What the training image contains
 
 The `Dockerfile.sagemaker` builds on the AWS PyTorch DLC base image and installs task-specific dependencies:
