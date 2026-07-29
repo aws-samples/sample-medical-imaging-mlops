@@ -449,12 +449,6 @@
                             <input type="text" id="sm_role_arn" name="sm_role_arn" value="" required>
                         </div>
                     </div>
-                    <div style="margin-bottom:1rem;">
-                        <button type="button" id="sm-validate-btn" class="btn btn-secondary" onclick="validateSageMakerConfig()">
-                            <i class="fas fa-check-circle"></i> Validate
-                        </button>
-                    </div>
-                    <div id="sm-validation-results" style="display:none; margin-bottom:1.5rem;"></div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>Task Type</label>
@@ -479,6 +473,12 @@
                             </div>
                         </div>
                     </div>
+                    <div style="margin-bottom:1rem;">
+                        <button type="button" id="sm-validate-btn" class="btn btn-secondary" onclick="validateSageMakerConfig()">
+                            <i class="fas fa-check-circle"></i> Validate
+                        </button>
+                    </div>
+                    <div id="sm-validation-results" style="display:none; margin-bottom:1.5rem;"></div>
                     <div class="form-row">
                         <div class="form-group">
                             <label for="sm_instance_type">Instance Type</label>
