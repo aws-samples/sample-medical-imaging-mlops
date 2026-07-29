@@ -1,28 +1,61 @@
 #!/bin/bash
 # Build and push the SageMaker inference image.
-# Usage: ./build_and_push_inference.sh <aws_account_id> <region> [classification|segmentation]
-# Example: ./build_and_push_inference.sh <YOUR_AWS_ACCOUNT_ID> us-east-1 classification
+# Usage: ./build_and_push_inference.sh [--build|--push] [classification|segmentation]
+# Examples:
+#   ./build_and_push_inference.sh classification          # build and push
+#   ./build_and_push_inference.sh --build classification   # build only
+#   ./build_and_push_inference.sh --push classification    # push only
+#
+# Reads AWS_ACCOUNT_ID and region from .env.local
 
 set -e
 
-AWS_ACCOUNT_ID=${1:?"Usage: $0 <aws_account_id> <region> [task]"}
-AWS_REGION=${2:?"Usage: $0 <aws_account_id> <region> [task]"}
-TASK=${3:-classification}
-ECR_REPO=sm-inference-byoc-${TASK}
-IMAGE=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:latest
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_LOCAL="$SCRIPT_DIR/.env.local"
 
-echo "Building $TASK inference image: $IMAGE"
-docker build -f Dockerfile.inference --build-arg TASK="$TASK" -t "$IMAGE" .
+if [[ -f "$ENV_LOCAL" ]]; then
+    eval "$(grep -E '^(AWS_ACCOUNT_ID|AWS_DEFAULT_REGION)=' "$ENV_LOCAL")"
+fi
 
-echo "Logging in to ECR..."
-aws ecr get-login-password --region "$AWS_REGION" \
-  | docker login --username AWS --password-stdin \
-    "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+if [[ -z "${AWS_ACCOUNT_ID:-}" ]]; then
+    echo "❌ Error: AWS_ACCOUNT_ID not set. Add it to .env.local or export it."
+    exit 1
+fi
 
-echo "Creating ECR repository (if not exists)..."
-aws ecr create-repository --repository-name "$ECR_REPO" --region "$AWS_REGION" 2>/dev/null || true
+# Parse flags
+DO_BUILD=true
+DO_PUSH=true
+TASK="classification"
 
-echo "Pushing image..."
-docker push "$IMAGE"
+for arg in "$@"; do
+    case "$arg" in
+        --build) DO_BUILD=true; DO_PUSH=false ;;
+        --push)  DO_BUILD=false; DO_PUSH=true ;;
+        *)       TASK="$arg" ;;
+    esac
+done
+
+AWS_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
+ECR_REPO="sm-inference-byoc-${TASK}"
+IMAGE="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:latest"
+
+if [[ "$DO_BUILD" == true ]]; then
+    echo "Building $TASK inference image: $IMAGE"
+    # Use --provenance=false to produce Docker V2 manifest (SageMaker rejects OCI manifests)
+    docker buildx build --provenance=false --platform linux/amd64 -f Dockerfile.inference --build-arg TASK="$TASK" -t "$IMAGE" --load .
+fi
+
+if [[ "$DO_PUSH" == true ]]; then
+    echo "Logging in to ECR..."
+    aws ecr get-login-password --region "$AWS_REGION" \
+      | docker login --username AWS --password-stdin \
+        "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+
+    echo "Creating ECR repository (if not exists)..."
+    aws ecr create-repository --repository-name "$ECR_REPO" --region "$AWS_REGION" 2>/dev/null || true
+
+    echo "Pushing image..."
+    docker push "$IMAGE"
+fi
 
 echo "Done. Image URI: $IMAGE"
