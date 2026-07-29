@@ -1,0 +1,52 @@
+#!/bin/bash
+# =============================================================================
+# Create a zip file for Slingshot security review
+# =============================================================================
+# Packages the project excluding secrets, caches, and generated files.
+#
+# Usage:
+#   ./scripts/slingshot-zip
+#
+# Output:
+#   ../medical-image-training-dashboard-review.zip
+# =============================================================================
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Handle being called as a git hook (from .git/hooks/) or directly (from scripts/)
+if [[ "$SCRIPT_DIR" == *".git/hooks"* ]]; then
+    SOURCE_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+else
+    SOURCE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+fi
+
+OUTPUT_FILE="$(dirname "$SOURCE_DIR")/medical-image-training-dashboard-review.zip"
+
+echo "Creating review zip..."
+echo "  Source: $SOURCE_DIR"
+echo "  Output: $OUTPUT_FILE"
+
+# Remove old zip if exists
+rm -f "$OUTPUT_FILE"
+
+cd "$SOURCE_DIR"
+zip -r "$OUTPUT_FILE" . \
+    -x '.venv/*' \
+    -x 'venv/*' \
+    -x '.git/*' \
+    -x '*/__pycache__/*' \
+    -x '*.pyc' \
+    -x 'docs/_build/*' \
+    -x '.DS_Store' \
+    -x 'data/*' \
+    -x 'logs/*' \
+    -x 'node_modules/*' \
+    -x '.env.local' \
+    -x '*.pem' \
+    -x '*.key' \
+    > /dev/null
+
+echo "✅ Created: $OUTPUT_FILE"
+echo "   Size: $(du -h "$OUTPUT_FILE" | cut -f1)"
