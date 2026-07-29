@@ -13,7 +13,13 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SOURCE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Handle being called as a git hook (from .git/hooks/) or directly (from scripts/)
+if [[ "$SCRIPT_DIR" == *".git/hooks"* ]]; then
+    SOURCE_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+else
+    SOURCE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+fi
 TARGET_DIR="/Users/drvikash/Documents/Tools/RL-medical-imaging/Kiro-ML-model"
 
 if [[ ! -d "$TARGET_DIR" ]]; then
