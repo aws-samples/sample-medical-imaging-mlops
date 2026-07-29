@@ -1,0 +1,39 @@
+#!/bin/bash
+# =============================================================================
+# Sync production_test to Kiro-ML-model
+# =============================================================================
+# Copies all source files from the production test repo to the main Kiro-ML-model
+# directory, excluding generated files, secrets, and caches.
+#
+# Usage:
+#   ./scripts/sync
+#   # or as a git hook (post-commit)
+# =============================================================================
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SOURCE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+TARGET_DIR="/Users/drvikash/Documents/Tools/RL-medical-imaging/Kiro-ML-model"
+
+if [[ ! -d "$TARGET_DIR" ]]; then
+    echo "❌ Target directory not found: $TARGET_DIR"
+    exit 1
+fi
+
+echo "Syncing: $SOURCE_DIR → $TARGET_DIR"
+
+rsync -avz \
+    --exclude '.git' \
+    --exclude '.venv' \
+    --exclude 'venv' \
+    --exclude '__pycache__' \
+    --exclude 'data' \
+    --exclude 'logs' \
+    --exclude '.env.local' \
+    --exclude 'docs/_build' \
+    --exclude '.DS_Store' \
+    --exclude 'node_modules' \
+    "$SOURCE_DIR/" "$TARGET_DIR/"
+
+echo "✅ Sync complete."
