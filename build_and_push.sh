@@ -40,8 +40,8 @@ IMAGE="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:latest"
 
 if [[ "$DO_BUILD" == true ]]; then
     echo "Building $TASK image: $IMAGE"
-    # Use --provenance=false to produce Docker V2 manifest (SageMaker rejects OCI manifests)
-    docker buildx build --provenance=false --platform linux/amd64 -f Dockerfile.sagemaker --build-arg TASK="$TASK" -t "$IMAGE" --load .
+    # Disable BuildKit to ensure Docker V2 manifest format (SageMaker rejects OCI manifests)
+    DOCKER_BUILDKIT=0 docker build --no-cache --platform linux/amd64 -f Dockerfile.sagemaker --build-arg TASK="$TASK" -t "$IMAGE" .
 fi
 
 if [[ "$DO_PUSH" == true ]]; then

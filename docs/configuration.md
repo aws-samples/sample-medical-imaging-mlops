@@ -446,6 +446,8 @@ Each script automatically:
 3. Creates the repository if it doesn't exist
 4. Pushes the image
 
+> **Important: Docker manifest format** — SageMaker only supports Docker V2 manifests (`application/vnd.docker.distribution.manifest.v2+json`). Newer versions of Docker with BuildKit enabled produce OCI format images by default, which SageMaker rejects with `Unsupported manifest media type application/vnd.oci.image.index.v1+json`. The build scripts handle this automatically by using `docker buildx build --provenance=false`, which forces Docker V2 output. If you build images manually, always include `--provenance=false` in your build command.
+
 ### What the training image contains
 
 The `Dockerfile.sagemaker` builds on the AWS PyTorch DLC base image and installs task-specific dependencies:

@@ -284,4 +284,5 @@ Set up Model Monitor to track prediction drift:
 | Endpoint stuck in `Creating` | Wait up to 10 minutes; check the SageMaker console for errors |
 | MLflow not tracking | Ensure `MLFLOW_TRACKING_URI` points to a running MLflow server (or use Docker Compose) |
 | Docker build fails with `403 Forbidden` | Run `aws ecr get-login-password` to authenticate with the AWS Deep Learning Containers ECR (see README) |
+| SageMaker rejects image with `Unsupported manifest media type` | Your Docker image was built in OCI format. Rebuild with `docker buildx build --provenance=false` or use the provided `build_and_push.sh` scripts which handle this automatically |
 | Empty job list after restart | Data stores auto-rebuild from `data/training_reports/` on first boot; click Sync from AWS to pull fresh data |
