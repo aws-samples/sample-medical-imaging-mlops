@@ -1,10 +1,11 @@
 #!/bin/bash
 # Build and push the SageMaker inference image.
-# Usage: ./build_and_push_inference.sh [--build|--push] [classification|segmentation]
+# Usage: ./build_and_push_inference.sh [--build|--push|--no-cache] [classification|segmentation]
 # Examples:
-#   ./build_and_push_inference.sh classification          # build and push
-#   ./build_and_push_inference.sh --build classification   # build only
-#   ./build_and_push_inference.sh --push classification    # push only
+#   ./build_and_push_inference.sh classification             # build (with cache) and push
+#   ./build_and_push_inference.sh --build classification      # build only (with cache)
+#   ./build_and_push_inference.sh --push classification       # push only
+#   ./build_and_push_inference.sh --no-cache classification   # build from scratch and push
 #
 # Reads AWS_ACCOUNT_ID and region from .env.local
 #
@@ -29,13 +30,15 @@ fi
 # Parse flags
 DO_BUILD=true
 DO_PUSH=true
+NO_CACHE=false
 TASK="classification"
 
 for arg in "$@"; do
     case "$arg" in
-        --build) DO_BUILD=true; DO_PUSH=false ;;
-        --push)  DO_BUILD=false; DO_PUSH=true ;;
-        *)       TASK="$arg" ;;
+        --build)    DO_BUILD=true; DO_PUSH=false ;;
+        --push)     DO_BUILD=false; DO_PUSH=true ;;
+        --no-cache) NO_CACHE=true ;;
+        *)          TASK="$arg" ;;
     esac
 done
 
@@ -49,9 +52,16 @@ if [[ "$DO_BUILD" == true ]]; then
     aws ecr get-login-password --region "$AWS_REGION" \
       | docker login --username AWS --password-stdin "$DLC_REGISTRY"
 
-    echo "Building $TASK inference image: $IMAGE"
+    CACHE_FLAG=""
+    if [[ "$NO_CACHE" == true ]]; then
+        CACHE_FLAG="--no-cache"
+        echo "Building $TASK inference image (no cache): $IMAGE"
+    else
+        echo "Building $TASK inference image (with cache): $IMAGE"
+    fi
+
     # Disable BuildKit to ensure Docker V2 manifest format (SageMaker rejects OCI manifests)
-    DOCKER_BUILDKIT=0 docker build --no-cache --platform linux/amd64 -f Dockerfile.inference --build-arg TASK="$TASK" -t "$IMAGE" .
+    DOCKER_BUILDKIT=0 docker build $CACHE_FLAG --platform linux/amd64 -f Dockerfile.inference --build-arg TASK="$TASK" -t "$IMAGE" .
 fi
 
 if [[ "$DO_PUSH" == true ]]; then
