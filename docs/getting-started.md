@@ -23,6 +23,26 @@ Your AWS credentials need access to:
 - **SageMaker** — create/manage training jobs, endpoints, processing jobs, and monitoring schedules
 - **ECR** — pull/push Docker images (only needed if building custom training containers)
 
+---
+
+## ⚠️ Medical AI Safety Notice
+
+> **This platform is designed for research and development purposes only.**
+>
+> Models trained and deployed through this system are **not validated for clinical use**. Production deployment of medical imaging AI requires:
+>
+> 1. **Regulatory clearance** — FDA 510(k), De Novo, PMA, CE marking, or equivalent regulatory pathway for your jurisdiction
+> 2. **Clinical validation studies** — Prospective trials demonstrating safety and efficacy on the target patient population
+> 3. **Human-in-the-loop oversight** — Qualified healthcare professionals must review and interpret all AI predictions
+> 4. **Bias and fairness evaluation** — Subgroup analysis across demographic groups to ensure equitable performance
+> 5. **Continuous monitoring** — Post-deployment surveillance for model drift and performance degradation
+>
+> **AI predictions must not be used as the sole basis for medical decisions.**
+>
+> Consult with regulatory affairs, clinical validation teams, and your institution's IRB/ethics board before any patient-facing deployment. For guidance on responsible AI practices in healthcare, see the [AWS Responsible AI documentation](https://aws.amazon.com/ai/responsible-ai/) and [AWS Healthcare AI compliance resources](https://aws.amazon.com/health/solutions/responsible-ai/).
+
+---
+
 ## Installation
 
 ### 1. Clone the repository
