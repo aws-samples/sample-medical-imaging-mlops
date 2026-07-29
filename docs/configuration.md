@@ -332,20 +332,31 @@ The script attaches the following AWS managed policies:
 
 ### Inline MLflow policy
 
-An inline policy named `mlflow-policy` is added for SageMaker MLflow experiment tracking:
+An inline policy named `mlflow-policy` is added for SageMaker MLflow experiment tracking. The resource is scoped to your specific tracking server:
 
 ```json
 {
   "Version": "2012-10-17",
   "Statement": [
     {
+      "Sid": "MLflowTrackingAccess",
       "Effect": "Allow",
       "Action": ["sagemaker-mlflow:*"],
-      "Resource": "*"
+      "Resource": "arn:aws:sagemaker:<region>:<account-id>:mlflow-tracking-server/<server-name>"
     }
   ]
 }
 ```
+
+The script determines the resource ARN based on your `.env.local` configuration:
+
+| `MLFLOW_TRACKING_SERVER_NAME` set? | `AWS_ACCOUNT_ID` set? | Resource scope |
+|---|---|---|
+| Yes | Yes | `arn:aws:sagemaker:REGION:ACCOUNT:mlflow-tracking-server/SERVER-NAME` |
+| No | Yes | `arn:aws:sagemaker:REGION:ACCOUNT:mlflow-tracking-server/*` (all servers in account) |
+| No | No | `arn:aws:sagemaker:REGION:*:mlflow-tracking-server/*` (fallback) |
+
+> **Security note:** Always set `MLFLOW_TRACKING_SERVER_NAME` in `.env.local` to scope permissions to your specific tracking server. Using `Resource: "*"` grants MLflow permissions across all tracking servers in the account.
 
 ### When to use which approach
 

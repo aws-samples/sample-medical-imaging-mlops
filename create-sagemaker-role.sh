@@ -43,15 +43,25 @@ MANAGED_POLICIES=(
 
 # --- Load .env.local (optional, for updating SAGEMAKER_ROLE_ARN) -------------
 AWS_ACCOUNT_ID=""
+AWS_DEFAULT_REGION=""
+MLFLOW_TRACKING_SERVER_NAME=""
 if [[ -f "$ENV_LOCAL" ]]; then
-    eval "$(grep -E '^AWS_ACCOUNT_ID=' "$ENV_LOCAL" 2>/dev/null)" || true
+    eval "$(grep -E '^(AWS_ACCOUNT_ID|AWS_DEFAULT_REGION|MLFLOW_TRACKING_SERVER_NAME)=' "$ENV_LOCAL" 2>/dev/null)" || true
 fi
+
+REGION="${AWS_DEFAULT_REGION:-us-east-1}"
 
 echo "============================================================"
 echo "  MedML SageMaker Execution Role Setup"
 echo "============================================================"
 echo "  Role Name:    $ROLE_NAME"
+echo "  Region:       $REGION"
 echo "  Policies:     ${#MANAGED_POLICIES[@]} managed + 1 inline (MLflow)"
+if [[ -n "$MLFLOW_TRACKING_SERVER_NAME" ]]; then
+echo "  MLflow scope: $MLFLOW_TRACKING_SERVER_NAME"
+else
+echo "  MLflow scope: all tracking servers (set MLFLOW_TRACKING_SERVER_NAME to restrict)"
+fi
 echo "============================================================"
 echo ""
 
@@ -76,16 +86,29 @@ cat > "$TRUST_POLICY" <<'EOF'
 EOF
 
 # --- Inline MLflow policy -----------------------------------------------------
-cat > "$MLFLOW_POLICY" <<'EOF'
+# Replace Resource with your tracking server ARN for least-privilege access.
+# If MLFLOW_TRACKING_SERVER_NAME is set in .env.local, the policy is scoped
+# to that server. Otherwise, it scopes to all tracking servers in the account.
+if [[ -n "$AWS_ACCOUNT_ID" && -n "$MLFLOW_TRACKING_SERVER_NAME" ]]; then
+    MLFLOW_RESOURCE="arn:aws:sagemaker:${REGION}:${AWS_ACCOUNT_ID}:mlflow-tracking-server/${MLFLOW_TRACKING_SERVER_NAME}"
+elif [[ -n "$AWS_ACCOUNT_ID" ]]; then
+    MLFLOW_RESOURCE="arn:aws:sagemaker:${REGION}:${AWS_ACCOUNT_ID}:mlflow-tracking-server/*"
+else
+    # Fallback — will be replaced when AWS_ACCOUNT_ID is available
+    MLFLOW_RESOURCE="arn:aws:sagemaker:${REGION}:*:mlflow-tracking-server/*"
+fi
+
+cat > "$MLFLOW_POLICY" <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
     {
+      "Sid": "MLflowTrackingAccess",
       "Effect": "Allow",
       "Action": [
         "sagemaker-mlflow:*"
       ],
-      "Resource": "*"
+      "Resource": "${MLFLOW_RESOURCE}"
     }
   ]
 }
