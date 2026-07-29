@@ -477,42 +477,51 @@ Problem: `application/vnd.oci.image.manifest.v1+json`
 
 **3. Fix — delete from ECR, rebuild, and push:**
 
+The working solution requires three things: clearing the Docker cache, deleting the old image from ECR, and rebuilding with BuildKit disabled.
+
 ```bash
-# Delete the OCI image from ECR
+# Clear all cached images (removes OCI-format base image layers)
+docker system prune -a --force
+
+# Login to DLC registry (for pulling the base image)
+aws ecr get-login-password --region us-east-1 \
+  | docker login --username AWS --password-stdin 763104351884.dkr.ecr.us-east-1.amazonaws.com
+
+# Delete the existing OCI image from ECR
 aws ecr batch-delete-image \
   --repository-name sm-inference-byoc-classification \
   --region us-east-1 \
   --image-ids imageTag=latest
 
-# Remove cached local images (base image may also be OCI)
-docker rmi 811260109607.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest
-docker rmi 763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-inference:2.6.0-gpu-py312-cu124-ubuntu22.04-sagemaker
-
-# Re-pull base image without BuildKit
-DOCKER_BUILDKIT=0 docker pull 763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-inference:2.6.0-gpu-py312-cu124-ubuntu22.04-sagemaker
-
-# Rebuild without BuildKit and without cache
+# Rebuild with BuildKit disabled and no cache
 DOCKER_BUILDKIT=0 docker build --no-cache --platform linux/amd64 \
   -f Dockerfile.inference --build-arg TASK=classification \
   -t 811260109607.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest .
 
-# Push
+# Login to your ECR
+aws ecr get-login-password --region us-east-1 \
+  | docker login --username AWS --password-stdin 811260109607.dkr.ecr.us-east-1.amazonaws.com
+
+# Push fresh
 docker push 811260109607.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest
+
+# Verify — must return application/vnd.docker.distribution.manifest.v2+json
+aws ecr batch-get-image \
+  --repository-name sm-inference-byoc-classification \
+  --region us-east-1 \
+  --image-ids imageTag=latest \
+  --query 'images[0].imageManifest' --output text \
+  | python3 -c "import sys,json; print(json.loads(sys.stdin.read()).get('mediaType','unknown'))"
 ```
 
-**4. If `DOCKER_BUILDKIT=0` still produces OCI manifests:**
+All three steps are critical:
+- **`docker system prune -a`** — Without this, Docker reuses cached OCI-format base image layers even with `--no-cache`
+- **Delete from ECR** — Pushing with the same tag doesn't always overwrite the manifest
+- **`DOCKER_BUILDKIT=0`** — Forces the legacy builder which outputs Docker V2 format
 
-Use `docker save/load` to force conversion:
+**4. If the above still produces OCI manifests:**
 
-```bash
-docker save <image-uri>:latest -o /tmp/inference.tar
-docker rmi <image-uri>:latest
-docker load -i /tmp/inference.tar
-docker push <image-uri>:latest
-rm /tmp/inference.tar
-```
-
-Or configure the Docker daemon to disable OCI output:
+Configure the Docker daemon to disable OCI output entirely:
 
 ```bash
 sudo tee /etc/docker/daemon.json <<'EOF'
@@ -524,6 +533,8 @@ sudo tee /etc/docker/daemon.json <<'EOF'
 EOF
 sudo systemctl restart docker
 ```
+
+Then repeat step 3. This ensures Docker never converts back to OCI on push.
 
 **5. References:**
 
