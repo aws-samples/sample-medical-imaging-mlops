@@ -81,7 +81,8 @@ def model_fn(model_dir: str) -> Dict[str, Any]:
     ):
         weights_path = os.path.join(model_dir, candidate)
         if os.path.exists(weights_path):
-            checkpoint = torch.load(weights_path, map_location=device, weights_only=False)
+            # weights_only=True prevents arbitrary code execution from untrusted model files
+            checkpoint = torch.load(weights_path, map_location=device, weights_only=True)
             state_dict = checkpoint["model"] if is_full_checkpoint and isinstance(checkpoint, dict) else checkpoint
             model.load_state_dict(state_dict)
             logger.info("Loaded weights from %s", candidate)

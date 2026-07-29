@@ -34,7 +34,9 @@ class TrainingService:
 
         if model_format == "pytorch":
             try:
-                torch.load(local_path, map_location="cpu", weights_only=False)
+                # weights_only=True prevents arbitrary code execution during deserialization.
+                # For models requiring custom objects, use torch.jit.load or ONNX format.
+                torch.load(local_path, map_location="cpu", weights_only=True)
             except Exception as e:
                 raise ValueError(f"Failed to load PyTorch model: {e}")
 

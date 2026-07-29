@@ -50,7 +50,8 @@ def model_fn(model_dir: str) -> Dict[str, Any]:
     if not os.path.exists(model_path):
         model_path = os.path.join(model_dir, "model.pth")
     if os.path.exists(model_path):
-        checkpoint = torch.load(model_path, map_location=device, weights_only=False)
+        # weights_only=True prevents arbitrary code execution from untrusted model files
+        checkpoint = torch.load(model_path, map_location=device, weights_only=True)
         model.load_state_dict(checkpoint.get("model", checkpoint))
         logger.info("Loaded weights from %s", model_path)
 

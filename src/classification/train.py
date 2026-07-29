@@ -94,7 +94,7 @@ if args.checkpoint_s3_uri:
             # Prefer best_model.pth; fall back to model.pth
             ckpt_name = "best_model.pth" if "best_model.pth" in tar.getnames() else "model.pth"
             f    = tar.extractfile(tar.getmember(ckpt_name))
-            ckpt = torch.load(io.BytesIO(f.read()), map_location=device)
+            ckpt = torch.load(io.BytesIO(f.read()), map_location=device, weights_only=True)
         import os as _os; _os.unlink(tmp_path)
         model.load_state_dict(ckpt["model"])
         if "optimizer" in ckpt:
