@@ -194,6 +194,15 @@ function displayDeployments(deployments) {
     const container = document.getElementById('deployments-list');
     if (!container) return;
 
+    // Update count badge
+    const badge = document.getElementById('dep-count-badge');
+    if (badge) {
+        const inService = (deployments || []).filter(d => d.status === 'InService').length;
+        const total = (deployments || []).length;
+        badge.textContent = `${inService} active / ${total} total`;
+        badge.style.background = inService > 0 ? '#1e8449' : '#888';
+    }
+
     if (!deployments || deployments.length === 0) {
         container.innerHTML = '<p>No deployments yet.</p>';
         return;
