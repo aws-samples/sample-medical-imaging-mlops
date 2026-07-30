@@ -244,19 +244,14 @@ function displayDeployments(deployments) {
                     <i class="fas fa-power-off"></i> Scale to 0
                 </button>
                 ` : ''}
-                ${d.status === 'InService' && d.instance_count > 1 ? `
-                <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeHtml(d.endpoint_name)}', ${d.instance_count - 1})" title="Remove one instance">
+                ${d.status === 'InService' && (d.instance_count || 1) > 1 ? `
+                <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeHtml(d.endpoint_name)}', ${(d.instance_count || 1) - 1})" title="Remove one instance">
                     <i class="fas fa-minus"></i>
                 </button>
                 ` : ''}
                 ${d.status === 'InService' ? `
                 <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeHtml(d.endpoint_name)}', ${(d.instance_count || 1) + 1})" title="Add one instance">
                     <i class="fas fa-plus"></i>
-                </button>
-                ` : ''}
-                ${d.status === 'InService' && d.endpoint_type === 'async' && d.instance_count === 0 ? `
-                <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeHtml(d.endpoint_name)}', 1)" title="Scale up to 1 instance">
-                    <i class="fas fa-play"></i> Scale Up
                 </button>
                 ` : ''}
                 ${!['InService', 'Failed', 'Deleting', 'Deleted'].includes(d.status) ? `
