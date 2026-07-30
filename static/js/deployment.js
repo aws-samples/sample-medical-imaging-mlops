@@ -224,9 +224,9 @@ function displayDeployments(deployments) {
                 ${d.failure_reason ? `<div style="color:#c62828;"><strong>Failure:</strong> ${escapeHtml(d.failure_reason)}</div>` : ''}
             </div>
             <div class="job-actions">
-                ${d.status === 'InService' ? `
+                ${d.status === 'InService' && d.endpoint_type === 'async' ? `
                 <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeHtml(d.endpoint_name)}', 0)" title="Scale to 0 instances (stop billing)">
-                    <i class="fas fa-power-off"></i> Scale Down
+                    <i class="fas fa-power-off"></i> Scale to 0
                 </button>
                 ` : ''}
                 ${d.status === 'InService' && d.instance_count > 1 ? `
@@ -237,6 +237,11 @@ function displayDeployments(deployments) {
                 ${d.status === 'InService' ? `
                 <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeHtml(d.endpoint_name)}', ${(d.instance_count || 1) + 1})" title="Add one instance">
                     <i class="fas fa-plus"></i>
+                </button>
+                ` : ''}
+                ${d.status === 'InService' && d.endpoint_type === 'async' && d.instance_count === 0 ? `
+                <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeHtml(d.endpoint_name)}', 1)" title="Scale up to 1 instance">
+                    <i class="fas fa-play"></i> Scale Up
                 </button>
                 ` : ''}
                 ${!['InService', 'Failed', 'Deleting', 'Deleted'].includes(d.status) ? `
