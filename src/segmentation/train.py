@@ -198,23 +198,20 @@ import shutil as _shutil
 def _copy_inference_artifacts(src_dir: str, dest_dir: str) -> None:
     code_dir = os.path.join(dest_dir, "code")
     os.makedirs(code_dir, exist_ok=True)
-    for fname in ("inference.py", "model_def.py", "requirements.txt"):
-        # Look in multiple locations — SageMaker may relocate train.py at runtime
-        candidates = [
-            os.path.join(src_dir, "inference", fname),            # relative to train.py
-            os.path.join("/opt/program", "inference", fname),     # absolute Docker path
-            os.path.join("/opt/ml/code", "inference", fname),     # SageMaker runtime path
-            os.path.join(src_dir, "..", "..", "inference", "segmentation", fname),
-            os.path.join(src_dir, fname),
-        ]
-        for src in candidates:
-            src = os.path.normpath(src)
-            if os.path.exists(src):
-                _shutil.copy2(src, os.path.join(code_dir, fname))
-                logger.info("Copied %s from %s to model_dir/code/", fname, src)
-                break
+    # inference.py and requirements-inference.txt are copied alongside train.py
+    # by the Dockerfile, so they follow wherever SageMaker relocates the script.
+    file_map = {
+        "inference.py": "inference.py",
+        "requirements-inference.txt": "requirements.txt",
+        "model_def.py": "model_def.py",
+    }
+    for src_name, dest_name in file_map.items():
+        src = os.path.join(src_dir, src_name)
+        if os.path.exists(src):
+            _shutil.copy2(src, os.path.join(code_dir, dest_name))
+            logger.info("Copied %s → code/%s", src_name, dest_name)
         else:
-            logger.warning("Deployment artifact not found, skipping: %s (searched %s)", fname, candidates)
+            logger.warning("Not found, skipping: %s", src)
 
 _copy_inference_artifacts(
     src_dir=os.path.dirname(os.path.abspath(__file__)),

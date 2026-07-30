@@ -9,8 +9,10 @@ RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
 COPY src/${TASK}/ /opt/program/
 
-# Include inference code so training can bundle it into model.tar.gz for deployment
-COPY src/inference/${TASK}/ /opt/program/inference/
+# Copy inference code alongside train.py so it's always found at the same level,
+# even when SageMaker relocates scripts to /opt/ml/code/ at runtime
+COPY src/inference/${TASK}/inference.py /opt/program/inference.py
+COPY src/inference/${TASK}/requirements.txt /opt/program/requirements-inference.txt
 
 ENV SAGEMAKER_PROGRAM train.py
 
