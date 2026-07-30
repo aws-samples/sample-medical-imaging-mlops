@@ -122,15 +122,21 @@ To build a single training image:
 
 # Segmentation training image
 ./build_and_push.sh segmentation
+
+# Full rebuild without Docker cache
+./build_and_push.sh classification --no-cache
 ```
 
 The script reads `AWS_ACCOUNT_ID` and `AWS_DEFAULT_REGION` from `.env.local`. No positional arguments for account ID or region are needed.
 
+By default, builds use Docker's layer cache for faster rebuilds. Pass `--no-cache` to force a full rebuild (useful when base image or dependencies have changed).
+
 **What it does:**
-1. Builds the Docker image from `Dockerfile.sagemaker` with the `TASK` build arg
-2. Logs in to your ECR registry
-3. Creates the repository if it doesn't exist
-4. Pushes the image
+1. Logs in to the AWS DLC ECR registry (base image source)
+2. Builds the Docker image from `Dockerfile.sagemaker` with the `TASK` build arg
+3. Logs in to your ECR registry
+4. Creates the repository if it doesn't exist
+5. Pushes the image
 
 **Files bundled into the image:**
 - `src/<task>/requirements.txt` — pip dependencies
@@ -147,6 +153,7 @@ ARG TASK
 COPY src/${TASK}/requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 COPY src/${TASK}/ /opt/program/
+COPY src/inference/${TASK}/ /opt/program/inference/
 ENV SAGEMAKER_PROGRAM train.py
 ```
 
@@ -154,6 +161,7 @@ Notes:
 - SageMaker training containers require root (no `USER` directive)
 - No `HEALTHCHECK` — SageMaker manages container lifecycle
 - The `SAGEMAKER_PROGRAM` env var tells SageMaker which script to execute
+- The `src/inference/${TASK}/` directory is included so training scripts can copy inference artifacts (e.g., `inference.py`) into `model_dir/code/` for SageMaker PyTorch serving
 
 ---
 
@@ -167,9 +175,23 @@ Notes:
 
 # Segmentation inference image
 ./build_and_push_inference.sh segmentation
+
+# Full rebuild without Docker cache
+./build_and_push_inference.sh classification --no-cache
 ```
 
 The script reads `AWS_ACCOUNT_ID` and `AWS_DEFAULT_REGION` from `.env.local`.
+
+By default, builds use Docker's layer cache. Pass `--no-cache` for a full rebuild.
+
+**What it does:**
+1. Logs in to the AWS DLC ECR registry (base image source)
+2. Builds the Docker image from `Dockerfile.inference` with the `TASK` build arg
+3. Logs in to your ECR registry
+4. Creates the repository if it doesn't exist
+5. **Deletes the existing `latest` image from ECR** (ensures the new push fully replaces the old manifest)
+6. Pushes the new image
+7. **Verifies the pushed manifest format** is Docker V2 (not OCI) — SageMaker's `CreateModel` API rejects OCI manifests
 
 ### Dockerfile.inference structure
 
@@ -185,6 +207,32 @@ Notes:
 - `SAGEMAKER_PROGRAM` is set at deploy time via `create_model` Environment — not baked in
 - SageMaker inference containers require root for nginx/gunicorn
 - The inference script (`inference.py`) is bundled inside `model.tar.gz`, not the container image
+
+### model.tar.gz Structure
+
+SageMaker's PyTorch serving container requires inference code to be located at `code/inference.py` inside the model archive. The training scripts now automatically copy inference artifacts to the correct location (`model_dir/code/`).
+
+**Required structure:**
+
+```
+model.tar.gz
+├── best_model.pth          # Model weights
+├── result.json             # Training metadata
+└── code/
+    └── inference.py        # Inference handler (model_fn, input_fn, predict_fn, output_fn)
+```
+
+> **Important:** Placing `inference.py` at the root of the archive will not work with the SageMaker PyTorch serving container. It must be under `code/`.
+
+#### Repackaging Existing Models
+
+If you have an existing `model.tar.gz` that was created before this change (with `inference.py` at the root), use the repackaging script:
+
+```bash
+python repackage_model.py s3://your-bucket/output/job-name/output/model.tar.gz
+```
+
+This downloads the archive, restructures it to place inference artifacts under `code/`, and re-uploads it to the same S3 location.
 
 ---
 
@@ -333,5 +381,5 @@ Check:
 
 SageMaker endpoint creation typically takes 5–10 minutes. If it exceeds 15 minutes, check the SageMaker console for error details. Common causes:
 - Inference image doesn't have the `serve` entrypoint
-- `model.tar.gz` is missing required files (`inference.py`, model weights)
+- `model.tar.gz` is missing required files or has incorrect structure (must contain `code/inference.py` and model weights)
 - Instance type capacity issues in the region

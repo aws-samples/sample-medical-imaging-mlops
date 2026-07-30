@@ -77,9 +77,12 @@ Navigate to `http://localhost:8000` and click the **Training** tab.
 
 ### Step 2 — Fill out the training form
 
+**Task Type** and **Dimension** (2D/3D) appear at the top of the form — selecting these first determines which model architectures and configuration options are shown below.
+
 | Field | Description | Example |
 |---|---|---|
-| **Task Type** | `classification` or `segmentation` | `classification` |
+| **Task Type** | `classification` or `segmentation` (top of form) | `classification` |
+| **Dimension** | `2D` or `3D` (top of form, determines model options) | `2D` |
 | **Data S3 URI** | S3 path to your dataset root | `s3://my-bucket/spine-xray/` |
 | **Model** | Architecture to train | `DenseNet121` |
 | **Epochs** | Number of training epochs | `50` |

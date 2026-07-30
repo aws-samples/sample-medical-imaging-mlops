@@ -447,15 +447,22 @@ aws ecr get-login-password --region us-east-1 \
 
 # Segmentation inference image
 ./build_and_push_inference.sh segmentation
+
+# Force full rebuild (no Docker layer cache)
+./build_and_push.sh classification --no-cache
+./build_and_push_inference.sh segmentation --no-cache
 ```
 
-All scripts read `AWS_ACCOUNT_ID` and `AWS_DEFAULT_REGION` from `.env.local`.
+All scripts read `AWS_ACCOUNT_ID` and `AWS_DEFAULT_REGION` from `.env.local`. Builds use Docker's layer cache by default for speed; pass `--no-cache` when base images or dependencies have changed.
 
 Each script automatically:
-1. Builds the Docker image from the appropriate Dockerfile
-2. Logs into your ECR registry
-3. Creates the repository if it doesn't exist
-4. Pushes the image
+1. Logs in to the AWS DLC ECR registry (for pulling the base image)
+2. Builds the Docker image from the appropriate Dockerfile
+3. Logs into your ECR registry
+4. Creates the repository if it doesn't exist
+5. Pushes the image
+
+The inference build script (`build_and_push_inference.sh`) additionally deletes the existing ECR image before pushing and verifies that the pushed manifest is in Docker V2 format (required by SageMaker's `CreateModel` API).
 
 > **Important: Docker manifest format** — SageMaker only supports Docker V2 manifests (`application/vnd.docker.distribution.manifest.v2+json`). Newer versions of Docker with BuildKit enabled produce OCI format images by default, which SageMaker rejects with `Unsupported manifest media type application/vnd.oci.image.index.v1+json`. The build scripts handle this automatically by using `DOCKER_BUILDKIT=0`, which forces Docker V2 output. If you build images manually, always include `DOCKER_BUILDKIT=0` in your build command.
 >
@@ -566,10 +573,13 @@ ARG TASK
 COPY src/${TASK}/requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 COPY src/${TASK}/ /opt/program/
+COPY src/inference/${TASK}/ /opt/program/inference/
 ENV SAGEMAKER_PROGRAM train.py
 ```
 
 Key packages bundled: `monai`, `torch`, `torchvision`, `nibabel`, `SimpleITK`, `pydicom`, `mlflow`, `tensorboard`.
+
+The `src/inference/${TASK}/` directory is included so training scripts can copy inference artifacts (e.g., `inference.py`) into `model_dir/code/` during training, producing a `model.tar.gz` ready for SageMaker PyTorch serving.
 
 ### After building
 
@@ -622,11 +632,12 @@ cp .env.local.example .env.local
 vim .env.local  # fill in all values
 
 # 2. Build and push Docker images
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 763104351884.dkr.ecr.us-east-1.amazonaws.com
-./build_and_push.sh YOUR_ACCOUNT_ID us-east-1 classification
-./build_and_push.sh YOUR_ACCOUNT_ID us-east-1 segmentation
-./build_and_push_inference.sh YOUR_ACCOUNT_ID us-east-1 classification
-./build_and_push_inference.sh YOUR_ACCOUNT_ID us-east-1 segmentation
+./setup.sh --images
+# Or individually:
+# ./build_and_push.sh classification
+# ./build_and_push.sh segmentation
+# ./build_and_push_inference.sh classification
+# ./build_and_push_inference.sh segmentation
 
 # 3. Start the dashboard
 python main.py

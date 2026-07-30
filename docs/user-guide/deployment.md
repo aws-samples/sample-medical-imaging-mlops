@@ -21,10 +21,12 @@ Navigate to `http://localhost:8000` and click the **Deployment** tab.
 | Field | Description | Example |
 |---|---|---|
 | **Endpoint Name** | Unique name for the endpoint | `spine-classifier-v2` |
+| **Endpoint Type** | Radio button: **Real-time** or **Async** | `Real-time` |
 | **Model Artifacts** | S3 URI of `model.tar.gz` | `s3://bucket/output/job/output/model.tar.gz` |
 | **Inference Image URI** | ECR URI of the inference container | from `.env.local` |
 | **Role ARN** | SageMaker execution role | from `.env.local` |
 | **Instance Type** | Endpoint instance type | `ml.g5.xlarge` |
+| **Output S3 URI** | S3 prefix for inference results (required for async, optional for real-time) | `s3://bucket/async-output/` |
 
 ### Step 3 — Submit
 
@@ -41,26 +43,44 @@ The deployment list auto-refreshes status from AWS. Once the endpoint shows `InS
 
 ## Real-Time vs Async Endpoints
 
-### Real-time (default)
+The deploy form presents a **radio button** to choose between endpoint types:
+
+### Real-time
 
 - Synchronous request/response
 - Best for single-image inference with low latency requirements
 - Timeout: 300 seconds (sufficient for 3D segmentation)
+- Minimum 1 instance (cannot scale to zero)
 
 ### Async endpoint
 
-Set `async_endpoint: true` in the deploy request to create an asynchronous endpoint:
+Select the **Async** radio button to create an asynchronous endpoint:
 
 | Field | Required | Description |
 |---|---|---|
-| `async_endpoint` | yes | Set to `true` |
-| `output_s3_uri` | yes | S3 prefix where results are written |
+| **Output S3 URI** | yes | S3 prefix where results are written |
 | `max_concurrent` | no | Max concurrent invocations per instance (default `10`) |
 
 Async endpoints are useful for:
 - Batch inference workloads
 - Large 3D volumes that exceed real-time timeout limits
 - Cost optimization (scale to zero when idle)
+
+## Endpoint Scaling
+
+Each deployed endpoint card displays scaling controls:
+
+| Button | Action | Availability |
+|---|---|---|
+| **Scale up (+)** | Adds one instance | All endpoints |
+| **Scale down (-)** | Removes one instance (minimum 1 for real-time) | All endpoints |
+| **Scale to 0** | Removes all instances (endpoint remains configured) | Async only |
+
+Real-time endpoints require at least 1 instance and cannot be scaled to zero. Async endpoints support scaling to zero — they automatically wake up when new requests arrive.
+
+## Active Endpoint Badge
+
+The deployment tab header displays a count badge showing currently active endpoints. Hovering or clicking reveals endpoint names and their instance counts, providing a quick overview of deployed resources.
 
 ## Enable Data Capture at Deploy Time
 
@@ -109,11 +129,33 @@ If an endpoint is deleted outside the dashboard (AWS console, CLI, etc.):
 - The local record is marked as `"Deleted"`
 - `Deleted` entries are filtered out of the list response
 
+## Model Archive Requirements
+
+SageMaker's PyTorch serving container expects inference code at `code/inference.py` inside `model.tar.gz`:
+
+```
+model.tar.gz
+├── best_model.pth
+├── result.json
+└── code/
+    └── inference.py
+```
+
+Training scripts automatically copy inference artifacts to `model_dir/code/` during training. If you have an older model archive with `inference.py` at the root, use the repackaging utility:
+
+```bash
+python repackage_model.py s3://your-bucket/output/job-name/output/model.tar.gz
+```
+
+### Security: Model Loading
+
+All model loading in training and evaluation code uses `torch.load(path, weights_only=True)` to prevent arbitrary code execution from untrusted model files. The inference script (`code/inference.py`) uses `torch.load(path, map_location=device)` without `weights_only=True` because it loads models produced by the project's own training pipeline — this trust boundary is documented in the code.
+
 ## Troubleshooting
 
 | Issue | Cause | Fix |
 |---|---|---|
 | Endpoint stuck in `Creating` | Container startup failure | Check CloudWatch logs for the endpoint |
-| `Failed` status | Missing inference script or bad model | Verify `model.tar.gz` contains `inference.py` and `best_model.pth` |
+| `Failed` status | Missing inference script or bad model | Verify `model.tar.gz` contains `code/inference.py` and `best_model.pth` (not `inference.py` at root) |
 | Permission denied | Role ARN lacks permissions | Ensure the role has `sagemaker:CreateEndpoint`, `ecr:GetAuthorizationToken`, `s3:GetObject` |
 | Timeout on invocation | Model too large or slow | Increase instance type or use async endpoint |

@@ -256,13 +256,17 @@ Once training completes:
 
 1. Go to the **Deployment** tab
 2. Click **Deploy** on a completed training job, or create a new deployment:
+   - **Endpoint type** — choose **Real-time** or **Async** (radio buttons)
    - **Model artifacts** — S3 URI of the `model.tar.gz` produced by training
    - **Inference image** — ECR URI of the inference container (from `.env.local`)
    - **Instance type** — e.g. `ml.g5.xlarge`
    - **Role ARN** — SageMaker execution role (from `.env.local`)
+   - **Output S3 URI** — S3 prefix for inference results (required for async, optional for real-time)
 3. Click **Deploy**
 
 The endpoint progresses from `Creating` → `InService`. This typically takes 5–10 minutes.
+
+Once deployed, endpoint cards display scaling controls: **Scale up (+)**, **Scale down (-)**, and **Scale to 0** (async only — real-time endpoints require a minimum of 1 instance). An active endpoint count badge shows endpoint names and instance counts at a glance.
 
 ### Step 5 — Run inference
 

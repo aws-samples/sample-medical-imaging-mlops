@@ -74,9 +74,11 @@ The result is saved to `s3://<prefix>/<endpoint_name>-result.json`.
 | Format | How to send |
 |---|---|
 | **NIfTI** (`.nii.gz`) | Raw bytes with `Content-Type: application/octet-stream` |
-| **S3 URI** | JSON: `{"s3_uri": "s3://bucket/subject/img.nii.gz"}` |
+| **S3 URI** | JSON: `{"file_path": "s3://bucket/subject/img.nii.gz"}` |
 | **Local path** | JSON: `{"file_path": "/path/to/volume.nii.gz"}` |
 | **Base64** | JSON: `{"file_path": "<base64-encoded NIfTI bytes>"}` |
+
+> **Note:** The segmentation inference script uses the `file_path` key (same as classification). The older `s3_uri` key is no longer used — always use `file_path` for both task types.
 
 ## Response Formats
 
@@ -116,6 +118,8 @@ The result is saved to `s3://<prefix>/<endpoint_name>-result.json`.
 | `voxels_total` | `int` | Total voxels in the mask |
 | `volume_fraction` | `float` | Ratio of positive voxels to total |
 
+The segmentation inference pipeline uses `SlidingWindowInferer` for memory-efficient processing of large 3D volumes, with `Orientation` and `Spacing` transforms applied to normalize inputs before prediction. This ensures consistent results regardless of the input volume's original orientation or voxel spacing.
+
 To save the segmentation mask locally:
 
 ```python
@@ -125,6 +129,17 @@ mask_bytes = base64.b64decode(response["mask_nifti_b64"])
 with open("mask.nii.gz", "wb") as f:
     f.write(mask_bytes)
 ```
+
+## Async Endpoint Inference
+
+When invoking an endpoint, the dashboard automatically detects whether the target is a real-time or async endpoint and adjusts the invocation method accordingly:
+
+- **Real-time endpoints** — sends a synchronous `InvokeEndpoint` request and returns the response immediately
+- **Async endpoints** — sends an `InvokeEndpointAsync` request, which returns an output location in S3 where the result will be written
+
+No additional configuration is needed in the inference UI — select the endpoint and invoke as normal. The dashboard handles the async/real-time distinction transparently.
+
+For async endpoints, the result panel shows the S3 output location and polls for completion automatically.
 
 ## CLI Tools
 
