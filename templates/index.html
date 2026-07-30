@@ -401,6 +401,30 @@
                 <form id="sagemaker-training-form">
                     <div class="form-row">
                         <div class="form-group">
+                            <label>Task Type</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="radio" name="sm_task_type" value="classification" checked> Classification
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="radio" name="sm_task_type" value="segmentation"> Segmentation
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Dimension</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="radio" name="sm_dimension" value="2D" checked> 2D
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="radio" name="sm_dimension" value="3D"> 3D
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
                             <label for="sm_job_name">Job Name (optional)</label>
                             <div style="display:flex; gap:6px; align-items:center;">
                                 <input type="text" id="sm_job_name" name="sm_job_name" placeholder="Auto-generated if empty" style="flex:1;" pattern="[a-zA-Z0-9\-]{1,63}">
@@ -447,30 +471,6 @@
                         <div class="form-group">
                             <label for="sm_role_arn">IAM Role ARN</label>
                             <input type="text" id="sm_role_arn" name="sm_role_arn" value="" required>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Task Type</label>
-                            <div class="checkbox-group">
-                                <label class="checkbox-label">
-                                    <input type="radio" name="sm_task_type" value="classification" checked> Classification
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="radio" name="sm_task_type" value="segmentation"> Segmentation
-                                </label>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Dimension</label>
-                            <div class="checkbox-group">
-                                <label class="checkbox-label">
-                                    <input type="radio" name="sm_dimension" value="2D" checked> 2D
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="radio" name="sm_dimension" value="3D"> 3D
-                                </label>
-                            </div>
                         </div>
                     </div>
                     <div style="margin-bottom:1rem;">
