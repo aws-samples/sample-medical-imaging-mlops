@@ -106,6 +106,27 @@ class AsyncInvokeRequest(BaseModel):
     output_s3_uri: str
 
 
+class ScaleRequest(BaseModel):
+    desired_count: int
+
+
+@router.post("/deployments/{endpoint_name}/scale")
+async def scale_endpoint(endpoint_name: str, request: ScaleRequest):
+    """Scale an endpoint up or down (including to 0)."""
+    try:
+        if not aws_service.sagemaker_client:
+            raise ValueError("AWS credentials not configured")
+        result = deployment_service.scale_endpoint(
+            endpoint_name=endpoint_name,
+            desired_count=request.desired_count,
+            sagemaker_client=aws_service.sagemaker_client,
+        )
+        return result
+    except Exception as e:
+        logger.error("Scale failed: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/invoke-async")
 async def invoke_async(request: AsyncInvokeRequest):
     """Submit an async inference request to a SageMaker async endpoint."""

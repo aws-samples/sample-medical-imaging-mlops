@@ -630,20 +630,25 @@
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label class="checkbox-label" style="margin-top: 8px;">
-                                    <input type="checkbox" id="dep-async" name="async_endpoint" onchange="toggleAsyncFields()">
-                                    <strong>Async Endpoint</strong>
-                                    <small style="color:var(--aws-dark-gray); display:block; margin-top:2px;">Best for large payloads or long-running inference (&gt;60s)</small>
-                                </label>
+                                <label>Inference Type</label>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-label">
+                                        <input type="radio" name="dep_inference_type" value="realtime" checked onchange="toggleAsyncFields()"> Real-time
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="radio" name="dep_inference_type" value="async" onchange="toggleAsyncFields()"> Async
+                                    </label>
+                                </div>
+                                <small style="color:var(--aws-dark-gray)">Async is best for large payloads or inference &gt;60s (e.g., 3D segmentation)</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="dep-output-s3-uri">Output S3 URI</label>
+                                <input type="text" id="dep-output-s3-uri" name="output_s3_uri" placeholder="s3://bucket/model-output/">
+                                <small style="color:var(--aws-dark-gray)">S3 path for inference results (required for async, optional for real-time)</small>
                             </div>
                         </div>
                         <div id="async-fields" style="display:none;">
                             <div class="form-row">
-                                <div class="form-group">
-                                    <label for="dep-output-s3-uri">Output S3 URI</label>
-                                    <input type="text" id="dep-output-s3-uri" name="output_s3_uri" placeholder="s3://bucket/async-outputs/">
-                                    <small style="color:var(--aws-dark-gray)">SageMaker writes inference results here</small>
-                                </div>
                                 <div class="form-group">
                                     <label for="dep-max-concurrent">Max Concurrent Invocations</label>
                                     <input type="number" id="dep-max-concurrent" name="max_concurrent" value="10" min="1" max="1000">

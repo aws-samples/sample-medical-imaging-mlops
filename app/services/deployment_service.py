@@ -232,6 +232,56 @@ class DeploymentService:
                 return {"endpoint_name": endpoint_name, "status": "Deleted"}
             raise
 
+    def scale_endpoint(self, endpoint_name: str, desired_count: int, sagemaker_client) -> dict:
+        """Scale an endpoint up or down. Setting desired_count=0 scales to zero (no billing)."""
+        # Get current endpoint config
+        desc = sagemaker_client.describe_endpoint(EndpointName=endpoint_name)
+        config_name = desc.get("EndpointConfigName")
+
+        if not config_name:
+            raise ValueError(f"Could not determine endpoint config for '{endpoint_name}'")
+
+        # Describe current config to get variant info
+        config_desc = sagemaker_client.describe_endpoint_config(EndpointConfigName=config_name)
+        variants = config_desc.get("ProductionVariants", [])
+        if not variants:
+            raise ValueError(f"No production variants found for endpoint '{endpoint_name}'")
+
+        variant_name = variants[0]["VariantName"]
+
+        if desired_count == 0:
+            # Scale to zero using update_endpoint_weights_and_capacities
+            sagemaker_client.update_endpoint_weights_and_capacities(
+                EndpointName=endpoint_name,
+                DesiredWeightsAndCapacities=[{
+                    "VariantName": variant_name,
+                    "DesiredInstanceCount": 0,
+                }],
+            )
+            logger.info("Scaling endpoint '%s' to 0 instances", endpoint_name)
+        else:
+            sagemaker_client.update_endpoint_weights_and_capacities(
+                EndpointName=endpoint_name,
+                DesiredWeightsAndCapacities=[{
+                    "VariantName": variant_name,
+                    "DesiredInstanceCount": desired_count,
+                }],
+            )
+            logger.info("Scaling endpoint '%s' to %d instance(s)", endpoint_name, desired_count)
+
+        # Update local record
+        record = self.deployments.get(endpoint_name, {})
+        record["instance_count"] = desired_count
+        record["status"] = "Updating"
+        self.deployments[endpoint_name] = record
+        self._save()
+
+        return {
+            "endpoint_name": endpoint_name,
+            "desired_count": desired_count,
+            "status": "Updating",
+        }
+
     def delete_endpoint(self, endpoint_name: str, sagemaker_client):
         try:
             try:

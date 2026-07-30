@@ -88,7 +88,7 @@ function updateInferenceImageUri() {
 }
 
 function toggleAsyncFields() {
-    const isAsync = document.getElementById('dep-async')?.checked;
+    const isAsync = document.querySelector('input[name="dep_inference_type"]:checked')?.value === 'async';
     const fields  = document.getElementById('async-fields');
     if (fields) fields.style.display = isAsync ? 'block' : 'none';
 }
@@ -102,7 +102,7 @@ function toggleCaptureFields() {
 async function deployModel(e) {
     e.preventDefault();
     const fd = new FormData(e.target);
-    const isAsync       = document.getElementById('dep-async')?.checked || false;
+    const isAsync       = document.querySelector('input[name="dep_inference_type"]:checked')?.value === 'async';
     const modelArtifacts = fd.get('model_artifacts')?.trim() || null;
     const importOnly    = !modelArtifacts;
 
@@ -115,18 +115,17 @@ async function deployModel(e) {
         instance_count:       parseInt(fd.get('instance_count') || '1'),
         inference_script:     fd.get('inference_script') || 'inference.py',
         async_endpoint:       isAsync,
+        output_s3_uri:        fd.get('output_s3_uri')?.trim() || null,
         enable_data_capture:  document.getElementById('dep-capture')?.checked || false,
         capture_s3_uri:       fd.get('capture_s3_uri') || null,
         capture_sampling_pct: parseInt(fd.get('capture_sampling_pct') || '100'),
     };
 
     if (isAsync) {
-        const outputUri = fd.get('output_s3_uri');
-        if (!outputUri) {
+        if (!payload.output_s3_uri) {
             alert('Output S3 URI is required for async endpoints');
             return;
         }
-        payload.output_s3_uri  = outputUri;
         payload.max_concurrent = parseInt(fd.get('max_concurrent') || '10');
     }
 
@@ -225,6 +224,21 @@ function displayDeployments(deployments) {
                 ${d.failure_reason ? `<div style="color:#c62828;"><strong>Failure:</strong> ${escapeHtml(d.failure_reason)}</div>` : ''}
             </div>
             <div class="job-actions">
+                ${d.status === 'InService' ? `
+                <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeHtml(d.endpoint_name)}', 0)" title="Scale to 0 instances (stop billing)">
+                    <i class="fas fa-power-off"></i> Scale Down
+                </button>
+                ` : ''}
+                ${d.status === 'InService' && d.instance_count > 1 ? `
+                <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeHtml(d.endpoint_name)}', ${d.instance_count - 1})" title="Remove one instance">
+                    <i class="fas fa-minus"></i>
+                </button>
+                ` : ''}
+                ${d.status === 'InService' ? `
+                <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeHtml(d.endpoint_name)}', ${(d.instance_count || 1) + 1})" title="Add one instance">
+                    <i class="fas fa-plus"></i>
+                </button>
+                ` : ''}
                 ${!['InService', 'Failed', 'Deleting', 'Deleted'].includes(d.status) ? `
                 <button class="btn btn-secondary" onclick="refreshDeployment('${escapeHtml(d.endpoint_name)}')">
                     <i class="fas fa-sync"></i> Refresh
@@ -254,6 +268,21 @@ async function deleteDeployment(endpointName) {
         loadDeployments();
     } catch (err) {
         alert(`Error: ${err.message}`);
+    }
+}
+
+async function scaleEndpoint(endpointName, desiredCount) {
+    const action = desiredCount === 0 ? 'scale down to 0 (stops billing)' : `scale to ${desiredCount} instance(s)`;
+    if (!confirm(`${action} for "${endpointName}"?`)) return;
+    try {
+        await apiCall(`/api/deployment/deployments/${endpointName}/scale`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ desired_count: desiredCount }),
+        });
+        loadDeployments();
+    } catch (err) {
+        alert(`Scale failed: ${err.message}`);
     }
 }
 
