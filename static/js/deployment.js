@@ -194,13 +194,19 @@ function displayDeployments(deployments) {
     const container = document.getElementById('deployments-list');
     if (!container) return;
 
-    // Update count badge
+    // Update count badge and active endpoint summary
     const badge = document.getElementById('dep-count-badge');
     if (badge) {
-        const inService = (deployments || []).filter(d => d.status === 'InService').length;
+        const active = (deployments || []).filter(d => d.status === 'InService');
         const total = (deployments || []).length;
-        badge.textContent = `${inService} active / ${total} total`;
-        badge.style.background = inService > 0 ? '#1e8449' : '#888';
+        if (active.length > 0) {
+            const summary = active.map(d => `${d.endpoint_name} (×${d.instance_count || 1})`).join(', ');
+            badge.innerHTML = `${active.length} active / ${total} total — <span style="font-weight:normal;">${escapeHtml(summary)}</span>`;
+            badge.style.background = '#1e8449';
+        } else {
+            badge.textContent = `0 active / ${total} total`;
+            badge.style.background = '#888';
+        }
     }
 
     if (!deployments || deployments.length === 0) {
