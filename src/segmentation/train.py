@@ -195,11 +195,12 @@ logger.info("Training complete. Best val_dice=%.4f", best_dice)
 # The PyTorch serving container discovers custom handlers at code/inference.py.
 import shutil as _shutil
 
-def _copy_inference_artifacts(src_dir: str, dest_dir: str) -> None:
+def _copy_inference_artifacts(src_dir: str, dest_dir: str, fallback_dir: str = "/opt/program") -> None:
     code_dir = os.path.join(dest_dir, "code")
     os.makedirs(code_dir, exist_ok=True)
     # inference.py and requirements-inference.txt are copied alongside train.py
     # by the Dockerfile, so they follow wherever SageMaker relocates the script.
+    # If not found in src_dir, fall back to /opt/program/ (original Docker location).
     file_map = {
         "inference.py": "inference.py",
         "requirements-inference.txt": "requirements.txt",
@@ -207,13 +208,16 @@ def _copy_inference_artifacts(src_dir: str, dest_dir: str) -> None:
     }
     for src_name, dest_name in file_map.items():
         src = os.path.join(src_dir, src_name)
+        if not os.path.exists(src):
+            src = os.path.join(fallback_dir, src_name)
         if os.path.exists(src):
             _shutil.copy2(src, os.path.join(code_dir, dest_name))
-            logger.info("Copied %s → code/%s", src_name, dest_name)
+            logger.info("Copied %s → code/%s", src, dest_name)
         else:
-            logger.warning("Not found, skipping: %s", src)
+            logger.warning("Not found, skipping: %s (checked %s and %s)", src_name, src_dir, fallback_dir)
 
 _copy_inference_artifacts(
     src_dir=os.path.dirname(os.path.abspath(__file__)),
     dest_dir=args.model_dir,
+    fallback_dir="/opt/program",
 )
