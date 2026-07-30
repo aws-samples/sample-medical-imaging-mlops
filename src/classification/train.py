@@ -108,13 +108,16 @@ if args.checkpoint_s3_uri:
 
 
 def copy_inference_artifacts(src_dir: str, dest_dir: str) -> None:
-    """Copy inference script and requirements into model_dir so SageMaker
-    bundles them into model.tar.gz — no post-training merging needed."""
+    """Copy inference script and requirements into model_dir/code/ so SageMaker
+    bundles them into model.tar.gz — no post-training merging needed.
+    The PyTorch serving container discovers custom handlers at code/inference.py."""
+    code_dir = os.path.join(dest_dir, "code")
+    os.makedirs(code_dir, exist_ok=True)
     for fname in ("inference.py", "requirements.txt", "model_def.py"):
         src = os.path.join(src_dir, fname)
         if os.path.exists(src):
-            shutil.copy2(src, os.path.join(dest_dir, fname))
-            logger.info("Copied %s to model_dir for deployment", fname)
+            shutil.copy2(src, os.path.join(code_dir, fname))
+            logger.info("Copied %s to model_dir/code/ for deployment", fname)
         else:
             logger.warning("Deployment artifact not found, skipping: %s", src)
 
