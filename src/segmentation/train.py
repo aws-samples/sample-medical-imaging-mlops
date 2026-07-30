@@ -199,8 +199,10 @@ def _copy_inference_artifacts(src_dir: str, dest_dir: str) -> None:
     code_dir = os.path.join(dest_dir, "code")
     os.makedirs(code_dir, exist_ok=True)
     for fname in ("inference.py", "model_def.py", "requirements.txt"):
-        # Look in the segmentation inference dir first, then the training dir
+        # Look in the inference subdir (Docker container layout), then
+        # the relative path from source tree, then the training dir itself
         candidates = [
+            os.path.join(src_dir, "inference", fname),
             os.path.join(src_dir, "..", "..", "inference", "segmentation", fname),
             os.path.join(src_dir, fname),
         ]

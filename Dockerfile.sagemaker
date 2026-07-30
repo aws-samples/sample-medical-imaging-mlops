@@ -9,6 +9,9 @@ RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
 COPY src/${TASK}/ /opt/program/
 
+# Include inference code so training can bundle it into model.tar.gz for deployment
+COPY src/inference/${TASK}/ /opt/program/inference/
+
 ENV SAGEMAKER_PROGRAM train.py
 
 # NOTE: SageMaker training containers require root to write to /opt/ml and
