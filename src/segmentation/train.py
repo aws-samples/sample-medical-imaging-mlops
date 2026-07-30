@@ -199,10 +199,11 @@ def _copy_inference_artifacts(src_dir: str, dest_dir: str) -> None:
     code_dir = os.path.join(dest_dir, "code")
     os.makedirs(code_dir, exist_ok=True)
     for fname in ("inference.py", "model_def.py", "requirements.txt"):
-        # Look in the inference subdir (Docker container layout), then
-        # the relative path from source tree, then the training dir itself
+        # Look in multiple locations — SageMaker may relocate train.py at runtime
         candidates = [
-            os.path.join(src_dir, "inference", fname),
+            os.path.join(src_dir, "inference", fname),            # relative to train.py
+            os.path.join("/opt/program", "inference", fname),     # absolute Docker path
+            os.path.join("/opt/ml/code", "inference", fname),     # SageMaker runtime path
             os.path.join(src_dir, "..", "..", "inference", "segmentation", fname),
             os.path.join(src_dir, fname),
         ]
@@ -210,10 +211,10 @@ def _copy_inference_artifacts(src_dir: str, dest_dir: str) -> None:
             src = os.path.normpath(src)
             if os.path.exists(src):
                 _shutil.copy2(src, os.path.join(code_dir, fname))
-                logger.info("Copied %s to model_dir/code/ for deployment", fname)
+                logger.info("Copied %s from %s to model_dir/code/", fname, src)
                 break
         else:
-            logger.warning("Deployment artifact not found, skipping: %s", fname)
+            logger.warning("Deployment artifact not found, skipping: %s (searched %s)", fname, candidates)
 
 _copy_inference_artifacts(
     src_dir=os.path.dirname(os.path.abspath(__file__)),
