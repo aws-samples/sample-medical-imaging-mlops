@@ -119,8 +119,9 @@ class InferenceService:
         s3_uri = input_data.get("s3_uri")
 
         if s3_uri:
-            # Build a JSON input file and upload it
-            input_body = json.dumps({"s3_uri": s3_uri})
+            # Build a JSON input file — send both keys for compatibility with
+            # BYOC images (expects s3_uri) and DLC code/ approach (expects file_path)
+            input_body = json.dumps({"s3_uri": s3_uri, "file_path": s3_uri})
         elif "bytes" in input_data:
             input_body = input_data["bytes"]
         elif input_data.get("file_path"):

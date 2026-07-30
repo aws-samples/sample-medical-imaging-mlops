@@ -188,8 +188,10 @@ def test_endpoint_async(endpoint_name: str, test_image_s3: str, region: str) -> 
     print(f"{'='*60}\n")
 
     # Upload input JSON to S3
-    # inference.py expects {"file_path": "<s3_uri_or_local_path>"}
-    input_payload = json.dumps({"file_path": test_image_s3})
+    # BYOC image inference.py expects {"s3_uri": "<s3_path>"}
+    # Reference/DLC inference.py expects {"file_path": "<s3_path>"}
+    # Support both by sending both keys
+    input_payload = json.dumps({"s3_uri": test_image_s3, "file_path": test_image_s3})
     input_key = f"{DEFAULT_OUTPUT_PREFIX}/test-input/request_{int(time.time())}.json"
 
     s3.put_object(
@@ -274,7 +276,7 @@ def test_endpoint_realtime(endpoint_name: str, test_image_s3: str, region: str) 
     print(f"  Test image: {test_image_s3}")
     print(f"{'='*60}\n")
 
-    payload = json.dumps({"file_path": test_image_s3})
+    payload = json.dumps({"s3_uri": test_image_s3, "file_path": test_image_s3})
     t0 = time.time()
 
     try:
