@@ -6,7 +6,7 @@
 #   TASK=classification (default) | segmentation
 #
 # Usage:
-#   ./build_and_push_inference.sh <aws_account_id> <region> [classification|segmentation]
+#   ./build_and_push_inference.sh [classification|segmentation]
 
 ARG TASK=classification
 
@@ -17,10 +17,7 @@ ARG TASK
 COPY src/inference/${TASK}/requirements.txt /tmp/requirements-inference.txt
 RUN pip install --no-cache-dir -r /tmp/requirements-inference.txt
 
-# Copy inference code into the container.
-# Classification: inference.py lives in src/classification/
-# Segmentation: inference.py lives in src/inference/segmentation/
-COPY src/${TASK}/ /opt/program/
+# Copy inference code (uniform structure: src/inference/${TASK}/ always has inference.py)
 COPY src/inference/${TASK}/ /opt/program/
 
 ENV SAGEMAKER_PROGRAM inference.py

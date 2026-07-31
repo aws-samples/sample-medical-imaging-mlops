@@ -7,10 +7,11 @@ ARG TASK
 COPY src/${TASK}/requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
+# Copy training code
 COPY src/${TASK}/ /opt/program/
 
-# Copy inference code alongside train.py so it's always found at the same level,
-# even when SageMaker relocates scripts to /opt/ml/code/ at runtime
+# Copy inference code alongside train.py (uniform structure for both tasks)
+# src/inference/${TASK}/ always contains inference.py + requirements.txt
 COPY src/inference/${TASK}/inference.py /opt/program/inference.py
 COPY src/inference/${TASK}/requirements.txt /opt/program/requirements-inference.txt
 

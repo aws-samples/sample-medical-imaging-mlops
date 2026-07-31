@@ -107,19 +107,26 @@ if args.checkpoint_s3_uri:
         logger.warning("Could not load checkpoint, starting from scratch: %s", e)
 
 
-def copy_inference_artifacts(src_dir: str, dest_dir: str) -> None:
+def copy_inference_artifacts(src_dir: str, dest_dir: str, fallback_dir: str = "/opt/program") -> None:
     """Copy inference script and requirements into model_dir/code/ so SageMaker
     bundles them into model.tar.gz — no post-training merging needed.
     The PyTorch serving container discovers custom handlers at code/inference.py."""
     code_dir = os.path.join(dest_dir, "code")
     os.makedirs(code_dir, exist_ok=True)
-    for fname in ("inference.py", "requirements.txt", "model_def.py"):
-        src = os.path.join(src_dir, fname)
+    file_map = {
+        "inference.py": "inference.py",
+        "requirements-inference.txt": "requirements.txt",
+        "model_def.py": "model_def.py",
+    }
+    for src_name, dest_name in file_map.items():
+        src = os.path.join(src_dir, src_name)
+        if not os.path.exists(src):
+            src = os.path.join(fallback_dir, src_name)
         if os.path.exists(src):
-            shutil.copy2(src, os.path.join(code_dir, fname))
-            logger.info("Copied %s to model_dir/code/ for deployment", fname)
+            shutil.copy2(src, os.path.join(code_dir, dest_name))
+            logger.info("Copied %s → code/%s", src, dest_name)
         else:
-            logger.warning("Deployment artifact not found, skipping: %s", src)
+            logger.warning("Not found, skipping: %s (checked %s and %s)", src_name, src_dir, fallback_dir)
 
 
 def run_epoch(loader, training=True):
@@ -241,6 +248,7 @@ logger.info("Saved result.json: %s", result)
 copy_inference_artifacts(
     src_dir=os.path.dirname(os.path.abspath(__file__)),
     dest_dir=args.model_dir,
+    fallback_dir="/opt/program",
 )
 
 if use_mlflow:
