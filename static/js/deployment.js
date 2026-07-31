@@ -224,19 +224,20 @@ function displayDeployments(deployments) {
     };
 
     container.innerHTML = deployments.map(d => `
-        <div class="job-item">
-            <div class="job-header">
-                <div class="job-id">${escapeHtml(d.endpoint_name)}</div>
+        <div class="job-item" style="padding:1rem 1.25rem;">
+            <div class="job-header" style="margin-bottom:0.75rem;">
+                <div>
+                    <div class="job-id" style="font-size:1rem;">${escapeHtml(d.endpoint_name)}</div>
+                    <span style="font-size:0.75rem; color:#666;">${d.endpoint_type === 'async' ? '⚡ Async' : '🔄 Real-time'} · ${escapeHtml(d.instance_type || 'N/A')} × ${d.instance_count || 1}</span>
+                </div>
                 <div class="job-status ${statusClass[d.status] || 'status-unknown'}">${escapeHtml(d.status)}</div>
             </div>
-            <div class="job-details" style="word-break:break-all;">
-                <div><strong>Type:</strong> ${d.endpoint_type === 'async' ? '⚡ Async' : '🔄 Real-time'}</div>
-                <div><strong>Instance:</strong> ${escapeHtml(d.instance_type || 'N/A')} × ${d.instance_count || 1}</div>
-                <div><strong>Created:</strong> ${d.created_at ? escapeHtml(new Date(d.created_at).toLocaleString()) : 'N/A'}</div>
-                ${d.output_s3_uri ? `<div><strong>Output:</strong> <code style="font-size:0.78rem; word-break:break-all;">${escapeHtml(d.output_s3_uri)}</code></div>` : ''}
-                ${d.data_capture_enabled ? `<div><strong>Data Capture:</strong> <span style="color:#1e8449;"><i class="fas fa-circle" style="font-size:0.6rem;"></i> Enabled</span> → <code style="font-size:0.78rem; word-break:break-all;">${escapeHtml(d.capture_s3_uri)}</code></div>` : ''}
-                ${d.endpoint_url ? `<div><strong>URL:</strong> <code style="font-size:0.78rem; word-break:break-all;">${escapeHtml(d.endpoint_url)}</code></div>` : ''}
-                ${d.failure_reason ? `<div style="color:#c62828;"><strong>Failure:</strong> ${escapeHtml(d.failure_reason)}</div>` : ''}
+            <div style="display:grid; grid-template-columns:auto 1fr; gap:0.3rem 1rem; font-size:0.82rem; margin-bottom:0.75rem;">
+                <strong>Created:</strong> <span>${d.created_at ? escapeHtml(new Date(d.created_at).toLocaleString()) : 'N/A'}</span>
+                ${d.output_s3_uri ? `<strong>Output:</strong> <span style="word-break:break-all; font-family:monospace; font-size:0.75rem;">${escapeHtml(d.output_s3_uri)}</span>` : ''}
+                ${d.endpoint_url ? `<strong>URL:</strong> <span style="word-break:break-all; font-family:monospace; font-size:0.75rem;">${escapeHtml(d.endpoint_url)}</span>` : ''}
+                ${d.data_capture_enabled ? `<strong>Capture:</strong> <span><span style="color:#1e8449;">● Enabled</span> → <span style="font-family:monospace; font-size:0.75rem;">${escapeHtml(d.capture_s3_uri)}</span></span>` : ''}
+                ${d.failure_reason ? `<strong style="color:#c62828;">Error:</strong> <span style="color:#c62828;">${escapeHtml(d.failure_reason)}</span>` : ''}
             </div>
             <div class="job-actions">
                 ${d.status === 'InService' && d.endpoint_type === 'async' ? `
