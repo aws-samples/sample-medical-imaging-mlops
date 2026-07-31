@@ -137,20 +137,24 @@ def model_fn(model_dir: str) -> Dict[str, Any]:
     }
 
 
-def input_fn(request_body: Union[str, bytes], content_type: str) -> str:
-    """Parse input data and return a file path to the NIfTI image.
+def input_fn(request_body: Union[str, bytes], content_type: str) -> Dict[str, str]:
+    """Parse input data and return a dict with local file path and metadata.
 
     Supports:
       - application/json with {"file_path": "<s3_uri_or_local_path>"}
+      - application/json with {"s3_uri": "<s3_uri>"} (compatibility)
       - application/x-nifti or application/octet-stream with raw NIfTI binary
+
+    Returns:
+        Dict with "local_path" and optionally "s3_uri" for output path derivation.
     """
     if content_type == "application/json":
         input_data = json.loads(request_body)
 
-        if "file_path" not in input_data:
-            raise ValueError("JSON payload must contain 'file_path' key")
-
-        file_path = input_data["file_path"]
+        # Support both "file_path" and "s3_uri" keys
+        file_path = input_data.get("file_path") or input_data.get("s3_uri")
+        if not file_path:
+            raise ValueError("JSON payload must contain 'file_path' or 's3_uri' key")
 
         if file_path.startswith("s3://"):
             import boto3
@@ -162,12 +166,12 @@ def input_fn(request_body: Union[str, bytes], content_type: str) -> str:
                 temp_path = temp_file.name
             s3_client.download_file(bucket_name, key, temp_path)
             logger.info(f"Downloaded S3 file to: {temp_path}")
-            return temp_path
+            return {"local_path": temp_path, "s3_uri": file_path}
 
         elif file_path.endswith((".nii.gz", ".nii")):
             if not os.path.exists(file_path):
                 raise FileNotFoundError(f"File not found: {file_path}")
-            return file_path
+            return {"local_path": file_path}
 
         else:
             # Assume base64-encoded NIfTI
@@ -177,7 +181,7 @@ def input_fn(request_body: Union[str, bytes], content_type: str) -> str:
                     temp_file.write(image_data)
                     temp_path = temp_file.name
                 logger.info(f"Decoded base64 to: {temp_path}")
-                return temp_path
+                return {"local_path": temp_path}
             except Exception as e:
                 raise ValueError(
                     f"Invalid file_path: expected S3 URI, local path, or base64. Error: {e}"
@@ -190,21 +194,24 @@ def input_fn(request_body: Union[str, bytes], content_type: str) -> str:
             temp_file.write(request_body)
             temp_path = temp_file.name
         logger.info(f"Saved binary NIfTI to: {temp_path}")
-        return temp_path
+        return {"local_path": temp_path}
 
     else:
         raise ValueError(f"Unsupported content type: {content_type}")
 
 
-def predict_fn(input_data: str, model_components: Dict[str, Any]) -> Dict[str, Any]:
-    """Run segmentation inference on a NIfTI image."""
+def predict_fn(input_data: Dict[str, str], model_components: Dict[str, Any]) -> Dict[str, Any]:
+    """Run segmentation inference on a NIfTI image.
+    Saves the segmentation mask as .nii.gz to S3 (alongside the input).
+    Returns statistics in the JSON response."""
     model = model_components["model"]
     device = model_components["device"]
     preprocessing = model_components["preprocessing"]
     post_transforms = model_components["post_transforms"]
     inferer = model_components["inferer"]
 
-    image_path = input_data
+    image_path = input_data["local_path"]
+    source_s3_uri = input_data.get("s3_uri")
     logger.info(f"Processing: {image_path}")
 
     try:
@@ -233,15 +240,36 @@ def predict_fn(input_data: str, model_components: Dict[str, Any]) -> Dict[str, A
         total_voxels = int(seg_array.size)
         seg_percentage = (voxel_count / total_voxels) * 100
 
-        # Save segmentation as NIfTI and encode to base64
+        # Save segmentation as NIfTI
         seg_nifti = nib.Nifti1Image(
             seg_array.astype(np.float32), affine=original_affine
         )
-        with tempfile.NamedTemporaryFile(delete=False, suffix="_seg.nii.gz") as temp_out:
-            nib.save(seg_nifti, temp_out.name)
-            with open(temp_out.name, "rb") as f:
-                seg_encoded = base64.b64encode(f.read()).decode("utf-8")
-            os.unlink(temp_out.name)
+
+        # Upload NIfTI mask to S3 (next to input file)
+        mask_s3_uri = None
+        if source_s3_uri:
+            try:
+                import boto3
+                s3_client = boto3.client("s3")
+                parts = source_s3_uri.replace("s3://", "").split("/", 1)
+                bucket_name, key = parts[0], parts[1]
+                # Place mask alongside input: img.nii.gz → img_seg.nii.gz
+                if key.endswith(".nii.gz"):
+                    mask_key = key.replace(".nii.gz", "_seg.nii.gz")
+                elif key.endswith(".nii"):
+                    mask_key = key.replace(".nii", "_seg.nii.gz")
+                else:
+                    mask_key = key + "_seg.nii.gz"
+
+                with tempfile.NamedTemporaryFile(delete=False, suffix="_seg.nii.gz") as temp_out:
+                    nib.save(seg_nifti, temp_out.name)
+                    s3_client.upload_file(temp_out.name, bucket_name, mask_key)
+                    os.unlink(temp_out.name)
+
+                mask_s3_uri = f"s3://{bucket_name}/{mask_key}"
+                logger.info(f"Saved segmentation mask to: {mask_s3_uri}")
+            except Exception as e:
+                logger.warning(f"Failed to upload mask to S3: {e}")
 
         # Cleanup temp input
         if "/tmp/" in image_path:
@@ -250,15 +278,18 @@ def predict_fn(input_data: str, model_components: Dict[str, Any]) -> Dict[str, A
             except OSError:
                 pass
 
-        return {
+        result = {
             "model_name": model_components["model_name"],
             "original_shape": list(original_shape),
             "segmentation_shape": list(seg_array.shape),
             "segmented_voxels": voxel_count,
             "total_voxels": total_voxels,
             "segmentation_percentage": round(seg_percentage, 2),
-            "segmentation_mask_base64": seg_encoded,
         }
+        if mask_s3_uri:
+            result["mask_s3_uri"] = mask_s3_uri
+
+        return result
 
     except Exception as e:
         logger.error(f"Inference error: {e}")
