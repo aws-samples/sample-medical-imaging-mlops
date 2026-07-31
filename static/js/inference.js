@@ -94,7 +94,7 @@ async function runInference(e) {
         if (inputType === 'file_path' && filePicker.files.length > 0) {
             // Send raw file bytes
             const fileBytes = await filePicker.files[0].arrayBuffer();
-            res = await apiCall(`/api/inference/invoke-local?endpoint_name=${encodeURIComponent(fd.get('endpoint_name'))}&task_type=${encodeURIComponent(fd.get('task_type'))}`, {
+            res = await apiCall(`/api/inference/invoke-local?endpoint_name=${encodeURIComponent(fd.get('endpoint_name'))}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/dicom' },
                 body: fileBytes,
@@ -102,7 +102,6 @@ async function runInference(e) {
         } else {
             const payload = {
                 endpoint_name: fd.get('endpoint_name'),
-                task_type:     fd.get('task_type'),
                 input_type:    inputType,
                 input_value:   inputValue,
                 output_s3_uri: fd.get('output_s3_uri') || null,
@@ -118,7 +117,7 @@ async function runInference(e) {
         if (placeholder) placeholder.style.display = 'none';
         if (result) result.style.display = 'block';
 
-        if (fd.get('task_type') === 'classification') {
+        if (fd.get('task_type') === 'classification' || res.predicted_class || res.probabilities) {
             displayClassificationResult(res);
         } else {
             displaySegmentationResult(res);

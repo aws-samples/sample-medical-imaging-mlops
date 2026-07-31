@@ -13,7 +13,7 @@ inference_service = InferenceService()
 
 class InferenceRequest(BaseModel):
     endpoint_name: str
-    task_type:     str = "classification"   # classification | segmentation
+    task_type:     Optional[str] = "classification"   # classification | segmentation
     input_type:    str = "s3_uri"           # s3_uri | file_path
     input_value:   str                      # S3 URI or local path
     output_s3_uri: Optional[str] = None     # where to save result
