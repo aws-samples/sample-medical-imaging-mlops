@@ -197,6 +197,7 @@ class DeploymentService:
             status   = response["EndpointStatus"]
             record   = self.deployments.get(endpoint_name, {})
             record["status"] = status
+            record["endpoint_name"] = endpoint_name
             record["endpoint_url"] = (
                 f"https://runtime.sagemaker.{response.get('EndpointArn','').split(':')[3]}"
                 f".amazonaws.com/endpoints/{endpoint_name}/invocations"
@@ -205,11 +206,34 @@ class DeploymentService:
             if status == "Failed":
                 record["failure_reason"] = response.get("FailureReason")
 
-            # Check data capture config from the endpoint config
+            # Get instance count from production variants
+            variants = response.get("ProductionVariants", [])
+            if variants:
+                record["instance_count"] = variants[0].get("CurrentInstanceCount", variants[0].get("DesiredInstanceCount", 1))
+                record["instance_type"] = record.get("instance_type") or variants[0].get("InstanceType")
+
+            # Check endpoint config for async and data capture settings
             config_name = response.get("EndpointConfigName")
             if config_name:
                 try:
                     cfg_resp = sagemaker_client.describe_endpoint_config(EndpointConfigName=config_name)
+
+                    # Async inference config
+                    async_cfg = cfg_resp.get("AsyncInferenceConfig", {})
+                    if async_cfg:
+                        record["endpoint_type"] = "async"
+                        output_cfg = async_cfg.get("OutputConfig", {})
+                        if output_cfg.get("S3OutputPath"):
+                            record["output_s3_uri"] = output_cfg["S3OutputPath"]
+                    else:
+                        record["endpoint_type"] = record.get("endpoint_type") or "realtime"
+
+                    # Instance type from production variants in config
+                    cfg_variants = cfg_resp.get("ProductionVariants", [])
+                    if cfg_variants and not record.get("instance_type"):
+                        record["instance_type"] = cfg_variants[0].get("InstanceType")
+
+                    # Data capture config
                     dc = cfg_resp.get("DataCaptureConfig", {})
                     if dc.get("EnableCapture"):
                         record["data_capture_enabled"] = True
