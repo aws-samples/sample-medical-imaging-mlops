@@ -24,6 +24,7 @@ class EndpointDeployRequest(BaseModel):
     async_endpoint:       bool = False
     output_s3_uri:        Optional[str] = None
     max_concurrent:       int = 10
+    output_pattern:       Optional[str] = None
     # Data capture
     enable_data_capture:  bool = False
     capture_s3_uri:       Optional[str] = None

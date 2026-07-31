@@ -653,6 +653,11 @@
                                     <label for="dep-max-concurrent">Max Concurrent Invocations</label>
                                     <input type="number" id="dep-max-concurrent" name="max_concurrent" value="10" min="1" max="1000">
                                 </div>
+                                <div class="form-group">
+                                    <label for="dep-output-pattern">Output Filename Pattern</label>
+                                    <input type="text" id="dep-output-pattern" name="output_pattern" value="{patient_id}_segmentation.nii.gz">
+                                    <small style="color:var(--aws-dark-gray)">Placeholders: {patient_id}, {filename}, {timestamp}, {model_name}</small>
+                                </div>
                             </div>
                         </div>
                         <div class="form-row">
@@ -761,7 +766,13 @@
                                 <label for="inf-output-s3">Output S3 URI (optional)</label>
                                 <input type="text" id="inf-output-s3" name="output_s3_uri"
                                     placeholder="s3://bucket/inference-results/">
-                                <small style="color:var(--aws-dark-gray)">Result JSON saved here</small>
+                                <small style="color:var(--aws-dark-gray)">Where segmentation masks are saved</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="inf-output-pattern">Output Filename Pattern</label>
+                                <input type="text" id="inf-output-pattern" name="output_pattern"
+                                    placeholder="{patient_id}_segmentation.nii.gz" value="{patient_id}_segmentation.nii.gz">
+                                <small style="color:var(--aws-dark-gray)">Placeholders: {patient_id}, {filename}, {timestamp}, {model_name}</small>
                             </div>
                         </div>
                         <div id="inf-status-banner" class="sm-status-banner" style="display:none;"></div>

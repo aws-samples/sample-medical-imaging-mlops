@@ -127,6 +127,7 @@ async function deployModel(e) {
             return;
         }
         payload.max_concurrent = parseInt(fd.get('max_concurrent') || '10');
+        payload.output_pattern = fd.get('output_pattern') || '{patient_id}_segmentation.nii.gz';
     }
 
     const btn    = e.target.querySelector('button[type="submit"]');

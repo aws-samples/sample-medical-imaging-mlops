@@ -105,6 +105,7 @@ async function runInference(e) {
                 input_type:    inputType,
                 input_value:   inputValue,
                 output_s3_uri: fd.get('output_s3_uri') || null,
+                output_pattern: fd.get('output_pattern') || null,
             };
             res = await apiCall('/api/inference/invoke', {
                 method: 'POST',

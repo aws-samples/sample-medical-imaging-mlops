@@ -134,6 +134,7 @@ class DeploymentService:
 
         model_name  = f"{endpoint_name}-model"
         config_name = f"{endpoint_name}-config"
+        output_pattern = config.get("output_pattern", "{patient_id}_segmentation.nii.gz")
 
         # model.tar.gz already contains inference.py (copied by train.py at end of training)
         sagemaker_client.create_model(
@@ -144,6 +145,8 @@ class DeploymentService:
                 "Environment": {
                     "SAGEMAKER_PROGRAM":             entry_point,
                     "SAGEMAKER_CONTAINER_LOG_LEVEL": "20",
+                    "OUTPUT_S3_URI":                 output_s3_uri,
+                    "OUTPUT_FILENAME_PATTERN":       output_pattern,
                 },
             },
             ExecutionRoleArn=role_arn,
@@ -183,6 +186,7 @@ class DeploymentService:
             "instance_type":   instance_type,
             "instance_count":  instance_count,
             "output_s3_uri":   output_s3_uri,
+            "output_pattern":  output_pattern,
             "status":          "Creating",
             "created_at":      datetime.utcnow().isoformat(),
         }

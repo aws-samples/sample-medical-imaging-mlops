@@ -17,6 +17,7 @@ class InferenceRequest(BaseModel):
     input_type:    str = "s3_uri"           # s3_uri | file_path
     input_value:   str                      # S3 URI or local path
     output_s3_uri: Optional[str] = None     # where to save result
+    output_pattern: Optional[str] = None    # filename pattern for segmentation masks
 
 
 @router.post("/invoke")
@@ -27,7 +28,11 @@ async def invoke_endpoint(request: InferenceRequest):
         session = aws_service._get_boto_session()
         result  = inference_service.invoke_endpoint(
             endpoint_name=request.endpoint_name,
-            input_data={request.input_type: request.input_value},
+            input_data={
+                request.input_type: request.input_value,
+                "output_s3_uri": request.output_s3_uri,
+                "output_pattern": request.output_pattern,
+            },
             task_type=request.task_type,
             output_s3_uri=request.output_s3_uri,
             boto_session=session,
