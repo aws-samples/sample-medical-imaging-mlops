@@ -48,9 +48,19 @@ The deploy form presents a **radio button** to choose between endpoint types:
 ### Real-time
 
 - Synchronous request/response
-- Best for single-image inference with low latency requirements
-- Timeout: 300 seconds (sufficient for 3D segmentation)
+- Best for classification (fast, <5s) and pre-warmed segmentation
+- **API gateway timeout: 60 seconds** — requests exceeding this fail regardless of container timeout
 - Minimum 1 instance (cannot scale to zero)
+
+> **Cold start warning:** The first request to a real-time endpoint after deployment (or after a period of inactivity) may time out. This is because the model loads into GPU memory on the first invocation. Subsequent requests are fast (<30s). To avoid cold-start timeouts:
+> - Send a warm-up request immediately after the endpoint becomes InService
+> - Or use async endpoints for segmentation, which have no timeout limit
+>
+> Both real-time and async endpoints use the same container and inference code. The only difference is the timeout behavior.
+
+**Recommendation:**
+- **Classification** → Real-time (fast inference, <5s)
+- **Segmentation** → Async (no timeout limit, supports scale-to-zero for cost savings)
 
 ### Async endpoint
 
@@ -62,9 +72,9 @@ Select the **Async** radio button to create an asynchronous endpoint:
 | `max_concurrent` | no | Max concurrent invocations per instance (default `10`) |
 
 Async endpoints are useful for:
+- 3D segmentation volumes (inference takes 15-30s, first request may take longer)
 - Batch inference workloads
-- Large 3D volumes that exceed real-time timeout limits
-- Cost optimization (scale to zero when idle)
+- Cost optimization (scale to zero when idle — no billing when no requests)
 
 ## Endpoint Scaling
 

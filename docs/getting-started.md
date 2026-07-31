@@ -309,4 +309,6 @@ Set up Model Monitor to track prediction drift:
 | MLflow not tracking | Ensure `MLFLOW_TRACKING_URI` points to a running MLflow server (or use Docker Compose) |
 | Docker build fails with `403 Forbidden` | Run `aws ecr get-login-password` to authenticate with the AWS Deep Learning Containers ECR (see README) |
 | SageMaker rejects image with `Unsupported manifest media type` | Your Docker image was built in OCI format. Rebuild with `docker buildx build --provenance=false` or use the provided `build_and_push.sh` scripts which handle this automatically |
+| Real-time endpoint times out on first request | This is a **cold start** — the model loads into GPU memory on the first invocation. The first request may exceed the 60s API gateway timeout, but subsequent requests are fast (<30s). Send a warm-up request after deployment, or use async endpoints for segmentation which have no timeout limit |
+| Real-time works on second request but not first | Cold start. The model and MONAI transforms are initialized on the first `predict_fn` call. After that, the model stays in GPU memory and subsequent requests are fast |
 | Empty job list after restart | Data stores auto-rebuild from `data/training_reports/` on first boot; click Sync from AWS to pull fresh data |
