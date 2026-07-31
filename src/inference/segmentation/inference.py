@@ -156,6 +156,8 @@ def input_fn(request_body: Union[str, bytes], content_type: str) -> Dict[str, st
         if not file_path:
             raise ValueError("JSON payload must contain 'file_path' or 's3_uri' key")
 
+        output_s3_uri = input_data.get("output_s3_uri", os.environ.get("OUTPUT_S3_URI", ""))
+
         if file_path.startswith("s3://"):
             import boto3
             parts = file_path.replace("s3://", "").split("/", 1)
@@ -166,7 +168,7 @@ def input_fn(request_body: Union[str, bytes], content_type: str) -> Dict[str, st
                 temp_path = temp_file.name
             s3_client.download_file(bucket_name, key, temp_path)
             logger.info(f"Downloaded S3 file to: {temp_path}")
-            return {"local_path": temp_path, "s3_uri": file_path}
+            return {"local_path": temp_path, "s3_uri": file_path, "output_s3_uri": output_s3_uri}
 
         elif file_path.endswith((".nii.gz", ".nii")):
             if not os.path.exists(file_path):
@@ -212,6 +214,7 @@ def predict_fn(input_data: Dict[str, str], model_components: Dict[str, Any]) -> 
 
     image_path = input_data["local_path"]
     source_s3_uri = input_data.get("s3_uri")
+    output_s3_uri = input_data.get("output_s3_uri", "")
     logger.info(f"Processing: {image_path}")
 
     try:
@@ -245,28 +248,37 @@ def predict_fn(input_data: Dict[str, str], model_components: Dict[str, Any]) -> 
             seg_array.astype(np.float32), affine=original_affine
         )
 
-        # Upload NIfTI mask to S3 (next to input file)
+        # Upload NIfTI mask to S3 at output_s3_uri/<patient_id>_segmentation.nii.gz
         mask_s3_uri = None
         if source_s3_uri:
             try:
                 import boto3
                 s3_client = boto3.client("s3")
-                parts = source_s3_uri.replace("s3://", "").split("/", 1)
-                bucket_name, key = parts[0], parts[1]
-                # Place mask alongside input: img.nii.gz → img_seg.nii.gz
-                if key.endswith(".nii.gz"):
-                    mask_key = key.replace(".nii.gz", "_seg.nii.gz")
-                elif key.endswith(".nii"):
-                    mask_key = key.replace(".nii", "_seg.nii.gz")
+
+                # Extract patient_id from the input path
+                # e.g., s3://bucket/segmentation/test/10090344/img.nii.gz → patient_id = "10090344"
+                source_parts = source_s3_uri.replace("s3://", "").split("/")
+                # Patient ID is the parent folder of the image file
+                patient_id = source_parts[-2] if len(source_parts) >= 3 else "unknown"
+
+                # Determine output bucket and prefix
+                if output_s3_uri:
+                    out_parts = output_s3_uri.replace("s3://", "").rstrip("/").split("/", 1)
+                    out_bucket = out_parts[0]
+                    out_prefix = out_parts[1] if len(out_parts) > 1 else "segmentation-results"
                 else:
-                    mask_key = key + "_seg.nii.gz"
+                    # Fallback: use the input bucket with a results prefix
+                    out_bucket = source_parts[0]
+                    out_prefix = "segmentation-results"
+
+                mask_key = f"{out_prefix}/{patient_id}_segmentation.nii.gz"
 
                 with tempfile.NamedTemporaryFile(delete=False, suffix="_seg.nii.gz") as temp_out:
                     nib.save(seg_nifti, temp_out.name)
-                    s3_client.upload_file(temp_out.name, bucket_name, mask_key)
+                    s3_client.upload_file(temp_out.name, out_bucket, mask_key)
                     os.unlink(temp_out.name)
 
-                mask_s3_uri = f"s3://{bucket_name}/{mask_key}"
+                mask_s3_uri = f"s3://{out_bucket}/{mask_key}"
                 logger.info(f"Saved segmentation mask to: {mask_s3_uri}")
             except Exception as e:
                 logger.warning(f"Failed to upload mask to S3: {e}")
