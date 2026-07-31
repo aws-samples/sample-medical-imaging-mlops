@@ -229,13 +229,13 @@ function displayDeployments(deployments) {
                 <div class="job-id">${escapeHtml(d.endpoint_name)}</div>
                 <div class="job-status ${statusClass[d.status] || 'status-unknown'}">${escapeHtml(d.status)}</div>
             </div>
-            <div class="job-details">
+            <div class="job-details" style="word-break:break-all;">
                 <div><strong>Type:</strong> ${d.endpoint_type === 'async' ? '⚡ Async' : '🔄 Real-time'}</div>
-                <div><strong>Instance:</strong> ${escapeHtml(d.instance_type)} × ${d.instance_count}</div>
+                <div><strong>Instance:</strong> ${escapeHtml(d.instance_type || 'N/A')} × ${d.instance_count || 1}</div>
                 <div><strong>Created:</strong> ${d.created_at ? escapeHtml(new Date(d.created_at).toLocaleString()) : 'N/A'}</div>
-                ${d.output_s3_uri ? `<div><strong>Output:</strong> <code style="font-size:0.78rem;">${escapeHtml(d.output_s3_uri)}</code></div>` : ''}
-                ${d.data_capture_enabled ? `<div><strong>Data Capture:</strong> <span style="color:#1e8449;"><i class="fas fa-circle" style="font-size:0.6rem;"></i> Enabled</span> → <code style="font-size:0.78rem;">${escapeHtml(d.capture_s3_uri)}</code></div>` : ''}
-                ${d.endpoint_url ? `<div><strong>URL:</strong> <code style="font-size:0.78rem;">${escapeHtml(d.endpoint_url)}</code></div>` : ''}
+                ${d.output_s3_uri ? `<div><strong>Output:</strong> <code style="font-size:0.78rem; word-break:break-all;">${escapeHtml(d.output_s3_uri)}</code></div>` : ''}
+                ${d.data_capture_enabled ? `<div><strong>Data Capture:</strong> <span style="color:#1e8449;"><i class="fas fa-circle" style="font-size:0.6rem;"></i> Enabled</span> → <code style="font-size:0.78rem; word-break:break-all;">${escapeHtml(d.capture_s3_uri)}</code></div>` : ''}
+                ${d.endpoint_url ? `<div><strong>URL:</strong> <code style="font-size:0.78rem; word-break:break-all;">${escapeHtml(d.endpoint_url)}</code></div>` : ''}
                 ${d.failure_reason ? `<div style="color:#c62828;"><strong>Failure:</strong> ${escapeHtml(d.failure_reason)}</div>` : ''}
             </div>
             <div class="job-actions">
