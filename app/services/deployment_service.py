@@ -93,9 +93,16 @@ class DeploymentService:
         sagemaker_client.create_endpoint(EndpointName=endpoint_name, EndpointConfigName=config_name)
         logger.info("Creating real-time endpoint: %s", endpoint_name)
 
+        # Infer task type from image URI or endpoint name
+        task_type = "classification"
+        combined = f"{image_uri or ''} {endpoint_name}".lower()
+        if "segmentation" in combined or "segment" in combined:
+            task_type = "segmentation"
+
         record = {
             "endpoint_name":        endpoint_name,
             "endpoint_type":        "realtime",
+            "task_type":            task_type,
             "model_artifacts":      model_artifacts,
             "image_uri":            image_uri,
             "instance_type":        instance_type,
@@ -161,9 +168,16 @@ class DeploymentService:
         sagemaker_client.create_endpoint(EndpointName=endpoint_name, EndpointConfigName=config_name)
         logger.info("Creating async endpoint: %s", endpoint_name)
 
+        # Infer task type from image URI or endpoint name
+        task_type = "classification"
+        combined = f"{image_uri or ''} {endpoint_name}".lower()
+        if "segmentation" in combined or "segment" in combined:
+            task_type = "segmentation"
+
         record = {
             "endpoint_name":   endpoint_name,
             "endpoint_type":   "async",
+            "task_type":       task_type,
             "model_artifacts": model_artifacts,
             "image_uri":       image_uri,
             "instance_type":   instance_type,

@@ -29,7 +29,7 @@ async function loadInferenceEndpoints() {
         const active = (dep.deployments || []).filter(d => d.status === 'InService');
         if (active.length > 0) {
             select.innerHTML = active.map(d =>
-                `<option value="${escapeHtml(d.endpoint_name)}" data-type="${escapeHtml(d.endpoint_type || 'realtime')}" data-output-s3="${escapeHtml(d.output_s3_uri || '')}">${escapeHtml(d.endpoint_name)}${d.endpoint_type === 'async' ? ' ⚡' : ''}</option>`
+                `<option value="${escapeHtml(d.endpoint_name)}" data-type="${escapeHtml(d.endpoint_type || 'realtime')}" data-output-s3="${escapeHtml(d.output_s3_uri || '')}" data-task="${escapeHtml(d.task_type || 'classification')}">${escapeHtml(d.endpoint_name)}${d.endpoint_type === 'async' ? ' ⚡' : ''}</option>`
             ).join('');
             // Auto-fill output S3 for first selected endpoint
             onInfEndpointChange();
@@ -117,10 +117,22 @@ async function runInference(e) {
         if (placeholder) placeholder.style.display = 'none';
         if (result) result.style.display = 'block';
 
-        if (fd.get('task_type') === 'classification' || res.predicted_class || res.probabilities) {
+        if (res.predicted_class || res.probabilities || res.predicted_class_index !== undefined) {
             displayClassificationResult(res);
-        } else {
+        } else if (res.segmentation_mask_base64 || res.mask_nifti_b64 || res.segmented_voxels !== undefined) {
             displaySegmentationResult(res);
+        } else if (res.async) {
+            displayAsyncResult(res);
+        } else {
+            // Use task type from the endpoint's deployment record
+            const epSelect = document.getElementById('inf-endpoint');
+            const selectedOpt = epSelect?.options[epSelect.selectedIndex];
+            const taskType = selectedOpt?.dataset?.task || 'classification';
+            if (taskType === 'segmentation') {
+                displaySegmentationResult(res);
+            } else {
+                displayClassificationResult(res);
+            }
         }
 
         const savedTo = document.getElementById('inf-saved-to');
@@ -132,6 +144,22 @@ async function runInference(e) {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-play"></i> Run Inference';
     }
+}
+
+function displayAsyncResult(res) {
+    const resultDiv = document.getElementById('inference-result');
+    if (!resultDiv) return;
+    resultDiv.innerHTML = `
+        <div style="padding:1rem; background:#e8f4fd; border-radius:6px; border:1px solid #1a6fa0;">
+            <h4 style="margin:0 0 0.5rem;"><i class="fas fa-clock"></i> Async Inference Submitted</h4>
+            <div style="font-size:0.85rem; display:grid; grid-template-columns:auto 1fr; gap:0.3rem 1rem;">
+                <strong>Inference ID:</strong> <code>${escapeHtml(res.inference_id || 'N/A')}</code>
+                <strong>Output:</strong> <code style="word-break:break-all;">${escapeHtml(res.output_location || res.message || 'Check S3')}</code>
+                <strong>Status:</strong> <span>${escapeHtml(res.status || 'Submitted')}</span>
+            </div>
+            <p style="margin:0.75rem 0 0; font-size:0.8rem; color:#666;">Results will appear in the output S3 path. Check in 15-30 seconds.</p>
+        </div>
+    `;
 }
 
 function displayClassificationResult(res) {
