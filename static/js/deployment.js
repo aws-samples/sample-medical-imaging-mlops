@@ -235,7 +235,6 @@ function displayDeployments(deployments) {
             <div style="display:grid; grid-template-columns:auto 1fr; gap:0.3rem 1rem; font-size:0.82rem; margin-bottom:0.75rem;">
                 <strong>Created:</strong> <span>${d.created_at ? escapeHtml(new Date(d.created_at).toLocaleString()) : 'N/A'}</span>
                 ${d.output_s3_uri ? `<strong>Output:</strong> <span style="word-break:break-all; font-family:monospace; font-size:0.75rem;">${escapeHtml(d.output_s3_uri)}</span>` : ''}
-                ${d.endpoint_url ? `<strong>URL:</strong> <span style="word-break:break-all; font-family:monospace; font-size:0.75rem;">${escapeHtml(d.endpoint_url)}</span>` : ''}
                 ${d.data_capture_enabled ? `<strong>Capture:</strong> <span><span style="color:#1e8449;">● Enabled</span> → <span style="font-family:monospace; font-size:0.75rem;">${escapeHtml(d.capture_s3_uri)}</span></span>` : ''}
                 ${d.failure_reason ? `<strong style="color:#c62828;">Error:</strong> <span style="color:#c62828;">${escapeHtml(d.failure_reason)}</span>` : ''}
             </div>
