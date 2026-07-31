@@ -157,6 +157,7 @@ def input_fn(request_body: Union[str, bytes], content_type: str) -> Dict[str, st
             raise ValueError("JSON payload must contain 'file_path' or 's3_uri' key")
 
         output_s3_uri = input_data.get("output_s3_uri", os.environ.get("OUTPUT_S3_URI", ""))
+        output_pattern = input_data.get("output_pattern", "")
 
         if file_path.startswith("s3://"):
             import boto3
@@ -168,7 +169,7 @@ def input_fn(request_body: Union[str, bytes], content_type: str) -> Dict[str, st
                 temp_path = temp_file.name
             s3_client.download_file(bucket_name, key, temp_path)
             logger.info(f"Downloaded S3 file to: {temp_path}")
-            return {"local_path": temp_path, "s3_uri": file_path, "output_s3_uri": output_s3_uri}
+            return {"local_path": temp_path, "s3_uri": file_path, "output_s3_uri": output_s3_uri, "output_pattern": output_pattern}
 
         elif file_path.endswith((".nii.gz", ".nii")):
             if not os.path.exists(file_path):
@@ -215,6 +216,7 @@ def predict_fn(input_data: Dict[str, str], model_components: Dict[str, Any]) -> 
     image_path = input_data["local_path"]
     source_s3_uri = input_data.get("s3_uri")
     output_s3_uri = input_data.get("output_s3_uri", "")
+    output_pattern_override = input_data.get("output_pattern", "")
     logger.info(f"Processing: {image_path}")
 
     try:
@@ -248,18 +250,35 @@ def predict_fn(input_data: Dict[str, str], model_components: Dict[str, Any]) -> 
             seg_array.astype(np.float32), affine=original_affine
         )
 
-        # Upload NIfTI mask to S3 at output_s3_uri/<patient_id>_segmentation.nii.gz
+        # Upload NIfTI mask to S3 at output_s3_uri using the output filename pattern
         mask_s3_uri = None
         if source_s3_uri:
             try:
                 import boto3
+                from datetime import datetime
                 s3_client = boto3.client("s3")
 
-                # Extract patient_id from the input path
-                # e.g., s3://bucket/segmentation/test/10090344/img.nii.gz → patient_id = "10090344"
+                # Extract metadata from input path for pattern substitution
+                # e.g., s3://bucket/segmentation/test/10090344/img.nii.gz
                 source_parts = source_s3_uri.replace("s3://", "").split("/")
-                # Patient ID is the parent folder of the image file
                 patient_id = source_parts[-2] if len(source_parts) >= 3 else "unknown"
+                input_filename = source_parts[-1].replace(".nii.gz", "").replace(".nii", "")
+                timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+
+                # Output filename pattern — supports placeholders:
+                #   {patient_id}  - parent folder of input (e.g., "10090344")
+                #   {filename}    - input filename without extension (e.g., "img")
+                #   {timestamp}   - UTC timestamp (e.g., "20260731-163000")
+                #   {model_name}  - model used (e.g., "SegResNet")
+                output_pattern = output_pattern_override or os.environ.get(
+                    "OUTPUT_FILENAME_PATTERN", "{patient_id}_segmentation.nii.gz"
+                )
+                output_filename = output_pattern.format(
+                    patient_id=patient_id,
+                    filename=input_filename,
+                    timestamp=timestamp,
+                    model_name=model_components["model_name"],
+                )
 
                 # Determine output bucket and prefix
                 if output_s3_uri:
@@ -267,11 +286,10 @@ def predict_fn(input_data: Dict[str, str], model_components: Dict[str, Any]) -> 
                     out_bucket = out_parts[0]
                     out_prefix = out_parts[1] if len(out_parts) > 1 else "segmentation-results"
                 else:
-                    # Fallback: use the input bucket with a results prefix
                     out_bucket = source_parts[0]
                     out_prefix = "segmentation-results"
 
-                mask_key = f"{out_prefix}/{patient_id}_segmentation.nii.gz"
+                mask_key = f"{out_prefix}/{output_filename}"
 
                 with tempfile.NamedTemporaryFile(delete=False, suffix="_seg.nii.gz") as temp_out:
                     nib.save(seg_nifti, temp_out.name)
