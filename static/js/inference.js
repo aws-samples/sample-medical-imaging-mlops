@@ -29,8 +29,10 @@ async function loadInferenceEndpoints() {
         const active = (dep.deployments || []).filter(d => d.status === 'InService');
         if (active.length > 0) {
             select.innerHTML = active.map(d =>
-                `<option value="${escapeHtml(d.endpoint_name)}">${escapeHtml(d.endpoint_name)}</option>`
+                `<option value="${escapeHtml(d.endpoint_name)}" data-type="${escapeHtml(d.endpoint_type || 'realtime')}" data-output-s3="${escapeHtml(d.output_s3_uri || '')}">${escapeHtml(d.endpoint_name)}${d.endpoint_type === 'async' ? ' ⚡' : ''}</option>`
             ).join('');
+            // Auto-fill output S3 for first selected endpoint
+            onInfEndpointChange();
             return;
         }
     } catch (_) {}
@@ -49,6 +51,24 @@ async function loadInferenceEndpoints() {
     }
 
     select.innerHTML = '<option value="" disabled selected>No InService endpoints found</option>';
+}
+
+function onInfEndpointChange() {
+    const select = document.getElementById('inf-endpoint');
+    const outputField = document.getElementById('inf-output-s3');
+    if (!select || !outputField) return;
+
+    const selected = select.options[select.selectedIndex];
+    if (!selected) return;
+
+    const endpointType = selected.dataset.type || 'realtime';
+    const outputS3 = selected.dataset.outputS3 || '';
+
+    // Auto-fill output S3 URI from deployment config for async endpoints
+    if (endpointType === 'async' && outputS3) {
+        outputField.value = outputS3;
+        outputField.parentElement.querySelector('small').textContent = 'Auto-filled from deployment config (async endpoint)';
+    }
 }
 
 async function runInference(e) {

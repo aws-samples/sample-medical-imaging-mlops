@@ -721,7 +721,7 @@
                             <div class="form-group">
                                 <label for="inf-endpoint">Endpoint</label>
                                 <div style="display:flex; gap:6px;">
-                                    <select id="inf-endpoint" name="endpoint_name" style="flex:1;">
+                                    <select id="inf-endpoint" name="endpoint_name" style="flex:1;" onchange="onInfEndpointChange()">
                                         <option value="" disabled selected>Loading endpoints...</option>
                                     </select>
                                     <button type="button" class="btn btn-secondary" onclick="loadInferenceEndpoints()" title="Refresh">
