@@ -6,6 +6,19 @@ registerTabInit('inference', function () {
     if (form) form.addEventListener('submit', runInference);
 });
 
+// Fallback: also load on DOMContentLoaded in case tab init doesn't fire
+document.addEventListener('DOMContentLoaded', function() {
+    const select = document.getElementById('inf-endpoint');
+    if (select && select.innerHTML.includes('Loading endpoints')) {
+        loadInferenceEndpoints();
+    }
+    const form = document.getElementById('inference-form');
+    if (form && !form._listenerAdded) {
+        form.addEventListener('submit', runInference);
+        form._listenerAdded = true;
+    }
+});
+
 function onInfInputTypeChange(val) {
     const browseBtn = document.getElementById('inf-browse-btn');
     const inputEl   = document.getElementById('inf-input-value');
