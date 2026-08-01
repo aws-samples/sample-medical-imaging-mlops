@@ -266,16 +266,19 @@ def predict_fn(input_data: Dict[str, str], model_components: Dict[str, Any]) -> 
                 timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
 
                 # Output filename pattern — supports placeholders:
-                #   {patient_id}  - parent folder of input (e.g., "10090344")
-                #   {filename}    - input filename without extension (e.g., "img")
-                #   {timestamp}   - UTC timestamp (e.g., "20260731-163000")
-                #   {model_name}  - model used (e.g., "SegResNet")
+                #   {patient_id}    - parent folder of input (e.g., "10090344")
+                #   {filename}      - input filename without extension (e.g., "img")
+                #   {endpoint_name} - name of the endpoint (e.g., "segmentation")
+                #   {timestamp}     - UTC timestamp (e.g., "20260731-163000")
+                #   {model_name}    - model used (e.g., "SegResNet")
                 output_pattern = output_pattern_override or os.environ.get(
                     "OUTPUT_FILENAME_PATTERN", "{patient_id}_segmentation.nii.gz"
                 )
+                endpoint_name = os.environ.get("SAGEMAKER_ENDPOINT_NAME", "endpoint")
                 output_filename = output_pattern.format(
                     patient_id=patient_id,
                     filename=input_filename,
+                    endpoint_name=endpoint_name,
                     timestamp=timestamp,
                     model_name=model_components["model_name"],
                 )

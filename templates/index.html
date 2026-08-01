@@ -660,11 +660,12 @@
                                         Placeholders (given input <code>s3://bucket/test/10090344/img.nii.gz</code>):<br>
                                         <code>{patient_id}</code> — <code>s3://bucket/test/<strong>10090344</strong>/img.nii.gz</code> → <em>10090344</em><br>
                                         <code>{filename}</code> — <code>s3://bucket/test/10090344/<strong>img</strong>.nii.gz</code> → <em>img</em><br>
+                                        <code>{endpoint_name}</code> — name of this endpoint → <em>segmentation</em><br>
                                         <code>{model_name}</code> — from model config → <em>SegResNet</em><br>
                                         <code>{timestamp}</code> — UTC time of inference → <em>20260731-170000</em><br><br>
                                         Output examples:<br>
                                         <code>{patient_id}_segmentation.nii.gz</code> → <em>10090344_segmentation.nii.gz</em><br>
-                                        <code>{patient_id}_{model_name}_{timestamp}.nii.gz</code> → <em>10090344_SegResNet_20260731-170000.nii.gz</em><br>
+                                        <code>{patient_id}_{endpoint_name}_{timestamp}.nii.gz</code> → <em>10090344_segmentation_20260731-170000.nii.gz</em><br>
                                         <code>{filename}_mask.nii.gz</code> → <em>img_mask.nii.gz</em>
                                     </small>
                                 </div>
@@ -782,7 +783,14 @@
                                 <label for="inf-output-pattern">Output Filename Pattern</label>
                                 <input type="text" id="inf-output-pattern" name="output_pattern"
                                     placeholder="{patient_id}_segmentation.nii.gz" value="{patient_id}_segmentation.nii.gz">
-                                <small style="color:var(--aws-dark-gray)">Placeholders: {patient_id}, {filename}, {timestamp}, {model_name}</small>
+                                <small style="color:var(--aws-dark-gray)">
+                                    Placeholders (given input <code>s3://bucket/test/10090344/img.nii.gz</code>):<br>
+                                    <code>{patient_id}</code> → <em>10090344</em> ·
+                                    <code>{filename}</code> → <em>img</em> ·
+                                    <code>{endpoint_name}</code> → <em>segmentation</em> ·
+                                    <code>{model_name}</code> → <em>SegResNet</em> ·
+                                    <code>{timestamp}</code> → <em>20260731-170000</em>
+                                </small>
                             </div>
                         </div>
                         <div id="inf-status-banner" class="sm-status-banner" style="display:none;"></div>
