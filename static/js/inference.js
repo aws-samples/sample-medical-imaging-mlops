@@ -220,6 +220,12 @@ async function pollAsyncResult(outputLocation, inferenceId) {
                     card.style.borderColor = '#1e8449';
                     card.querySelector('h4').innerHTML = '<i class="fas fa-check-circle" style="color:#1e8449;"></i> Async Inference Complete';
                 }
+                // Update the top banner too
+                const banner = document.getElementById('inf-status-banner');
+                if (banner) {
+                    banner.className = 'sm-status-banner sm-status-success';
+                    banner.innerHTML = '<i class="fas fa-check-circle"></i> Async inference complete';
+                }
                 // Display the segmentation result
                 if (res.result) {
                     const segDiv = document.getElementById('inf-seg-result');
@@ -229,7 +235,8 @@ async function pollAsyncResult(outputLocation, inferenceId) {
                 return;
             }
         } catch (e) {
-            // Not ready yet, continue polling
+            // Not ready yet or API error, continue polling
+            console.warn('Async poll error:', e.message);
         }
     }
 
