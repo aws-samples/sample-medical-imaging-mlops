@@ -83,3 +83,26 @@ async def list_active_endpoints():
         return {"endpoints": endpoints}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/async-status")
+async def check_async_status(output_location: str):
+    """Check if an async inference result is available at the given S3 location."""
+    try:
+        if not aws_service._session:
+            raise ValueError("AWS credentials not configured")
+        import json as _json
+        s3 = aws_service._session.client("s3")
+        parts = output_location.replace("s3://", "").split("/", 1)
+        bucket, key = parts[0], parts[1]
+        try:
+            obj = s3.get_object(Bucket=bucket, Key=key)
+            result_str = obj["Body"].read().decode("utf-8")
+            result = _json.loads(result_str)
+            return {"completed": True, "result": result}
+        except s3.exceptions.NoSuchKey:
+            return {"completed": False}
+        except Exception:
+            return {"completed": False}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

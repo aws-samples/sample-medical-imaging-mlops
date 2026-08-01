@@ -151,15 +151,67 @@ function displayAsyncResult(res) {
     const resultDiv = document.getElementById('inference-result');
     if (!resultDiv) return;
     resultDiv.innerHTML = `
-        <div style="padding:1rem; background:#e8f4fd; border-radius:6px; border:1px solid #1a6fa0;">
-            <h4 style="margin:0 0 0.5rem;"><i class="fas fa-clock"></i> Async Inference Submitted</h4>
+        <div id="async-result-card" style="padding:1rem; background:#e8f4fd; border-radius:6px; border:1px solid #1a6fa0;">
+            <h4 style="margin:0 0 0.5rem;"><i class="fas fa-spinner fa-spin"></i> Async Inference In Progress</h4>
             <div style="font-size:0.85rem; display:grid; grid-template-columns:auto 1fr; gap:0.3rem 1rem;">
                 <strong>Inference ID:</strong> <code>${escapeHtml(res.inference_id || 'N/A')}</code>
                 <strong>Output:</strong> <code style="word-break:break-all;">${escapeHtml(res.output_location || res.message || 'Check S3')}</code>
-                <strong>Status:</strong> <span>${escapeHtml(res.status || 'Submitted')}</span>
+                <strong>Status:</strong> <span id="async-poll-status">Submitted — polling for result...</span>
             </div>
-            <p style="margin:0.75rem 0 0; font-size:0.8rem; color:#666;">Results will appear in the output S3 path. Check in 15-30 seconds.</p>
+            <div id="async-poll-progress" style="margin-top:0.75rem; font-size:0.8rem; color:#666;">
+                <i class="fas fa-hourglass-half"></i> Waiting for result...
+            </div>
         </div>
+    `;
+
+    // Poll for async result completion
+    if (res.output_location) {
+        pollAsyncResult(res.output_location, res.inference_id);
+    }
+}
+
+async function pollAsyncResult(outputLocation, inferenceId) {
+    const statusEl = document.getElementById('async-poll-status');
+    const progressEl = document.getElementById('async-poll-progress');
+    const card = document.getElementById('async-result-card');
+    const maxWait = 300; // 5 minutes
+    const interval = 5;  // poll every 5 seconds
+    let elapsed = 0;
+
+    while (elapsed < maxWait) {
+        await new Promise(r => setTimeout(r, interval * 1000));
+        elapsed += interval;
+
+        if (progressEl) progressEl.innerHTML = `<i class="fas fa-hourglass-half"></i> Waiting... (${elapsed}s)`;
+
+        try {
+            // Check if result is ready via the backend
+            const res = await apiCall(`/api/inference/async-status?output_location=${encodeURIComponent(outputLocation)}`);
+            if (res.completed) {
+                if (statusEl) statusEl.innerHTML = '<span style="color:#1e8449;"><i class="fas fa-check-circle"></i> Completed</span>';
+                if (progressEl) progressEl.innerHTML = '';
+                if (card) {
+                    card.style.background = '#e8f8f0';
+                    card.style.borderColor = '#1e8449';
+                    card.querySelector('h4').innerHTML = '<i class="fas fa-check-circle" style="color:#1e8449;"></i> Async Inference Complete';
+                }
+                // Display the segmentation result
+                if (res.result) {
+                    const segDiv = document.getElementById('inf-seg-result');
+                    if (segDiv) segDiv.style.display = 'block';
+                    displaySegmentationResult(res.result);
+                }
+                return;
+            }
+        } catch (e) {
+            // Not ready yet, continue polling
+        }
+    }
+
+    // Timed out
+    if (statusEl) statusEl.innerHTML = '<span style="color:#c62828;">Timed out — check S3 manually</span>';
+    if (progressEl) progressEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Result not available after ${maxWait}s. It may still be processing.`;
+}
     `;
 }
 
