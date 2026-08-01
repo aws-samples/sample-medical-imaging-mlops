@@ -37,35 +37,94 @@ OUTPUT_DIR = Path("/opt/ml/processing/output")
 
 # ── Endpoint invocation ───────────────────────────────────────────────────────
 
-def invoke_endpoint(runtime_client, endpoint_name: str, s3_uri: str) -> dict:
-    """Send a NIfTI S3 URI to the segmentation endpoint and return parsed response."""
-    payload  = json.dumps({"s3_uri": s3_uri})
-    response = runtime_client.invoke_endpoint(
+def invoke_endpoint(runtime_client, endpoint_name: str, s3_uri: str, s3_client=None) -> dict:
+    """Send a NIfTI S3 URI to the segmentation endpoint and return parsed response.
+    Supports both real-time and async endpoints."""
+    import time
+
+    payload = json.dumps({"s3_uri": s3_uri, "file_path": s3_uri})
+
+    # Try real-time first
+    try:
+        response = runtime_client.invoke_endpoint(
+            EndpointName=endpoint_name,
+            ContentType="application/json",
+            Accept="application/json",
+            Body=payload,
+        )
+        return json.loads(response["Body"].read().decode("utf-8"))
+    except runtime_client.exceptions.ClientError as e:
+        if "does not support this inference type" not in str(e):
+            raise
+
+    # Async fallback — upload input to S3 and invoke async
+    if not s3_client:
+        s3_client = boto3.client("s3")
+
+    # Upload input payload
+    input_key = f"evaluation-tmp/{endpoint_name}/input_{int(time.time())}.json"
+    input_bucket = s3_uri.replace("s3://", "").split("/")[0]
+    s3_client.put_object(Bucket=input_bucket, Key=input_key, Body=payload.encode("utf-8"), ContentType="application/json")
+
+    response = runtime_client.invoke_endpoint_async(
         EndpointName=endpoint_name,
+        InputLocation=f"s3://{input_bucket}/{input_key}",
         ContentType="application/json",
         Accept="application/json",
-        Body=payload,
     )
-    return json.loads(response["Body"].read().decode("utf-8"))
+
+    output_location = response.get("OutputLocation", "")
+    out_parts = output_location.replace("s3://", "").split("/", 1)
+    out_bucket, out_key = out_parts[0], out_parts[1]
+
+    # Poll for result (max 5 min)
+    for _ in range(60):
+        time.sleep(5)
+        try:
+            obj = s3_client.get_object(Bucket=out_bucket, Key=out_key)
+            return json.loads(obj["Body"].read().decode("utf-8"))
+        except s3_client.exceptions.NoSuchKey:
+            continue
+
+    raise TimeoutError(f"Async inference timed out for {s3_uri}")
 
 
 # ── Metrics ───────────────────────────────────────────────────────────────────
 
-def decode_mask(result: dict) -> np.ndarray:
-    """Decode base64 NIfTI mask from endpoint response to a binary numpy array."""
+def decode_mask(result: dict, s3_client=None) -> np.ndarray:
+    """Decode segmentation mask from endpoint response.
+    Supports both:
+      - mask_nifti_b64: base64-encoded NIfTI (legacy)
+      - mask_s3_uri: S3 path to .nii.gz file (current)
+    """
     import base64, tempfile, nibabel as nib
 
-    b64 = result.get("mask_nifti_b64")
-    if not b64:
-        raise ValueError("Response missing 'mask_nifti_b64'")
-    raw = base64.b64decode(b64)
-    with tempfile.NamedTemporaryFile(suffix=".nii.gz", delete=False) as f:
-        f.write(raw)
-        f.flush()
-        tmp_path = f.name
-    mask = nib.load(tmp_path).get_fdata().astype(np.uint8)
-    os.unlink(tmp_path)
-    return mask
+    # New format: mask saved to S3
+    mask_s3_uri = result.get("mask_s3_uri")
+    if mask_s3_uri and s3_client:
+        parts = mask_s3_uri.replace("s3://", "").split("/", 1)
+        bucket, key = parts[0], parts[1]
+        with tempfile.NamedTemporaryFile(suffix=".nii.gz", delete=False) as f:
+            f.flush()
+            tmp_path = f.name
+        s3_client.download_file(bucket, key, tmp_path)
+        mask = nib.load(tmp_path).get_fdata().astype(np.uint8)
+        os.unlink(tmp_path)
+        return mask
+
+    # Legacy format: base64-encoded mask in response
+    b64 = result.get("mask_nifti_b64") or result.get("segmentation_mask_base64")
+    if b64:
+        raw = base64.b64decode(b64)
+        with tempfile.NamedTemporaryFile(suffix=".nii.gz", delete=False) as f:
+            f.write(raw)
+            f.flush()
+            tmp_path = f.name
+        mask = nib.load(tmp_path).get_fdata().astype(np.uint8)
+        os.unlink(tmp_path)
+        return mask
+
+    raise ValueError("Response missing both 'mask_s3_uri' and 'mask_nifti_b64'")
 
 
 def load_gt_mask(s3_client, bucket: str, key: str) -> np.ndarray:
@@ -175,7 +234,7 @@ def main():
         logger.info("Evaluating subject '%s'...", subj)
         try:
             result    = invoke_endpoint(runtime_client, args.endpoint_name, img_s3_uri)
-            pred_mask = decode_mask(result)
+            pred_mask = decode_mask(result, s3_client=s3_client)
             gt_mask   = load_gt_mask(s3_client, bucket, mask_key)
 
             # Resize pred to gt shape if needed
