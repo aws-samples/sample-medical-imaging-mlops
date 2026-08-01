@@ -661,7 +661,11 @@
                                         <code>{patient_id}</code> — parent folder of input file (e.g., "10090344")<br>
                                         <code>{filename}</code> — input filename without extension (e.g., "img")<br>
                                         <code>{model_name}</code> — model architecture (e.g., "SegResNet")<br>
-                                        <code>{timestamp}</code> — UTC time of inference (e.g., "20260731-170000")
+                                        <code>{timestamp}</code> — UTC time of inference (e.g., "20260731-170000")<br><br>
+                                        Examples:<br>
+                                        <code>{patient_id}_segmentation.nii.gz</code> → <em>10090344_segmentation.nii.gz</em><br>
+                                        <code>{patient_id}_{model_name}_{timestamp}.nii.gz</code> → <em>10090344_SegResNet_20260731-170000.nii.gz</em><br>
+                                        <code>{filename}_mask.nii.gz</code> → <em>img_mask.nii.gz</em>
                                     </small>
                                 </div>
                             </div>
