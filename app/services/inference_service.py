@@ -121,7 +121,13 @@ class InferenceService:
         if s3_uri:
             # Build a JSON input file — send both keys for compatibility with
             # BYOC images (expects s3_uri) and DLC code/ approach (expects file_path)
-            input_body = json.dumps({"s3_uri": s3_uri, "file_path": s3_uri})
+            payload = {"s3_uri": s3_uri, "file_path": s3_uri}
+            # Include output config so inference script knows where to save masks
+            if input_data.get("output_s3_uri"):
+                payload["output_s3_uri"] = input_data["output_s3_uri"]
+            if input_data.get("output_pattern"):
+                payload["output_pattern"] = input_data["output_pattern"]
+            input_body = json.dumps(payload)
         elif "bytes" in input_data:
             input_body = input_data["bytes"]
         elif input_data.get("file_path"):
