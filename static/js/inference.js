@@ -135,18 +135,22 @@ async function runInference(e) {
             });
         }
 
-        if (banner) { banner.className = 'sm-status-banner sm-status-success'; banner.innerHTML = '<i class="fas fa-check-circle"></i> Inference complete'; }
         if (placeholder) placeholder.style.display = 'none';
         if (result) result.style.display = 'block';
 
-        if (res.predicted_class || res.probabilities || res.predicted_class_index !== undefined) {
+        if (res.async) {
+            // Async endpoint — show submission card and start polling
+            if (banner) { banner.className = 'sm-status-banner sm-status-submitting'; banner.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Async inference submitted — waiting for result...'; }
+            displayAsyncResult(res);
+        } else if (res.predicted_class || res.probabilities || res.predicted_class_index !== undefined) {
+            if (banner) { banner.className = 'sm-status-banner sm-status-success'; banner.innerHTML = '<i class="fas fa-check-circle"></i> Inference complete'; }
             displayClassificationResult(res);
         } else if (res.segmentation_mask_base64 || res.mask_nifti_b64 || res.segmented_voxels !== undefined) {
+            if (banner) { banner.className = 'sm-status-banner sm-status-success'; banner.innerHTML = '<i class="fas fa-check-circle"></i> Inference complete'; }
             displaySegmentationResult(res);
-        } else if (res.async) {
-            displayAsyncResult(res);
         } else {
             // Use task type from the endpoint's deployment record
+            if (banner) { banner.className = 'sm-status-banner sm-status-success'; banner.innerHTML = '<i class="fas fa-check-circle"></i> Inference complete'; }
             const epSelect = document.getElementById('inf-endpoint');
             const selectedOpt = epSelect?.options[epSelect.selectedIndex];
             const taskType = selectedOpt?.dataset?.task || 'classification';
