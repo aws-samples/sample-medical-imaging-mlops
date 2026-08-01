@@ -111,40 +111,43 @@ def model_fn(model_dir: str) -> Dict[str, Any]:
     }
 
 
-def input_fn(request_body: Union[str, bytes], content_type: str) -> str:
-    """Return a local file path to the DICOM image."""
+def input_fn(request_body: Union[str, bytes], content_type: str) -> Dict[str, Any]:
+    """Return a dict with local file path and metadata for output saving."""
     if content_type == "application/dicom":
         with tempfile.NamedTemporaryFile(delete=False, suffix=".dcm") as tmp:
             tmp.write(request_body)
             tmp.flush()
             tmp_path = tmp.name
         logger.info("Received raw DICOM bytes → %s", tmp_path)
-        return tmp_path
+        return {"local_path": tmp_path}
 
     if content_type == "application/json":
         data = json.loads(request_body)
 
-        if "file_path" in data:
-            path = data["file_path"]
-            if path.startswith("s3://"):
-                return _download_s3(path)
-            if os.path.exists(path):
-                return path
-            raise ValueError(f"file_path not found: {path}")
+        output_s3_uri = data.get("output_s3_uri", os.environ.get("OUTPUT_S3_URI", ""))
+        output_pattern = data.get("output_pattern", "")
+        s3_uri = data.get("s3_uri") or data.get("file_path", "")
 
-        if "s3_uri" in data:
-            return _download_s3(data["s3_uri"])
+        if s3_uri.startswith("s3://"):
+            local_path = _download_s3(s3_uri)
+            return {"local_path": local_path, "s3_uri": s3_uri, "output_s3_uri": output_s3_uri, "output_pattern": output_pattern}
+
+        if os.path.exists(s3_uri):
+            return {"local_path": s3_uri, "output_s3_uri": output_s3_uri, "output_pattern": output_pattern}
+
+        raise ValueError(f"Cannot resolve input: {s3_uri}")
 
     raise ValueError(f"Unsupported content_type: {content_type}")
 
 
-def predict_fn(input_data: str, model_components: Dict[str, Any]) -> torch.Tensor:
-    """Run inference on the image at input_data path."""
+def predict_fn(input_data: Dict[str, Any], model_components: Dict[str, Any]) -> Dict[str, Any]:
+    """Run inference on the image and return prediction + metadata for output saving."""
     model      = model_components["model"]
     device     = model_components["device"]
     transforms = model_components["transforms"]
 
-    image_tensor = transforms(input_data).unsqueeze(0).to(device)
+    local_path = input_data["local_path"] if isinstance(input_data, dict) else input_data
+    image_tensor = transforms(local_path).unsqueeze(0).to(device)
 
     # Handle 5-D output from some MONAI transforms (H,W,D) → drop depth dim
     if image_tensor.dim() == 5:
@@ -157,17 +160,26 @@ def predict_fn(input_data: str, model_components: Dict[str, Any]) -> torch.Tenso
     if isinstance(output, (list, tuple)):
         output = output[0]
 
-    return output
+    # Pass metadata through for output_fn to save to S3
+    return {
+        "prediction": output,
+        "s3_uri": input_data.get("s3_uri", "") if isinstance(input_data, dict) else "",
+        "output_s3_uri": input_data.get("output_s3_uri", "") if isinstance(input_data, dict) else "",
+        "output_pattern": input_data.get("output_pattern", "") if isinstance(input_data, dict) else "",
+    }
 
 
-def output_fn(prediction: torch.Tensor, accept: str) -> str:
-    """Format prediction as JSON with human-readable labels."""
-    probs         = torch.softmax(prediction, dim=1)
+def output_fn(prediction: Dict[str, Any], accept: str) -> str:
+    """Format prediction as JSON with human-readable labels. Save to S3 if output_s3_uri provided."""
+    pred_tensor   = prediction["prediction"]
+    source_s3_uri = prediction.get("s3_uri", "")
+    output_s3_uri = prediction.get("output_s3_uri", "")
+    output_pattern_override = prediction.get("output_pattern", "")
+
+    probs         = torch.softmax(pred_tensor, dim=1)
     predicted_idx = int(probs.argmax(dim=1).item())
     confidence    = float(probs.max(dim=1)[0].item())
 
-    # model_components not directly available here, but idx_to_label is
-    # injected via a module-level cache set during model_fn
     idx_to_label = _label_cache.get("idx_to_label", {})
     result_meta  = _label_cache.get("result", {})
 
@@ -190,6 +202,46 @@ def output_fn(prediction: torch.Tensor, accept: str) -> str:
             "best_val_accuracy":result_meta.get("best_val_accuracy"),
             "data_s3_uri":      result_meta.get("data_s3_uri"),
         }
+
+    # Save result to S3 with configurable filename pattern
+    if output_s3_uri and source_s3_uri:
+        try:
+            from datetime import datetime
+            s3_client = boto3.client("s3")
+
+            # Extract metadata from input path
+            source_parts = source_s3_uri.replace("s3://", "").split("/")
+            patient_id = source_parts[-2] if len(source_parts) >= 3 else "unknown"
+            input_filename = source_parts[-1].split(".")[0]
+            timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+            endpoint_name = os.environ.get("SAGEMAKER_ENDPOINT_NAME", "endpoint")
+
+            output_pattern = output_pattern_override or os.environ.get(
+                "OUTPUT_FILENAME_PATTERN", "{patient_id}_classification_{timestamp}.json"
+            )
+            output_filename = output_pattern.format(
+                patient_id=patient_id,
+                filename=input_filename,
+                endpoint_name=endpoint_name,
+                timestamp=timestamp,
+                model_name=result_meta.get("model_name", "classification"),
+            )
+
+            out_parts = output_s3_uri.replace("s3://", "").rstrip("/").split("/", 1)
+            out_bucket = out_parts[0]
+            out_prefix = out_parts[1] if len(out_parts) > 1 else "classification-results"
+
+            result_key = f"{out_prefix}/{output_filename}"
+            s3_client.put_object(
+                Bucket=out_bucket,
+                Key=result_key,
+                Body=json.dumps(response, indent=2).encode("utf-8"),
+                ContentType="application/json",
+            )
+            response["saved_to"] = f"s3://{out_bucket}/{result_key}"
+            logger.info("Saved classification result to: s3://%s/%s", out_bucket, result_key)
+        except Exception as e:
+            logger.warning("Failed to save result to S3: %s", e)
 
     return json.dumps(response)
 
