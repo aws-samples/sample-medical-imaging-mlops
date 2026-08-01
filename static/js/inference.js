@@ -23,32 +23,40 @@ async function loadInferenceEndpoints() {
     const select = document.getElementById('inf-endpoint');
     if (!select) return;
 
-    // Load from local deployments cache immediately (fast, no AWS call)
-    try {
-        const dep    = await apiCall('/api/deployment/deployments?local_only=true');
-        const active = (dep.deployments || []).filter(d => d.status === 'InService');
-        if (active.length > 0) {
-            select.innerHTML = active.map(d =>
-                `<option value="${escapeHtml(d.endpoint_name)}" data-type="${escapeHtml(d.endpoint_type || 'realtime')}" data-output-s3="${escapeHtml(d.output_s3_uri || '')}" data-task="${escapeHtml(d.task_type || 'classification')}">${escapeHtml(d.endpoint_name)}${d.endpoint_type === 'async' ? ' ⚡' : ''}</option>`
-            ).join('');
-            // Auto-fill output S3 for first selected endpoint
-            onInfEndpointChange();
-            return;
-        }
-    } catch (_) {}
-
-    // Fallback: try live AWS endpoint list
+    // Try live AWS endpoint list first (most accurate)
     try {
         const res = await apiCall('/api/inference/endpoints');
         if (res.endpoints && res.endpoints.length > 0) {
-            select.innerHTML = res.endpoints.map(e =>
-                `<option value="${escapeHtml(e.name)}">${escapeHtml(e.name)} (${escapeHtml(e.status)})</option>`
-            ).join('');
+            // Merge with local data for task_type and output_s3_uri
+            let localData = {};
+            try {
+                const dep = await apiCall('/api/deployment/deployments?local_only=true');
+                (dep.deployments || []).forEach(d => { localData[d.endpoint_name] = d; });
+            } catch (_) {}
+
+            select.innerHTML = res.endpoints.map(e => {
+                const local = localData[e.name] || {};
+                return `<option value="${escapeHtml(e.name)}" data-type="${escapeHtml(local.endpoint_type || 'realtime')}" data-output-s3="${escapeHtml(local.output_s3_uri || '')}" data-task="${escapeHtml(local.task_type || 'classification')}">${escapeHtml(e.name)}${local.endpoint_type === 'async' ? ' ⚡' : ''}</option>`;
+            }).join('');
+            onInfEndpointChange();
             return;
         }
     } catch (err) {
         console.warn('Could not load live endpoints:', err.message);
     }
+
+    // Fallback: load from local deployments cache
+    try {
+        const dep = await apiCall('/api/deployment/deployments?local_only=true');
+        const active = (dep.deployments || []).filter(d => d.status === 'InService');
+        if (active.length > 0) {
+            select.innerHTML = active.map(d =>
+                `<option value="${escapeHtml(d.endpoint_name)}" data-type="${escapeHtml(d.endpoint_type || 'realtime')}" data-output-s3="${escapeHtml(d.output_s3_uri || '')}" data-task="${escapeHtml(d.task_type || 'classification')}">${escapeHtml(d.endpoint_name)}${d.endpoint_type === 'async' ? ' ⚡' : ''}</option>`
+            ).join('');
+            onInfEndpointChange();
+            return;
+        }
+    } catch (_) {}
 
     select.innerHTML = '<option value="" disabled selected>No InService endpoints found</option>';
 }
