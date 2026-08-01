@@ -170,7 +170,7 @@ if [[ "$RUN_CLASS" == true ]]; then
     fi
 
     # Test real-time inference
-    info "Testing classification inference..."
+    info "Testing classification real-time inference..."
     CLASS_RESULT=$(aws sagemaker-runtime invoke-endpoint \
         --endpoint-name "$CLASS_ENDPOINT" \
         --content-type application/json \
@@ -181,17 +181,86 @@ if [[ "$RUN_CLASS" == true ]]; then
     if [[ -f /tmp/class-integration-output.json ]]; then
         CLASS_OUTPUT=$(cat /tmp/class-integration-output.json)
         if echo "$CLASS_OUTPUT" | python3 -c "import sys,json; d=json.load(sys.stdin); assert 'predicted_class' in d or 'predictions' in d" 2>/dev/null; then
-            pass "Classification inference returned predictions"
+            pass "Classification real-time inference returned predictions"
             PRED=$(echo "$CLASS_OUTPUT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('predicted_class', d.get('predictions','?')))" 2>/dev/null)
             info "Prediction: $PRED"
         else
-            fail "Classification response missing predictions"
+            fail "Classification real-time response missing predictions"
             echo "$CLASS_OUTPUT" | head -3
         fi
         rm -f /tmp/class-integration-output.json
     else
-        fail "Classification invoke-endpoint failed"
+        fail "Classification real-time invoke-endpoint failed"
         echo "$CLASS_RESULT" | tail -3
+    fi
+
+    # Test async inference (classification)
+    info "Testing classification async inference..."
+    CLASS_ASYNC_ENDPOINT="${CLASS_ENDPOINT}-async"
+    if [[ "$SKIP_DEPLOY" == false && -n "$CLASS_MODEL_S3" ]]; then
+        # Deploy async classification endpoint
+        CLASS_IMAGE="${AWS_ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/sm-inference-byoc-classification:latest"
+        aws sagemaker delete-model --model-name "$CLASS_ASYNC_ENDPOINT-model" --region "$REGION" 2>/dev/null || true
+        aws sagemaker delete-endpoint-config --endpoint-config-name "$CLASS_ASYNC_ENDPOINT-config" --region "$REGION" 2>/dev/null || true
+        aws sagemaker delete-endpoint --endpoint-name "$CLASS_ASYNC_ENDPOINT" --region "$REGION" 2>/dev/null || true
+
+        aws sagemaker create-model --model-name "$CLASS_ASYNC_ENDPOINT-model" \
+            --primary-container "{\"Image\":\"$CLASS_IMAGE\",\"ModelDataUrl\":\"$CLASS_MODEL_S3\",\"Environment\":{\"SAGEMAKER_PROGRAM\":\"inference.py\",\"SAGEMAKER_CONTAINER_LOG_LEVEL\":\"20\"}}" \
+            --execution-role-arn "$ROLE_ARN" --region "$REGION" > /dev/null
+
+        aws sagemaker create-endpoint-config --endpoint-config-name "$CLASS_ASYNC_ENDPOINT-config" \
+            --production-variants "[{\"VariantName\":\"AllTraffic\",\"ModelName\":\"$CLASS_ASYNC_ENDPOINT-model\",\"InstanceType\":\"ml.g5.xlarge\",\"InitialInstanceCount\":1}]" \
+            --async-inference-config "{\"OutputConfig\":{\"S3OutputPath\":\"s3://medml-dashboard/model-output/classification/async-output/\"}}" \
+            --region "$REGION" > /dev/null
+
+        aws sagemaker create-endpoint --endpoint-name "$CLASS_ASYNC_ENDPOINT" \
+            --endpoint-config-name "$CLASS_ASYNC_ENDPOINT-config" --region "$REGION" > /dev/null
+
+        info "Waiting for async classification endpoint..."
+        aws sagemaker wait endpoint-in-service --endpoint-name "$CLASS_ASYNC_ENDPOINT" --region "$REGION" 2>/dev/null && pass "Classification async endpoint InService" || fail "Classification async endpoint failed"
+    fi
+
+    # Invoke async
+    CLASS_ASYNC_INPUT="s3://medml-dashboard/model-output/classification/test-input/request_$(date +%s).json"
+    echo "{\"s3_uri\": \"$CLASS_TEST_IMAGE\", \"file_path\": \"$CLASS_TEST_IMAGE\"}" | \
+        aws s3 cp - "$CLASS_ASYNC_INPUT" --region "$REGION" 2>/dev/null
+
+    ASYNC_RESPONSE=$(aws sagemaker-runtime invoke-endpoint-async \
+        --endpoint-name "$CLASS_ASYNC_ENDPOINT" \
+        --input-location "$CLASS_ASYNC_INPUT" \
+        --content-type application/json \
+        --region "$REGION" 2>&1) || true
+
+    if echo "$ASYNC_RESPONSE" | grep -q "InferenceId"; then
+        pass "Classification async invocation submitted"
+        ASYNC_OUTPUT=$(echo "$ASYNC_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin).get('OutputLocation',''))" 2>/dev/null)
+        info "Async output: $ASYNC_OUTPUT"
+
+        # Poll for result (max 60s for classification)
+        ELAPSED=0
+        while [[ $ELAPSED -lt 60 ]]; do
+            sleep 5
+            ELAPSED=$((ELAPSED + 5))
+            ASYNC_BUCKET=$(echo "$ASYNC_OUTPUT" | sed 's|s3://||' | cut -d'/' -f1)
+            ASYNC_KEY=$(echo "$ASYNC_OUTPUT" | sed 's|s3://[^/]*/||')
+            if aws s3 cp "s3://$ASYNC_BUCKET/$ASYNC_KEY" /tmp/class-async-output.json --region "$REGION" 2>/dev/null; then
+                ASYNC_RESULT=$(cat /tmp/class-async-output.json)
+                if echo "$ASYNC_RESULT" | python3 -c "import sys,json; d=json.load(sys.stdin); assert 'predicted_class' in d or 'predictions' in d" 2>/dev/null; then
+                    pass "Classification async inference returned predictions (${ELAPSED}s)"
+                else
+                    fail "Classification async response missing predictions"
+                fi
+                rm -f /tmp/class-async-output.json
+                break
+            fi
+            echo "   [${ELAPSED}s] Waiting..."
+        done
+        if [[ $ELAPSED -ge 60 ]]; then
+            fail "Classification async inference timed out"
+        fi
+    else
+        fail "Classification async invocation failed"
+        echo "$ASYNC_RESPONSE" | tail -3
     fi
 fi
 
@@ -208,6 +277,10 @@ if [[ "$CLEANUP" == true && "$SKIP_DEPLOY" == false ]]; then
         aws sagemaker delete-endpoint --endpoint-name "$CLASS_ENDPOINT" --region "$REGION" 2>/dev/null && info "Deleted $CLASS_ENDPOINT" || true
         aws sagemaker delete-endpoint-config --endpoint-config-name "$CLASS_ENDPOINT-config" --region "$REGION" 2>/dev/null || true
         aws sagemaker delete-model --model-name "$CLASS_ENDPOINT-model" --region "$REGION" 2>/dev/null || true
+        # Async classification
+        aws sagemaker delete-endpoint --endpoint-name "$CLASS_ENDPOINT-async" --region "$REGION" 2>/dev/null && info "Deleted $CLASS_ENDPOINT-async" || true
+        aws sagemaker delete-endpoint-config --endpoint-config-name "$CLASS_ENDPOINT-async-config" --region "$REGION" 2>/dev/null || true
+        aws sagemaker delete-model --model-name "$CLASS_ENDPOINT-async-model" --region "$REGION" 2>/dev/null || true
     fi
 fi
 
