@@ -61,10 +61,10 @@ async def deploy_model(request: EndpointDeployRequest):
 
 
 @router.get("/deployments")
-async def list_deployments():
-    """List all deployments with refreshed status from AWS."""
+async def list_deployments(local_only: bool = False):
+    """List all deployments. If local_only=true, skip AWS status refresh."""
     deployments = deployment_service.list_deployments()
-    if aws_service.sagemaker_client:
+    if not local_only and aws_service.sagemaker_client:
         for d in deployments:
             if d.get("status") in {"Deleted"}:
                 continue
@@ -75,8 +75,8 @@ async def list_deployments():
                 d.update(updated)
             except Exception:
                 pass
-    # Re-fetch after refresh — pruned deleted entries won't appear
-    deployments = deployment_service.list_deployments()
+        # Re-fetch after refresh — pruned deleted entries won't appear
+        deployments = deployment_service.list_deployments()
     return {"deployments": [d for d in deployments if d.get("status") != "Deleted"]}
 
 
