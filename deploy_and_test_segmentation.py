@@ -191,7 +191,11 @@ def test_endpoint_async(endpoint_name: str, test_image_s3: str, region: str) -> 
     # BYOC image inference.py expects {"s3_uri": "<s3_path>"}
     # Reference/DLC inference.py expects {"file_path": "<s3_path>"}
     # Support both by sending both keys
-    input_payload = json.dumps({"s3_uri": test_image_s3, "file_path": test_image_s3})
+    input_payload = json.dumps({
+        "s3_uri": test_image_s3,
+        "file_path": test_image_s3,
+        "output_s3_uri": f"s3://{DEFAULT_OUTPUT_BUCKET}/{DEFAULT_OUTPUT_PREFIX}/masks",
+    })
     input_key = f"{DEFAULT_OUTPUT_PREFIX}/test-input/request_{int(time.time())}.json"
 
     s3.put_object(
