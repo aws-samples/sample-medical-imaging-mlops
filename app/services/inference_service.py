@@ -85,14 +85,38 @@ class InferenceService:
                 "probabilities":         {l: round(p, 4) for l, p in zip(labels, probs)},
             }
 
-        # Save to S3 if requested
+        # Save to S3 if requested — per-subject naming
         if output_s3_uri:
             try:
+                from datetime import datetime
                 parts  = output_s3_uri.replace("s3://", "").split("/", 1)
                 bucket = parts[0]
                 prefix = parts[1].rstrip("/") if len(parts) > 1 else "inference-results"
-                key    = f"{prefix}/{endpoint_name}-result.json"
-                s3     = boto_session.client("s3")
+
+                # Extract patient_id and filename from input S3 URI
+                s3_uri = input_data.get("s3_uri") or input_data.get("file_path") or ""
+                if s3_uri.startswith("s3://"):
+                    source_parts = s3_uri.replace("s3://", "").split("/")
+                    patient_id = source_parts[-2] if len(source_parts) >= 3 else "unknown"
+                    input_filename = source_parts[-1].split(".")[0]
+                else:
+                    patient_id = "unknown"
+                    input_filename = "input"
+
+                timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+
+                # Use output_pattern if provided, otherwise default
+                output_pattern = input_data.get("output_pattern") or "{patient_id}_classification_{timestamp}.json"
+                output_filename = output_pattern.format(
+                    patient_id=patient_id,
+                    filename=input_filename,
+                    endpoint_name=endpoint_name,
+                    timestamp=timestamp,
+                    model_name="classification",
+                )
+
+                key = f"{prefix}/{output_filename}"
+                s3  = boto_session.client("s3")
                 s3.put_object(
                     Bucket=bucket,
                     Key=key,
