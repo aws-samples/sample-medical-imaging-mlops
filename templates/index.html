@@ -657,12 +657,12 @@
                                     <label for="dep-output-pattern">Output Filename Pattern</label>
                                     <input type="text" id="dep-output-pattern" name="output_pattern" value="{patient_id}_segmentation.nii.gz">
                                     <small style="color:var(--aws-dark-gray)">
-                                        Placeholders:<br>
-                                        <code>{patient_id}</code> — parent folder of input file (e.g., "10090344")<br>
-                                        <code>{filename}</code> — input filename without extension (e.g., "img")<br>
-                                        <code>{model_name}</code> — model architecture (e.g., "SegResNet")<br>
-                                        <code>{timestamp}</code> — UTC time of inference (e.g., "20260731-170000")<br><br>
-                                        Examples:<br>
+                                        Placeholders (given input <code>s3://bucket/test/10090344/img.nii.gz</code>):<br>
+                                        <code>{patient_id}</code> — <code>s3://bucket/test/<strong>10090344</strong>/img.nii.gz</code> → <em>10090344</em><br>
+                                        <code>{filename}</code> — <code>s3://bucket/test/10090344/<strong>img</strong>.nii.gz</code> → <em>img</em><br>
+                                        <code>{model_name}</code> — from model config → <em>SegResNet</em><br>
+                                        <code>{timestamp}</code> — UTC time of inference → <em>20260731-170000</em><br><br>
+                                        Output examples:<br>
                                         <code>{patient_id}_segmentation.nii.gz</code> → <em>10090344_segmentation.nii.gz</em><br>
                                         <code>{patient_id}_{model_name}_{timestamp}.nii.gz</code> → <em>10090344_SegResNet_20260731-170000.nii.gz</em><br>
                                         <code>{filename}_mask.nii.gz</code> → <em>img_mask.nii.gz</em>
