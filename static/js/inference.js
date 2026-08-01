@@ -219,6 +219,21 @@ async function pollAsyncResult(outputLocation, inferenceId) {
                     card.style.background = '#e8f8f0';
                     card.style.borderColor = '#1e8449';
                     card.querySelector('h4').innerHTML = '<i class="fas fa-check-circle" style="color:#1e8449;"></i> Async Inference Complete';
+
+                    // Show the raw .out file contents
+                    const rawOutputDiv = document.createElement('div');
+                    rawOutputDiv.style.cssText = 'margin-top:0.75rem; font-size:0.8rem;';
+                    const outputUri = res.result?.mask_s3_uri || outputLocation;
+                    rawOutputDiv.innerHTML = `
+                        <div style="margin-bottom:0.5rem;">
+                            <strong>Output S3:</strong> <code style="word-break:break-all;">${escapeHtml(outputUri)}</code>
+                        </div>
+                        <details>
+                            <summary style="cursor:pointer; color:#1a6fa0; font-weight:500;"><i class="fas fa-file-code"></i> Raw response (.out file)</summary>
+                            <pre style="margin-top:0.5rem; padding:0.75rem; background:#f4f6f9; border-radius:4px; overflow-x:auto; font-size:0.75rem; max-height:300px; overflow-y:auto;">${escapeHtml(JSON.stringify(res.result, null, 2))}</pre>
+                        </details>
+                    `;
+                    card.appendChild(rawOutputDiv);
                 }
                 // Update the top banner too
                 const banner = document.getElementById('inf-status-banner');
@@ -274,12 +289,19 @@ function displayClassificationResult(res) {
         `).join('');
     }
 
-    // Show output file location
+    // Show output file location and raw response
     const outputEl = document.getElementById('inf-saved-to');
     if (outputEl) {
-        outputEl.innerHTML = res.saved_to
-            ? `<div style="padding:0.5rem; background:#e8f8f0; border-radius:4px; font-size:0.8rem;"><i class="fas fa-check-circle" style="color:#1e8449;"></i> Saved to: <code style="word-break:break-all;">${escapeHtml(res.saved_to)}</code></div>`
+        const savedHtml = res.saved_to
+            ? `<div style="padding:0.5rem; background:#e8f8f0; border-radius:4px; font-size:0.8rem; margin-bottom:0.5rem;"><i class="fas fa-check-circle" style="color:#1e8449;"></i> Saved to: <code style="word-break:break-all;">${escapeHtml(res.saved_to)}</code></div>`
             : '';
+        const rawHtml = `
+            <details style="margin-top:0.5rem; font-size:0.8rem;">
+                <summary style="cursor:pointer; color:#1a6fa0; font-weight:500;"><i class="fas fa-file-code"></i> Raw response</summary>
+                <pre style="margin-top:0.5rem; padding:0.75rem; background:#f4f6f9; border-radius:4px; overflow-x:auto; font-size:0.75rem; max-height:300px; overflow-y:auto;">${escapeHtml(JSON.stringify(res, null, 2))}</pre>
+            </details>
+        `;
+        outputEl.innerHTML = savedHtml + rawHtml;
     }
 }
 
