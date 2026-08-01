@@ -191,6 +191,14 @@ function displayClassificationResult(res) {
             </div>
         `).join('');
     }
+
+    // Show output file location
+    const outputEl = document.getElementById('inf-saved-to');
+    if (outputEl) {
+        outputEl.innerHTML = res.saved_to
+            ? `<div style="padding:0.5rem; background:#e8f8f0; border-radius:4px; font-size:0.8rem;"><i class="fas fa-check-circle" style="color:#1e8449;"></i> Saved to: <code style="word-break:break-all;">${escapeHtml(res.saved_to)}</code></div>`
+            : '';
+    }
 }
 
 function displaySegmentationResult(res) {
@@ -201,10 +209,15 @@ function displaySegmentationResult(res) {
 
     const stats = document.getElementById('inf-seg-stats');
     if (stats) {
+        const maskUri = res.mask_s3_uri || res.saved_to || '';
         stats.innerHTML = `
-            <div class="status-detail-row"><span>Shape:</span><strong>${(res.shape || []).join(' × ')}</strong></div>
-            <div class="status-detail-row"><span>Positive voxels:</span><strong>${res.voxels_positive?.toLocaleString() || 'N/A'}</strong></div>
-            <div class="status-detail-row"><span>Volume fraction:</span><strong>${res.volume_fraction != null ? (res.volume_fraction * 100).toFixed(2) + '%' : 'N/A'}</strong></div>
+            <div class="status-detail-row"><span>Model:</span><strong>${escapeHtml(res.model_name || 'N/A')}</strong></div>
+            <div class="status-detail-row"><span>Original shape:</span><strong>${(res.original_shape || res.shape || []).join(' × ')}</strong></div>
+            <div class="status-detail-row"><span>Segmentation shape:</span><strong>${(res.segmentation_shape || []).join(' × ')}</strong></div>
+            <div class="status-detail-row"><span>Segmented voxels:</span><strong>${(res.segmented_voxels || res.voxels_positive || 0).toLocaleString()}</strong></div>
+            <div class="status-detail-row"><span>Total voxels:</span><strong>${(res.total_voxels || 0).toLocaleString()}</strong></div>
+            <div class="status-detail-row"><span>Segmentation %:</span><strong>${res.segmentation_percentage != null ? res.segmentation_percentage + '%' : (res.volume_fraction != null ? (res.volume_fraction * 100).toFixed(2) + '%' : 'N/A')}</strong></div>
+            ${maskUri ? `<div style="margin-top:0.75rem; padding:0.5rem; background:#e8f8f0; border-radius:4px; font-size:0.8rem;"><i class="fas fa-check-circle" style="color:#1e8449;"></i> Mask saved to: <code style="word-break:break-all;">${escapeHtml(maskUri)}</code></div>` : ''}
         `;
     }
 }
