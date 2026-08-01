@@ -233,8 +233,6 @@ async function pollAsyncResult(outputLocation, inferenceId) {
     if (statusEl) statusEl.innerHTML = '<span style="color:#c62828;">Timed out — check S3 manually</span>';
     if (progressEl) progressEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Result not available after ${maxWait}s. It may still be processing.`;
 }
-    `;
-}
 
 function displayClassificationResult(res) {
     const card = document.getElementById('inf-class-result');
