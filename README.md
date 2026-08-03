@@ -41,29 +41,31 @@ MedAnvil is a web dashboard for the full medical imaging ML lifecycle on AWS. Po
 ## Quick Start
 
 ```bash
-# Clone and setup
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+# Setup credentials
 cp .env.example .env
 cp .env.local.example .env.local   # add your AWS account ID, role ARN, ECR URIs
 
-# Run
-python main.py
+# Run (installs deps, starts MLflow + TensorBoard + app)
+./start.sh
 ```
+
+That's it. The start script handles virtual environment creation, dependency installation (uses [uv](https://github.com/astral-sh/uv) if available, falls back to pip), and launches all services.
 
 Open [http://localhost:8000](http://localhost:8000) 🎉
-
-### Docker
-
-```bash
-docker-compose up --build
-```
 
 | Service | URL |
 |---|---|
 | Dashboard | http://localhost:8000 |
 | MLflow | http://localhost:5000 |
 | TensorBoard | http://localhost:6006 |
+
+### Build & push SageMaker containers
+
+```bash
+./start.sh --build
+```
+
+This builds the BYOC training and inference Docker images and pushes them to ECR (requires `AWS_ACCOUNT_ID` in `.env.local`).
 
 ## Stack
 
