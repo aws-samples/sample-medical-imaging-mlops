@@ -92,11 +92,6 @@ else
     echo "🧪 Using remote MLflow: $MLFLOW_TRACKING_URI"
 fi
 
-# Start TensorBoard in background
-echo "📊 Starting TensorBoard..."
-python -m tensorboard.main --logdir=./logs/tensorboard --port=6006 --host=0.0.0.0 2>/dev/null &
-TENSORBOARD_PID=$!
-
 # Wait a moment for services to start
 sleep 2
 
@@ -106,7 +101,6 @@ echo "📍 Application will be available at: http://localhost:8000"
 if [[ -n "$MLFLOW_PID" ]]; then
     echo "🧪 MLflow UI available at: http://localhost:5000"
 fi
-echo "📊 TensorBoard available at: http://localhost:6006"
 echo ""
 echo "Press Ctrl+C to stop all services"
 
@@ -115,7 +109,6 @@ cleanup() {
     echo ""
     echo "🛑 Stopping services..."
     [[ -n "${MLFLOW_PID:-}" ]] && kill "$MLFLOW_PID" 2>/dev/null
-    kill "$TENSORBOARD_PID" 2>/dev/null
     echo "✅ All services stopped"
     exit 0
 }
