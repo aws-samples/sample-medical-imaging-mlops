@@ -45,18 +45,18 @@ MedAnvil is a web dashboard for the full medical imaging ML lifecycle on AWS. Po
 cp .env.example .env
 cp .env.local.example .env.local   # add your AWS account ID, role ARN, ECR URIs
 
-# Run (installs deps, starts MLflow + TensorBoard + app)
+# Run (installs deps, starts TensorBoard + app)
 ./start.sh
 ```
 
-That's it. The start script handles virtual environment creation, dependency installation (uses [uv](https://github.com/astral-sh/uv) if available, falls back to pip), and launches all services.
+That's it. The start script handles virtual environment creation, dependency installation (uses [uv](https://github.com/astral-sh/uv) if available, falls back to pip), and launches all services. If `MLFLOW_TRACKING_URI` is set in `.env.local` (e.g. a SageMaker-managed MLflow ARN), it uses that — otherwise it starts a local MLflow server.
 
 Open [http://localhost:8000](http://localhost:8000) 🎉
 
 | Service | URL |
 |---|---|
 | Dashboard | http://localhost:8000 |
-| MLflow | http://localhost:5000 |
+| MLflow | SageMaker Studio (or http://localhost:5000 if local) |
 | TensorBoard | http://localhost:6006 |
 
 ### Build & push SageMaker containers
