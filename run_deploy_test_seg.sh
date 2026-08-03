@@ -6,8 +6,13 @@
 
 set -e
 
+# Load credentials from .env.local
+if [ -f .env.local ]; then
+    export $(grep -v '^#' .env.local | xargs)
+fi
+
 MODEL_S3=s3://medml-dashboard/model-output/segmentation/segmentation-segresnet-20260729-1559/output/model.tar.gz
-ROLE_ARN=arn:aws:iam::811260109607:role/SageMakerExecutionRole
+ROLE_ARN="${SAGEMAKER_ROLE_ARN:?Error: SAGEMAKER_ROLE_ARN not set. Add it to .env.local}"
 TEST_IMAGE=s3://test-imaging-workflows/segmentation/test/10090344/img.nii.gz
 
 echo "Step 1: Repackaging model with inference code..."

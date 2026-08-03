@@ -82,7 +82,7 @@ python delete_endpoint.py
 # 3. Deploy and test
 python deploy_and_test_segmentation.py \
     --model-data s3://medml-dashboard/model-output/segmentation/segmentation-segresnet-20260729-1559/output/model.tar.gz \
-    --role-arn arn:aws:iam::811260109607:role/SageMakerExecutionRole \
+    --role-arn arn:aws:iam::123456789012:role/SageMakerExecutionRole \
     --test-image s3://test-imaging-workflows/segmentation/test/10090344/img.nii.gz
 ```
 
