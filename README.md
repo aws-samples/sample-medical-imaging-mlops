@@ -64,7 +64,16 @@ Open [http://localhost:8000](http://localhost:8000) 🎉
 ./start.sh --build
 ```
 
-This builds the BYOC training and inference Docker images and pushes them to ECR (requires `AWS_ACCOUNT_ID` in `.env.local`).
+This builds and pushes 4 BYOC Docker images to ECR (requires `AWS_ACCOUNT_ID` in `.env.local`):
+
+| Script | Image |
+|---|---|
+| `build_and_push.sh classification` | Training container for classification models |
+| `build_and_push.sh segmentation` | Training container for segmentation models |
+| `build_and_push_inference.sh classification` | Inference container for classification endpoints |
+| `build_and_push_inference.sh segmentation` | Inference container for segmentation endpoints |
+
+Without `--build`, the script skips Docker entirely and just starts the app.
 
 ## Stack
 
