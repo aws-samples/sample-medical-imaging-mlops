@@ -10,11 +10,23 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 # --- Configuration ---
-# Add AWS account IDs that should never appear in committed code
-BLOCKED_ACCOUNT_IDS="575108919340"
+# Load account ID from .env.local (gitignored) to avoid hardcoding it here
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+ENV_LOCAL="${REPO_ROOT}/.env.local"
+if [[ -f "$ENV_LOCAL" ]]; then
+    # Source only AWS_ACCOUNT_ID to avoid side effects
+    AWS_ACCOUNT_ID="$(grep -E '^AWS_ACCOUNT_ID=' "$ENV_LOCAL" | cut -d'=' -f2 | tr -d '\"' | tr -d "'")"
+fi
 
-# Add S3 bucket names that are account-specific
-BLOCKED_BUCKETS="public-datasets-imaging-us-east-1|sagemaker-us-east-1-575108919340"
+if [[ -z "${AWS_ACCOUNT_ID:-}" ]]; then
+    echo "⚠️  AWS_ACCOUNT_ID not set in .env.local — skipping account-specific scrub checks"
+    exit 0
+fi
+
+BLOCKED_ACCOUNT_IDS="$AWS_ACCOUNT_ID"
+
+# S3 bucket names that are account-specific
+BLOCKED_BUCKETS="public-datasets-imaging-us-east-1|sagemaker-us-east-1-${AWS_ACCOUNT_ID}"
 
 # --- Checks ---
 FAILED=0

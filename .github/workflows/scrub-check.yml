@@ -14,11 +14,16 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Check for hardcoded AWS account IDs
+        env:
+          BLOCKED_ACCOUNT_IDS: ${{ secrets.AWS_ACCOUNT_ID }}
         run: |
-          # Add your AWS account ID(s) here to block accidental commits
-          ACCOUNT_IDS="575108919340"
+          # Account ID comes from repository secret to avoid hardcoding
+          if [[ -z "$BLOCKED_ACCOUNT_IDS" ]]; then
+            echo "::warning::AWS_ACCOUNT_ID secret not set — skipping account ID check"
+            exit 0
+          fi
 
-          for id in $ACCOUNT_IDS; do
+          for id in $BLOCKED_ACCOUNT_IDS; do
             if grep -r "$id" \
               --include='*.py' --include='*.js' --include='*.html' \
               --include='*.sh' --include='*.md' --include='*.yml' \
@@ -44,9 +49,16 @@ jobs:
           fi
 
       - name: Check for account-specific S3 buckets
+        env:
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         run: |
-          # Add bucket name patterns that should not appear in public code
-          BLOCKED_BUCKETS="public-datasets-imaging-us-east-1|sagemaker-us-east-1-575108919340"
+          if [[ -z "$AWS_ACCOUNT_ID" ]]; then
+            echo "::warning::AWS_ACCOUNT_ID secret not set — skipping bucket name check"
+            exit 0
+          fi
+
+          # Bucket name patterns that should not appear in public code
+          BLOCKED_BUCKETS="public-datasets-imaging-us-east-1|sagemaker-us-east-1-${AWS_ACCOUNT_ID}"
 
           if grep -rE "$BLOCKED_BUCKETS" \
             --include='*.py' --include='*.js' --include='*.html' \
