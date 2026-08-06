@@ -205,6 +205,9 @@ class MonitoringService:
         }
         if config.get("KmsKeyId"):
             create_kwargs["KmsKeyId"] = config["KmsKeyId"]
+        # Preserve AsyncInferenceConfig if the original endpoint had it
+        if config.get("AsyncInferenceConfig"):
+            create_kwargs["AsyncInferenceConfig"] = config["AsyncInferenceConfig"]
 
         sagemaker_client.create_endpoint_config(**create_kwargs)
         sagemaker_client.update_endpoint(
