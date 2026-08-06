@@ -223,7 +223,7 @@ coverage run -m pytest && coverage report
 
 ## License
 
-[Add your license here]
+This project is licensed under the [MIT-0 License](LICENSE).
 
 ---
 
