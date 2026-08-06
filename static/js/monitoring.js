@@ -214,23 +214,22 @@ async function loadCvEndpoints(preloaded) {
     if (!select) return;
     try {
         const deployments = preloaded || (await apiCall('/api/deployment/deployments?local_only=true')).deployments || [];
-        const all = deployments.filter(d => ['InService', 'Creating', 'Updating'].includes(d.status));
-        if (!all.length) {
-            select.innerHTML = '<option value="" disabled selected>No endpoints found</option>';
+        // Only show endpoints that have data capture enabled
+        const withCapture = deployments.filter(d => d.data_capture_enabled && d.capture_s3_uri);
+        if (!withCapture.length) {
+            select.innerHTML = '<option value="" disabled selected>No endpoints with data capture enabled</option>';
             return;
         }
         select.innerHTML = '<option value="" disabled selected>Select an endpoint…</option>'
-            + all.map(d => {
-                const captureFlag = d.data_capture_enabled ? ' 📡' : '';
+            + withCapture.map(d => {
                 const captureUri  = d.capture_s3_uri || '';
                 return `<option value="${escapeHtml(d.endpoint_name)}" data-capture="${escapeHtml(captureUri)}" data-status="${escapeHtml(d.status)}">`
-                    + `${escapeHtml(d.endpoint_name)}${captureFlag} (${escapeHtml(d.status)})</option>`;
+                    + `${escapeHtml(d.endpoint_name)} 📡 (${escapeHtml(d.status)})</option>`;
             }).join('');
 
-        // Auto-select first endpoint with capture enabled
-        const withCapture = all.find(d => d.data_capture_enabled && d.capture_s3_uri);
-        if (withCapture) {
-            select.value = withCapture.endpoint_name;
+        // Auto-select first endpoint
+        if (withCapture.length === 1) {
+            select.value = withCapture[0].endpoint_name;
             onCvEndpointSelect();
         }
     } catch (_) {
