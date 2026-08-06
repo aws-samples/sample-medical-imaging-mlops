@@ -70,7 +70,7 @@ async def invoke_endpoint_local(
 
 @router.get("/endpoints")
 async def list_active_endpoints():
-    """List InService SageMaker endpoints, enriched with task_type from local deployment store."""
+    """List all tracked endpoints available for inference (InService from AWS + locally tracked)."""
     try:
         if not aws_service.sagemaker_client:
             raise ValueError("AWS credentials not configured")
@@ -80,10 +80,13 @@ async def list_active_endpoints():
         deployment_service = DeploymentService()
         local_store = {d["endpoint_name"]: d for d in deployment_service.list_deployments()}
 
-        response  = aws_service.sagemaker_client.list_endpoints(StatusEquals="InService")
+        # Get InService endpoints from AWS
+        response = aws_service.sagemaker_client.list_endpoints(StatusEquals="InService")
+        aws_names = set()
         endpoints = []
         for e in response.get("Endpoints", []):
             name = e["EndpointName"]
+            aws_names.add(name)
             local = local_store.get(name, {})
             # Infer task_type from local store, then fall back to name heuristic
             task_type = local.get("task_type")
@@ -100,6 +103,30 @@ async def list_active_endpoints():
                 "instance_count": instance_count,
                 "scaled_to_zero": instance_count == 0,
             })
+
+        # Also include locally-tracked endpoints not returned by AWS
+        # (e.g. Creating, Updating status — still useful to show in dropdown)
+        for name, local in local_store.items():
+            if name in aws_names:
+                continue
+            status = local.get("status", "")
+            if status in ("Deleted", "Deleting", "Failed"):
+                continue
+            task_type = local.get("task_type")
+            if not task_type:
+                task_type = "segmentation" if "segment" in name.lower() else "classification"
+            instance_count = local.get("instance_count")
+            endpoints.append({
+                "name":           name,
+                "status":         status,
+                "created":        local.get("created_at", ""),
+                "task_type":      task_type,
+                "endpoint_type":  local.get("endpoint_type", "realtime"),
+                "output_s3_uri":  local.get("output_s3_uri", ""),
+                "instance_count": instance_count,
+                "scaled_to_zero": instance_count == 0,
+            })
+
         return {"endpoints": endpoints}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

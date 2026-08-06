@@ -46,7 +46,8 @@ async function loadInferenceEndpoints() {
                 const outputS3    = e.output_s3_uri || '';
                 const asyncLabel  = epType === 'async' ? ' ⚡' : '';
                 const scaledLabel = e.scaled_to_zero ? ' ⚠️ scaled to 0' : '';
-                return `<option value="${escapeHtml(e.name)}" data-type="${escapeHtml(epType)}" data-output-s3="${escapeHtml(outputS3)}" data-task="${escapeHtml(taskType)}" data-scaled="${e.scaled_to_zero ? '1' : '0'}">${escapeHtml(e.name)}${asyncLabel}${scaledLabel}</option>`;
+                const statusLabel = e.status !== 'InService' ? ` (${e.status})` : '';
+                return `<option value="${escapeHtml(e.name)}" data-type="${escapeHtml(epType)}" data-output-s3="${escapeHtml(outputS3)}" data-task="${escapeHtml(taskType)}" data-scaled="${e.scaled_to_zero ? '1' : '0'}" data-status="${escapeHtml(e.status || '')}">${escapeHtml(e.name)}${asyncLabel}${scaledLabel}${statusLabel}</option>`;
             }).join('');
             onInfEndpointChange();
             return;
