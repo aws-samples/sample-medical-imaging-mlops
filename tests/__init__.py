@@ -1,3 +1,3 @@
 """
-MedML Training Platform Test Suite
+MedAnvil Test Suite
 """

@@ -1,4 +1,4 @@
-// Main JavaScript file for MedML Training Platform
+// Main JavaScript file for MedAnvil
 
 // ── HTML escaping utility (prevents XSS in template strings) ─────────────────
 function escapeHtml(str) {

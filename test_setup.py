@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script to verify MedML Training Platform setup
+Test script to verify MedAnvil setup
 """
 
 import sys
@@ -112,7 +112,7 @@ def test_app_startup():
 
 def main():
     """Run all tests"""
-    print("🔍 MedML Training Platform Setup Test\n")
+    print("🔍 MedAnvil Setup Test\n")
     
     tests = [
         ("Package Imports", test_imports),

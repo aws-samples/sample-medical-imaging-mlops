@@ -18,7 +18,7 @@ from app.services.aws_service import AWSService
 load_dotenv()
 load_dotenv(".env.local", override=True)
 
-app = FastAPI(title="MedML Training Platform", version="1.0.0")
+app = FastAPI(title="MedAnvil", version="1.0.0")
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
