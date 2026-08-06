@@ -32,6 +32,10 @@ Building medical imaging AI typically means juggling scattered scripts, manual i
 - **Cloud-native on AWS** — SageMaker training, deployment, and monitoring with MLflow experiment tracking
 - **No vendor lock-in** — open source, runs locally, brings your own AWS account
 
+<p align="center">
+  <img src="static/dashboard.png" alt="MedAnvil Dashboard" width="800" />
+</p>
+
 ---
 
 ## Features
@@ -56,21 +60,41 @@ All experiments are tracked in MLflow with full hyperparameter, metric, and arti
 
 One-click deployment to SageMaker endpoints. Choose real-time or async inference. Monitor endpoint health and auto-scaling from the dashboard.
 
+<p align="center">
+  <img src="static/model_deployment.png" alt="Model Deployment" width="800" />
+</p>
+
 ### 🔬 Invoke
 
 Test deployed models directly from the browser. Upload DICOM/NIfTI files, paste S3 URIs, or use local samples. See predictions with confidence scores and visual overlays for segmentation.
+
+<p align="center">
+  <img src="static/run_inference.png" alt="Run Inference" width="800" />
+</p>
 
 ### 📊 Evaluate
 
 Run structured evaluation jobs against live endpoints. Get per-class metrics, confusion matrices, ROC curves, and exportable reports.
 
+<p align="center">
+  <img src="static/evaluation.png" alt="Model Evaluation" width="800" />
+</p>
+
 ### 📈 Monitor
 
 Set up SageMaker Model Monitor with data capture, quality baselines, and drift detection schedules. Get alerted when your model's inputs or outputs shift.
 
+<p align="center">
+  <img src="static/monitoring.png" alt="Model Monitoring" width="800" />
+</p>
+
 ### ⚖️ Fairness
 
 Scan DICOM metadata for demographic distributions (age, sex, ethnicity). Audit training data representation and model performance across subgroups before deployment.
+
+<p align="center">
+  <img src="static/Fairness.png" alt="Fairness Analysis" width="800" />
+</p>
 
 ### 📝 Report
 
