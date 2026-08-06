@@ -44,9 +44,11 @@ Launch SageMaker training jobs with state-of-the-art architectures. Configure hy
 | Classification | Segmentation |
 |---|---|
 | ResNet50 | SegResNet |
-| DenseNet121 | SwinUNETR |
+| VGG-16 | SwinUNETR |
+| DenseNet121 | UNet |
 | EfficientNet-B0 | |
 | Vision Transformer (ViT) | |
+| Custom (bring your own) | |
 
 All experiments are tracked in MLflow with full hyperparameter, metric, and artifact logging.
 
