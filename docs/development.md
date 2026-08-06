@@ -311,7 +311,7 @@ Environment variables:
 
 ```bash
 # Classification
-python test_endpoint.py --endpoint my-endpoint --local /path/to/image.dcm
+python tests/integration/test_endpoint.py --endpoint my-endpoint --local /path/to/image.dcm
 
 # Segmentation
 python test_endpoint_segmentation.py --endpoint my-seg-endpoint \

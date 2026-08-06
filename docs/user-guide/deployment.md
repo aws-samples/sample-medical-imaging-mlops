@@ -154,7 +154,7 @@ model.tar.gz
 Training scripts automatically copy inference artifacts to `model_dir/code/` during training. If you have an older model archive with `inference.py` at the root, use the repackaging utility:
 
 ```bash
-python repackage_model.py s3://your-bucket/output/job-name/output/model.tar.gz
+python tests/integration/repackage_model.py s3://your-bucket/output/job-name/output/model.tar.gz
 ```
 
 ### Security: Model Loading

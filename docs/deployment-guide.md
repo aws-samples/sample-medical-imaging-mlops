@@ -229,7 +229,7 @@ model.tar.gz
 If you have an existing `model.tar.gz` that was created before this change (with `inference.py` at the root), use the repackaging script:
 
 ```bash
-python repackage_model.py s3://your-bucket/output/job-name/output/model.tar.gz
+python tests/integration/repackage_model.py s3://your-bucket/output/job-name/output/model.tar.gz
 ```
 
 This downloads the archive, restructures it to place inference artifacts under `code/`, and re-uploads it to the same S3 location.
