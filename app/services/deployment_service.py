@@ -51,6 +51,16 @@ class DeploymentService:
         model_name  = f"{endpoint_name}-model"
         config_name = f"{endpoint_name}-config"
 
+        # Clean up any existing model/config from a prior deployment with the same name
+        try:
+            sagemaker_client.delete_model(ModelName=model_name)
+        except Exception:
+            pass
+        try:
+            sagemaker_client.delete_endpoint_config(EndpointConfigName=config_name)
+        except Exception:
+            pass
+
         # model.tar.gz already contains inference.py (copied by train.py at end of training)
         sagemaker_client.create_model(
             ModelName=model_name,
@@ -135,6 +145,16 @@ class DeploymentService:
         model_name  = f"{endpoint_name}-model"
         config_name = f"{endpoint_name}-config"
         output_pattern = config.get("output_pattern", "{patient_id}_segmentation.nii.gz")
+
+        # Clean up any existing model/config from a prior deployment with the same name
+        try:
+            sagemaker_client.delete_model(ModelName=model_name)
+        except Exception:
+            pass
+        try:
+            sagemaker_client.delete_endpoint_config(EndpointConfigName=config_name)
+        except Exception:
+            pass
 
         # model.tar.gz already contains inference.py (copied by train.py at end of training)
         sagemaker_client.create_model(
