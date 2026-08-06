@@ -594,7 +594,7 @@
                             <div class="form-group">
                                 <label for="dep-image-uri">Inference Container Image URI</label>
                                 <div style="display:flex; gap:6px; align-items:center;">
-                                    <select id="dep-image-uri" name="image_uri" style="flex:1;" required></select>
+                                    <select id="dep-image-uri" name="image_uri" style="flex:1;" required onchange="updateOutputPatternDefault()"></select>
                                     <button type="button" class="btn btn-secondary" onclick="openAddInferenceContainerModal()" title="Add container">
                                         <i class="fas fa-plus"></i>
                                     </button>
@@ -657,16 +657,15 @@
                                     <label for="dep-output-pattern">Output Filename Pattern</label>
                                     <input type="text" id="dep-output-pattern" name="output_pattern" value="{patient_id}_segmentation.nii.gz">
                                     <small style="color:var(--aws-dark-gray)">
-                                        Placeholders (given input <code>s3://bucket/test/10090344/img.nii.gz</code>):<br>
+                                        Auto-set based on container type. Placeholders (given input <code>s3://bucket/test/10090344/img.nii.gz</code>):<br>
                                         <code>{patient_id}</code> — <code>s3://bucket/test/<strong>10090344</strong>/img.nii.gz</code> → <em>10090344</em><br>
                                         <code>{filename}</code> — <code>s3://bucket/test/10090344/<strong>img</strong>.nii.gz</code> → <em>img</em><br>
                                         <code>{endpoint_name}</code> — name of this endpoint → <em>segmentation</em><br>
                                         <code>{model_name}</code> — from model config → <em>SegResNet</em><br>
                                         <code>{timestamp}</code> — UTC time of inference → <em>20260731-170000</em><br><br>
                                         Output examples:<br>
-                                        <code>{patient_id}_segmentation.nii.gz</code> → <em>10090344_segmentation.nii.gz</em><br>
-                                        <code>{patient_id}_{endpoint_name}_{timestamp}.nii.gz</code> → <em>10090344_segmentation_20260731-170000.nii.gz</em><br>
-                                        <code>{filename}_mask.nii.gz</code> → <em>img_mask.nii.gz</em>
+                                        Segmentation: <code>{patient_id}_segmentation.nii.gz</code> → <em>10090344_segmentation.nii.gz</em><br>
+                                        Classification: <code>{patient_id}_classification.json</code> → <em>10090344_classification.json</em>
                                     </small>
                                 </div>
                             </div>

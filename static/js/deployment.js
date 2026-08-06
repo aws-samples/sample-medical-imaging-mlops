@@ -77,6 +77,7 @@ function removeSelectedInferenceContainer() {
 
 registerTabInit('deployment', function () {
     populateInferenceContainerDropdown();
+    updateOutputPatternDefault();
     loadDeployments();
     const form = document.getElementById('deployment-form');
     if (form) form.addEventListener('submit', deployModel);
@@ -87,10 +88,37 @@ function updateInferenceImageUri() {
     // no-op — dropdown is now used instead of a text input
 }
 
+function getDeployTaskType() {
+    // Infer task type from the selected image URI label/value
+    const select = document.getElementById('dep-image-uri');
+    if (!select) return 'classification';
+    const selected = select.options[select.selectedIndex];
+    const text = ((selected?.text || '') + (selected?.value || '')).toLowerCase();
+    return text.includes('segmentation') ? 'segmentation' : 'classification';
+}
+
+function updateOutputPatternDefault() {
+    const patternInput = document.getElementById('dep-output-pattern');
+    if (!patternInput) return;
+    const taskType = getDeployTaskType();
+    const current  = patternInput.value.trim();
+    // Only update if the field still holds one of the known defaults (don't overwrite user edits)
+    const knownDefaults = [
+        '{patient_id}_segmentation.nii.gz',
+        '{patient_id}_classification.json',
+    ];
+    if (!current || knownDefaults.includes(current)) {
+        patternInput.value = taskType === 'segmentation'
+            ? '{patient_id}_segmentation.nii.gz'
+            : '{patient_id}_classification.json';
+    }
+}
+
 function toggleAsyncFields() {
     const isAsync = document.querySelector('input[name="dep_inference_type"]:checked')?.value === 'async';
     const fields  = document.getElementById('async-fields');
     if (fields) fields.style.display = isAsync ? 'block' : 'none';
+    if (isAsync) updateOutputPatternDefault();
 }
 
 function toggleCaptureFields() {
@@ -127,7 +155,11 @@ async function deployModel(e) {
             return;
         }
         payload.max_concurrent = parseInt(fd.get('max_concurrent') || '10');
-        payload.output_pattern = fd.get('output_pattern') || '{patient_id}_segmentation.nii.gz';
+        const taskType = getDeployTaskType();
+        const defaultPattern = taskType === 'segmentation'
+            ? '{patient_id}_segmentation.nii.gz'
+            : '{patient_id}_classification.json';
+        payload.output_pattern = fd.get('output_pattern') || defaultPattern;
     }
 
     const btn    = e.target.querySelector('button[type="submit"]');
