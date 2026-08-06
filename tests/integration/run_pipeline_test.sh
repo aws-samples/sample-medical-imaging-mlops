@@ -2,7 +2,7 @@
 # =============================================================================
 # Integration Test Pipeline
 # =============================================================================
-# End-to-end test of the MedML Training Dashboard deployment pipeline.
+# End-to-end test of the MedAnvil deployment pipeline.
 # Tests both classification and segmentation endpoints.
 #
 # Usage:
@@ -26,7 +26,7 @@ cd "$PROJECT_DIR"
 
 # Load config
 if [[ -f .env.local ]]; then
-    eval "$(grep -E '^(AWS_ACCOUNT_ID|AWS_DEFAULT_REGION|SAGEMAKER_ROLE_ARN|TEST_IMAGE_S3_URI|TEST_SEGMENTATION_S3_URI)=' .env.local)"
+    eval "$(grep -E '^(AWS_ACCOUNT_ID|AWS_DEFAULT_REGION|SAGEMAKER_ROLE_ARN|SAGEMAKER_OUTPUT_BUCKET|TEST_IMAGE_S3_URI|TEST_SEGMENTATION_S3_URI)=' .env.local)"
 fi
 
 # ── Configuration ─────────────────────────────────────────────────────────────
@@ -35,12 +35,12 @@ ROLE_ARN="${SAGEMAKER_ROLE_ARN:-arn:aws:iam::${AWS_ACCOUNT_ID}:role/SageMakerExe
 
 # Segmentation
 SEG_ENDPOINT="segmentation-integration-test"
-SEG_TEST_IMAGE="${TEST_SEGMENTATION_S3_URI:-s3://test-imaging-workflows/segmentation/test/10090344/img.nii.gz}"
+SEG_TEST_IMAGE="${TEST_SEGMENTATION_S3_URI:-s3://<your-test-bucket>/segmentation/test/10090344/img.nii.gz}"
 SEG_MODEL_S3="${SEG_MODEL_S3:-}"  # Set via env or auto-detect latest
 
 # Classification
 CLASS_ENDPOINT="classification-integration-test"
-CLASS_TEST_IMAGE="${TEST_IMAGE_S3_URI:-s3://test-imaging-workflows/classification/vindr-spinexr-subset/test/No_finding/1a3de4a48b92b4f8f5ea.dicom}"
+CLASS_TEST_IMAGE="${TEST_IMAGE_S3_URI:-s3://<your-test-bucket>/classification/test/No_finding/sample.dicom}"
 CLASS_MODEL_S3="${CLASS_MODEL_S3:-}"  # Set via env or auto-detect latest
 
 # Flags
@@ -74,15 +74,17 @@ fail() { echo -e "${RED}❌ FAIL:${NC} $1"; ((FAIL++)); }
 info() { echo -e "${YELLOW}ℹ️  $1${NC}"; }
 
 # ── Auto-detect latest model artifacts ────────────────────────────────────────
-if [[ -z "$SEG_MODEL_S3" ]]; then
-    SEG_MODEL_S3=$(aws s3 ls s3://medml-dashboard/model-output/segmentation/ --region "$REGION" | grep "segmentation-segresnet" | sort | tail -1 | awk '{print "s3://medml-dashboard/model-output/segmentation/" $NF "output/model.tar.gz"}' 2>/dev/null || echo "")
+SAGEMAKER_BUCKET="${SAGEMAKER_OUTPUT_BUCKET:-}"
+
+if [[ -z "$SEG_MODEL_S3" && -n "$SAGEMAKER_BUCKET" ]]; then
+    SEG_MODEL_S3=$(aws s3 ls "s3://${SAGEMAKER_BUCKET}/model-output/segmentation/" --region "$REGION" | grep "segmentation-segresnet" | sort | tail -1 | awk "{print \"s3://${SAGEMAKER_BUCKET}/model-output/segmentation/\" \$NF \"output/model.tar.gz\"}" 2>/dev/null || echo "")
     if [[ -n "$SEG_MODEL_S3" ]]; then
         info "Auto-detected segmentation model: $SEG_MODEL_S3"
     fi
 fi
 
-if [[ -z "$CLASS_MODEL_S3" ]]; then
-    CLASS_MODEL_S3=$(aws s3 ls s3://medml-dashboard/model-output/classification/ --region "$REGION" | grep "classification" | sort | tail -1 | awk '{print "s3://medml-dashboard/model-output/classification/" $NF "output/model.tar.gz"}' 2>/dev/null || echo "")
+if [[ -z "$CLASS_MODEL_S3" && -n "$SAGEMAKER_BUCKET" ]]; then
+    CLASS_MODEL_S3=$(aws s3 ls "s3://${SAGEMAKER_BUCKET}/model-output/classification/" --region "$REGION" | grep "classification" | sort | tail -1 | awk "{print \"s3://${SAGEMAKER_BUCKET}/model-output/classification/\" \$NF \"output/model.tar.gz\"}" 2>/dev/null || echo "")
     if [[ -n "$CLASS_MODEL_S3" ]]; then
         info "Auto-detected classification model: $CLASS_MODEL_S3"
     fi
@@ -90,7 +92,7 @@ fi
 
 echo ""
 echo "============================================================"
-echo "  MedML Integration Test Pipeline"
+echo "  MedAnvil Integration Test Pipeline"
 echo "============================================================"
 echo "  Region:           $REGION"
 echo "  Role:             $ROLE_ARN"
@@ -144,7 +146,7 @@ if [[ "$RUN_SEG" == true ]]; then
     fi
 
     # Check mask saved
-    MASK_CHECK=$(aws s3 ls s3://medml-dashboard/model-output/segmentation/masks/ --region "$REGION" 2>/dev/null | grep "_segmentation.nii.gz" | tail -1 || echo "")
+    MASK_CHECK=$(aws s3 ls "s3://${SAGEMAKER_BUCKET}/model-output/segmentation/masks/" --region "$REGION" 2>/dev/null | grep "_segmentation.nii.gz" | tail -1 || echo "")
     if [[ -n "$MASK_CHECK" ]]; then
         pass "Segmentation mask (.nii.gz) saved to S3"
     else
@@ -210,7 +212,7 @@ if [[ "$RUN_CLASS" == true ]]; then
 
         aws sagemaker create-endpoint-config --endpoint-config-name "$CLASS_ASYNC_ENDPOINT-config" \
             --production-variants "[{\"VariantName\":\"AllTraffic\",\"ModelName\":\"$CLASS_ASYNC_ENDPOINT-model\",\"InstanceType\":\"ml.g5.xlarge\",\"InitialInstanceCount\":1}]" \
-            --async-inference-config "{\"OutputConfig\":{\"S3OutputPath\":\"s3://medml-dashboard/model-output/classification/async-output/\"}}" \
+            --async-inference-config "{\"OutputConfig\":{\"S3OutputPath\":\"s3://${SAGEMAKER_BUCKET}/model-output/classification/async-output/\"}}" \
             --region "$REGION" > /dev/null
 
         aws sagemaker create-endpoint --endpoint-name "$CLASS_ASYNC_ENDPOINT" \
@@ -221,7 +223,7 @@ if [[ "$RUN_CLASS" == true ]]; then
     fi
 
     # Invoke async
-    CLASS_ASYNC_INPUT="s3://medml-dashboard/model-output/classification/test-input/request_$(date +%s).json"
+    CLASS_ASYNC_INPUT="s3://${SAGEMAKER_BUCKET}/model-output/classification/test-input/request_$(date +%s).json"
     echo "{\"s3_uri\": \"$CLASS_TEST_IMAGE\", \"file_path\": \"$CLASS_TEST_IMAGE\"}" | \
         aws s3 cp - "$CLASS_ASYNC_INPUT" --region "$REGION" 2>/dev/null
 

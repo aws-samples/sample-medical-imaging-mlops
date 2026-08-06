@@ -11,9 +11,9 @@ if [ -f .env.local ]; then
     export $(grep -v '^#' .env.local | xargs)
 fi
 
-MODEL_S3=s3://medml-dashboard/model-output/segmentation/segmentation-segresnet-20260729-1559/output/model.tar.gz
+MODEL_S3="${SEGMENTATION_MODEL_S3_URI:?Error: Set SEGMENTATION_MODEL_S3_URI in .env.local (e.g. s3://your-bucket/model-output/segmentation/.../model.tar.gz)}"
 ROLE_ARN="${SAGEMAKER_ROLE_ARN:?Error: SAGEMAKER_ROLE_ARN not set. Add it to .env.local}"
-TEST_IMAGE=s3://test-imaging-workflows/segmentation/test/10090344/img.nii.gz
+TEST_IMAGE="${TEST_SEGMENTATION_S3_URI:-s3://your-test-bucket/segmentation/test/10090344/img.nii.gz}"
 
 echo "Step 1: Repackaging model with inference code..."
 python repackage_model.py --model-s3-uri "$MODEL_S3"

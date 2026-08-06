@@ -12,12 +12,12 @@ Usage:
     # Deploy and test
     python deploy_and_test_segmentation.py \
         --model-data s3://your-bucket/output/model.tar.gz \
-        --test-image s3://test-imaging-workflows/segmentation/test/10090344/img.nii.gz
+        --test-image s3://your-test-bucket/segmentation/test/10090344/img.nii.gz
 
     # Test an existing endpoint (skip deployment)
     python deploy_and_test_segmentation.py \
         --endpoint segmentation \
-        --test-image s3://test-imaging-workflows/segmentation/test/10090344/img.nii.gz \
+        --test-image s3://your-test-bucket/segmentation/test/10090344/img.nii.gz \
         --skip-deploy
 
     # Deploy only (no test)
@@ -46,9 +46,9 @@ DEFAULT_ENDPOINT_NAME = "segmentation"
 DEFAULT_INSTANCE_TYPE = "ml.g5.xlarge"
 DEFAULT_TEST_IMAGE = os.environ.get(
     "TEST_SEGMENTATION_S3_URI",
-    "s3://test-imaging-workflows/segmentation/test/10090344/img.nii.gz",
+    "s3://<your-test-bucket>/segmentation/test/10090344/img.nii.gz",
 )
-DEFAULT_OUTPUT_BUCKET = "medml-dashboard"
+DEFAULT_OUTPUT_BUCKET = os.environ.get("SAGEMAKER_OUTPUT_BUCKET", "<your-output-bucket>")
 DEFAULT_OUTPUT_PREFIX = "model-output/segmentation"
 
 POLL_INTERVAL = 30  # seconds between status checks
