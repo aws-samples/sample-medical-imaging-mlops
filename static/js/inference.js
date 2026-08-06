@@ -172,22 +172,27 @@ async function runInference(e) {
             // Async endpoint — show submission card and start polling
             if (banner) { banner.className = 'sm-status-banner sm-status-submitting'; banner.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Async inference submitted — waiting for result...'; }
             displayAsyncResult(res);
-        } else if (res.predicted_class || res.probabilities || res.predicted_class_index !== undefined) {
-            if (banner) { banner.className = 'sm-status-banner sm-status-success'; banner.innerHTML = '<i class="fas fa-check-circle"></i> Inference complete'; }
-            displayClassificationResult(res);
-        } else if (res.segmentation_mask_base64 || res.mask_nifti_b64 || res.segmented_voxels !== undefined) {
-            if (banner) { banner.className = 'sm-status-banner sm-status-success'; banner.innerHTML = '<i class="fas fa-check-circle"></i> Inference complete'; }
-            displaySegmentationResult(res);
         } else {
-            // Use task type from the endpoint's deployment record
-            if (banner) { banner.className = 'sm-status-banner sm-status-success'; banner.innerHTML = '<i class="fas fa-check-circle"></i> Inference complete'; }
-            const epSelect = document.getElementById('inf-endpoint');
-            const selectedOpt = epSelect?.options[epSelect.selectedIndex];
-            const taskType = selectedOpt?.dataset?.task || 'classification';
-            if (taskType === 'segmentation') {
+            // Restore result container structure if it was overwritten by a prior async call
+            restoreResultContainer();
+
+            if (res.predicted_class || res.probabilities || res.predicted_class_index !== undefined) {
+                if (banner) { banner.className = 'sm-status-banner sm-status-success'; banner.innerHTML = '<i class="fas fa-check-circle"></i> Inference complete'; }
+                displayClassificationResult(res);
+            } else if (res.segmentation_mask_base64 || res.mask_nifti_b64 || res.segmented_voxels !== undefined) {
+                if (banner) { banner.className = 'sm-status-banner sm-status-success'; banner.innerHTML = '<i class="fas fa-check-circle"></i> Inference complete'; }
                 displaySegmentationResult(res);
             } else {
-                displayClassificationResult(res);
+                // Use task type from the endpoint's deployment record
+                if (banner) { banner.className = 'sm-status-banner sm-status-success'; banner.innerHTML = '<i class="fas fa-check-circle"></i> Inference complete'; }
+                const epSelect = document.getElementById('inf-endpoint');
+                const selectedOpt = epSelect?.options[epSelect.selectedIndex];
+                const taskType = selectedOpt?.dataset?.task || 'classification';
+                if (taskType === 'segmentation') {
+                    displaySegmentationResult(res);
+                } else {
+                    displayClassificationResult(res);
+                }
             }
         }
 
@@ -199,6 +204,26 @@ async function runInference(e) {
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-play"></i> Run Inference';
+    }
+}
+
+function restoreResultContainer() {
+    // If displayAsyncResult overwrote inference-result innerHTML, restore the original structure
+    const resultDiv = document.getElementById('inference-result');
+    if (!resultDiv) return;
+    if (!document.getElementById('inf-class-result')) {
+        resultDiv.innerHTML = `
+            <div id="inf-class-result" class="inf-class-card" style="display:none;">
+                <div class="inf-predicted-class"></div>
+                <div class="inf-confidence"></div>
+                <div id="inf-probabilities" class="inf-prob-bars"></div>
+            </div>
+            <div id="inf-seg-result" style="display:none;">
+                <p>Segmentation mask saved to S3. Summary:</p>
+                <div id="inf-seg-stats" class="job-status-detail"></div>
+            </div>
+            <div id="inf-saved-to" style="margin-top:0.75rem; font-size:0.85rem; color:#666;"></div>
+        `;
     }
 }
 
