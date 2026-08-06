@@ -144,8 +144,8 @@ Resume training from checkpoints with full lineage tracking. Know exactly which 
 
 ```bash
 # Clone the repo
-git clone https://github.com/your-org/medanvil.git
-cd medanvil
+git clone https://github.com/aws-samples/sample-medical-imaging-mlops.git
+cd sample-medical-imaging-mlops
 
 # Configure environment
 cp .env.example .env
