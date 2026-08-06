@@ -1,133 +1,232 @@
-# MedAnvil
+<p align="center">
+  <img src="static/favicon.svg" alt="MedAnvil" width="80" />
+</p>
 
-```
-                              ██████
-                              ██████
-              ████████████████████████
-            ██                        █
-           ██                          █
-          █████████████████████████████████
-          ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
-                    ██████████
-                    ██████████
-                    ██████████
-               ████████████████████
-              ██████████████████████
-```
+<h1 align="center">MedAnvil</h1>
 
-**Train, deploy, and monitor medical imaging AI — from your browser.**
+<p align="center">
+  <strong>Train, deploy, and monitor medical imaging AI — from your browser.</strong>
+</p>
 
-> **⚠️ Research Use Only** — This platform is intended for research and development of medical imaging AI models. Model outputs must not be used as the sole basis for clinical decisions without review by qualified healthcare professionals. Clinical deployment requires regulatory approval (e.g. FDA clearance), clinical validation studies, and human-in-the-loop oversight. See the [Responsible AI](#responsible-ai) section below.
+<p align="center">
+  <a href="#features">Features</a> •
+  <a href="#how-it-works">How It Works</a> •
+  <a href="#architecture">Architecture</a> •
+  <a href="#getting-started">Getting Started</a> •
+  <a href="#documentation">Documentation</a> •
+  <a href="#responsible-ai">Responsible AI</a>
+</p>
 
 ---
 
-## What is this?
+> **⚠️ Research Use Only** — Model outputs are not clinical diagnoses. Clinical deployment requires regulatory clearance (e.g., FDA), validation studies, and human-in-the-loop oversight.
 
-MedAnvil is a web dashboard for the full medical imaging ML lifecycle on AWS. Point it at your data in S3, pick a model architecture, and go from raw DICOM/NIfTI files to a live SageMaker endpoint — with experiment tracking, fairness auditing, and model monitoring built in.
+---
 
-## Capabilities
+## Why MedAnvil?
 
-| | |
+Building medical imaging AI typically means juggling scattered scripts, manual infrastructure, and disconnected experiment tracking. MedAnvil brings it all into one place:
+
+- **One interface** for the entire ML lifecycle — data prep through production monitoring
+- **Built for medical imaging** — native DICOM/NIfTI support, MONAI-powered architectures, and DICOM metadata-aware fairness analysis
+- **Cloud-native on AWS** — SageMaker training, deployment, and monitoring with MLflow experiment tracking
+- **No vendor lock-in** — open source, runs locally, brings your own AWS account
+
+---
+
+## Features
+
+### 🏋️ Train
+
+Launch SageMaker training jobs with state-of-the-art architectures. Configure hyperparameters, data augmentation, and class balancing from the UI.
+
+**Supported models:**
+| Classification | Segmentation |
 |---|---|
-| 🏋️ **Train** | Classification & segmentation on SageMaker (ResNet50, DenseNet121, EfficientNet, ViT, SegResNet, SwinUNETR) with MLflow tracking |
-| 🚀 **Deploy** | One-click deployment to real-time or async SageMaker endpoints |
-| 🔬 **Invoke** | Test endpoints from the UI — DICOM, NIfTI, S3 URIs, or local files |
-| 📊 **Evaluate** | Run evaluation jobs against deployed endpoints with per-class metrics, confusion matrices, and ROC curves |
-| 📈 **Monitor** | Data capture, data quality baselines, and drift detection schedules via SageMaker Model Monitor |
-| ⚖️ **Fairness** | Scan DICOM metadata for demographic distributions and bias auditing |
-| 📝 **Report** | Generate structured paper sections (abstract, methods, results, discussion) from completed jobs |
-| 🔄 **Fine-tune** | Resume training from checkpoints with full lineage tracking |
+| ResNet50 | SegResNet |
+| DenseNet121 | SwinUNETR |
+| EfficientNet-B0 | |
+| Vision Transformer (ViT) | |
 
-## Quick Start
+All experiments are tracked in MLflow with full hyperparameter, metric, and artifact logging.
+
+### 🚀 Deploy
+
+One-click deployment to SageMaker endpoints. Choose real-time or async inference. Monitor endpoint health and auto-scaling from the dashboard.
+
+### 🔬 Invoke
+
+Test deployed models directly from the browser. Upload DICOM/NIfTI files, paste S3 URIs, or use local samples. See predictions with confidence scores and visual overlays for segmentation.
+
+### 📊 Evaluate
+
+Run structured evaluation jobs against live endpoints. Get per-class metrics, confusion matrices, ROC curves, and exportable reports.
+
+### 📈 Monitor
+
+Set up SageMaker Model Monitor with data capture, quality baselines, and drift detection schedules. Get alerted when your model's inputs or outputs shift.
+
+### ⚖️ Fairness
+
+Scan DICOM metadata for demographic distributions (age, sex, ethnicity). Audit training data representation and model performance across subgroups before deployment.
+
+### 📝 Report
+
+Auto-generate structured paper sections — abstract, methods, results, discussion — from completed training and evaluation jobs. Export for publication workflows.
+
+### 🔄 Fine-tune
+
+Resume training from checkpoints with full lineage tracking. Know exactly which base model, data version, and hyperparameters produced each artifact.
+
+---
+
+## How It Works
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        MedAnvil Dashboard                        │
+│                     (FastAPI + Jinja2 + JS)                      │
+└──────────┬──────────────────────────────────┬───────────────────┘
+           │                                  │
+           ▼                                  ▼
+┌─────────────────────┐           ┌─────────────────────────┐
+│    AWS SageMaker     │           │       MLflow Server      │
+│  • Training Jobs     │           │  • Experiment Tracking   │
+│  • Endpoints         │           │  • Model Registry        │
+│  • Model Monitor     │           │  • Artifact Store        │
+│  • Processing Jobs   │           │                          │
+└──────────┬──────────┘           └─────────────────────────┘
+           │
+           ▼
+┌─────────────────────┐
+│      Amazon S3       │
+│  • Training Data     │
+│  • Model Artifacts   │
+│  • Data Capture      │
+│  • Evaluation Results│
+└─────────────────────┘
+```
+
+1. **Prepare** — Point MedAnvil at your imaging data in S3 (DICOM or NIfTI)
+2. **Train** — Select an architecture, configure hyperparameters, launch a SageMaker training job
+3. **Track** — All metrics, parameters, and artifacts logged to MLflow automatically
+4. **Deploy** — Push your best model to a SageMaker endpoint with one click
+5. **Evaluate** — Run batch evaluation jobs and review per-class performance
+6. **Monitor** — Set up data quality baselines and drift detection schedules
+7. **Iterate** — Fine-tune from checkpoints, compare experiments, and improve
+
+---
+
+## Architecture
+
+| Layer | Technology |
+|---|---|
+| **Frontend** | Jinja2 templates, vanilla JavaScript, Chart.js |
+| **Backend** | Python, FastAPI, boto3 |
+| **ML Framework** | PyTorch, MONAI |
+| **Experiment Tracking** | MLflow (SageMaker-managed or local) |
+| **Training & Inference** | AWS SageMaker (BYOC containers) |
+| **Storage** | Amazon S3 |
+| **Container Registry** | Amazon ECR |
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3.10+
+- AWS account with SageMaker access
+- AWS CLI configured with appropriate credentials
+- Docker (for building training/inference containers)
+
+### Install & Run
 
 ```bash
-# Setup credentials
-cp .env.example .env
-cp .env.local.example .env.local   # add your AWS account ID, role ARN, ECR URIs
+# Clone the repo
+git clone https://github.com/your-org/medanvil.git
+cd medanvil
 
-# Run (installs deps, starts app)
+# Configure environment
+cp .env.example .env
+cp .env.local.example .env.local   # Add your AWS account ID, role ARN, ECR URIs
+
+# Start the application
 ./start.sh
 ```
 
-That's it. The start script handles virtual environment creation, dependency installation (uses [uv](https://github.com/astral-sh/uv) if available, falls back to pip), and launches the app. If `MLFLOW_TRACKING_URI` is set in `.env.local` (e.g. a SageMaker-managed MLflow ARN), it uses that — otherwise it starts a local MLflow server.
+The start script handles:
+- Virtual environment creation
+- Dependency installation (uses [uv](https://github.com/astral-sh/uv) if available, falls back to pip)
+- MLflow server startup (local or SageMaker-managed)
+- Application launch
 
-Open [http://localhost:8000](http://localhost:8000) 🎉
+Open **http://localhost:8000** and you're ready to go.
 
-| Service | URL |
-|---|---|
-| Dashboard | http://localhost:8000 |
-| MLflow | SageMaker Studio (or http://localhost:5000 if local) |
-
-### Build & push SageMaker containers
+### Build SageMaker Containers
 
 ```bash
 ./start.sh --build
 ```
 
-This builds and pushes 4 BYOC Docker images to ECR (requires `AWS_ACCOUNT_ID` in `.env.local`):
-
-| Script | Image |
-|---|---|
-| `build_and_push.sh classification` | Training container for classification models |
-| `build_and_push.sh segmentation` | Training container for segmentation models |
-| `build_and_push_inference.sh classification` | Inference container for classification endpoints |
-| `build_and_push_inference.sh segmentation` | Inference container for segmentation endpoints |
-
-Without `--build`, the script skips Docker entirely and just starts the app.
-
-## Stack
-
-- **Backend** — FastAPI · boto3 · PyTorch · MONAI · MLflow
-- **Frontend** — Jinja2 templates · vanilla JS
-- **Infra** — Docker · SageMaker · S3 · ECR
-
-## Project Layout
-
-```
-app/                 → FastAPI routers + services
-src/classification/  → SageMaker BYOC training (classification)
-src/segmentation/    → SageMaker BYOC training (segmentation)
-src/inference/       → SageMaker serving scripts
-src/evaluation/      → Endpoint evaluation processing jobs
-templates/           → Jinja2 HTML
-static/              → CSS + JS
-docs/                → Full documentation (Read the Docs format)
-```
-
-## Documentation
-
-Full docs live in [`docs/`](docs/) — covers configuration, API reference, deployment guide, user guides, and development setup.
-
-```bash
-# Build locally
-cd docs && make html
-# → docs/_build/html/index.html
-```
-
-## Testing
-
-```bash
-# Unit tests
-pytest
-
-# With coverage
-coverage run -m pytest && coverage report
-
-# Integration tests (requires AWS credentials + live endpoints)
-pytest tests/integration/ -v -s
-```
-
-## Responsible AI
-
-This platform processes medical imaging data for AI model training and evaluation. Important considerations:
-
-- **Not a medical device** — AI outputs are for research purposes only and must not be used as the sole basis for clinical decisions.
-- **Human oversight required** — Any clinical deployment requires qualified healthcare professional review of all AI predictions.
-- **Regulatory compliance** — Production medical AI systems require appropriate regulatory clearances (FDA, CE marking) and institutional review board approval.
-- **Fairness and bias** — Use the built-in Fairness Analysis feature to audit demographic representation in training data. Monitor model performance across subgroups.
-- **Validation** — Models must undergo clinical validation studies before use in patient care settings.
-- **Data privacy** — Ensure compliance with HIPAA, GDPR, and applicable data protection regulations when handling patient data.
+Builds and pushes 4 Docker images to ECR:
+- Classification training container
+- Segmentation training container
+- Classification inference container
+- Segmentation inference container
 
 ---
 
-Built with [MONAI](https://monai.io/) · Powered by [AWS SageMaker](https://aws.amazon.com/sagemaker/)
+## Documentation
+
+Comprehensive documentation is available in the [`docs/`](docs/) directory:
+
+- **[Getting Started](docs/getting-started.md)** — Setup, prerequisites, and first training job
+- **[Configuration](docs/configuration.md)** — Environment variables, AWS setup, and customization
+- **[API Reference](docs/api-reference.md)** — Full REST API documentation
+- **[Deployment Guide](docs/deployment-guide.md)** — Production deployment on AWS
+- **[User Guide](docs/user-guide/)** — Feature walkthroughs for every tab
+- **[Development](docs/development.md)** — Contributing, testing, and architecture details
+- **[Custom Model Workflow](docs/custom-model-workflow.md)** — Bring your own model architecture
+
+---
+
+## Responsible AI
+
+MedAnvil is a research tool. If you are considering clinical deployment, the following apply:
+
+| Consideration | Guidance |
+|---|---|
+| **Not a medical device** | AI predictions are for research only — not clinical diagnoses |
+| **Human oversight** | Qualified healthcare professionals must review all model outputs |
+| **Regulatory clearance** | Clinical use requires FDA 510(k)/De Novo, CE marking, or equivalent |
+| **Clinical validation** | Retrospective metrics ≠ prospective clinical evidence |
+| **Fairness & bias** | Use built-in fairness analysis to audit demographic representation |
+| **Data privacy** | Ensure HIPAA/GDPR compliance when handling patient data |
+| **Reproducibility** | All experiments are tracked with full provenance metadata |
+
+---
+
+## Contributing
+
+We welcome contributions! See [`docs/development.md`](docs/development.md) for setup instructions, coding standards, and the pull request process.
+
+```bash
+# Run tests
+pytest
+
+# Run with coverage
+coverage run -m pytest && coverage report
+```
+
+---
+
+## License
+
+[Add your license here]
+
+---
+
+<p align="center">
+  Built with <a href="https://monai.io/" target="_blank" rel="noopener noreferrer">MONAI</a> · Powered by <a href="https://aws.amazon.com/sagemaker/" target="_blank" rel="noopener noreferrer">AWS SageMaker</a>
+</p>

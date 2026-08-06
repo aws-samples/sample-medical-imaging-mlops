@@ -13,6 +13,7 @@ Provides a UI for data ingestion, model training (local and SageMaker), and depl
    user-guide/index
    api-reference
    deployment-guide
+   custom-model-workflow
    development
 
 Indices and tables

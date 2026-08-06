@@ -198,12 +198,21 @@ function displayDeployments(deployments) {
     // Update count badge and active endpoint summary
     const badge = document.getElementById('dep-count-badge');
     if (badge) {
-        const active = (deployments || []).filter(d => d.status === 'InService');
+        // An endpoint is truly active only if InService AND has at least 1 instance running
+        const active = (deployments || []).filter(d => d.status === 'InService' && (d.instance_count == null || d.instance_count > 0));
+        const scaledToZero = (deployments || []).filter(d => d.status === 'InService' && d.instance_count === 0);
         const total = (deployments || []).length;
         if (active.length > 0) {
-            const summary = active.map(d => `${d.endpoint_name} (×${d.instance_count || 1})`).join(', ');
-            badge.innerHTML = `${active.length} active / ${total} total — <span style="font-weight:normal;">${escapeHtml(summary)}</span>`;
+            const summary = active.map(d => `${d.endpoint_name} (×${d.instance_count != null ? d.instance_count : 1})`).join(', ');
+            let badgeText = `${active.length} active / ${total} total — <span style="font-weight:normal;">${escapeHtml(summary)}</span>`;
+            if (scaledToZero.length > 0) {
+                badgeText += ` <span style="font-weight:normal; color:#ffd; opacity:0.85;">(${scaledToZero.length} scaled to 0)</span>`;
+            }
+            badge.innerHTML = badgeText;
             badge.style.background = '#1e8449';
+        } else if (scaledToZero.length > 0) {
+            badge.textContent = `0 active / ${total} total — ${scaledToZero.length} scaled to 0`;
+            badge.style.background = '#888';
         } else {
             badge.textContent = `0 active / ${total} total`;
             badge.style.background = '#888';
@@ -229,7 +238,7 @@ function displayDeployments(deployments) {
             <div class="job-header" style="margin-bottom:0.75rem;">
                 <div>
                     <div class="job-id" style="font-size:1rem;">${escapeHtml(d.endpoint_name)}</div>
-                    <span style="font-size:0.75rem; color:#666;">${d.endpoint_type === 'async' ? '⚡ Async' : '🔄 Real-time'} · ${escapeHtml(d.instance_type || 'N/A')} × ${d.instance_count || 1}</span>
+                    <span style="font-size:0.75rem; color:#666;">${d.endpoint_type === 'async' ? '⚡ Async' : '🔄 Real-time'} · ${escapeHtml(d.instance_type || 'N/A')} × ${d.instance_count != null ? d.instance_count : 1}${d.instance_count === 0 ? ' <span style="color:#e67e22; font-weight:600;">— scaled to 0</span>' : ''}</span>
                 </div>
                 <div class="job-status ${statusClass[d.status] || 'status-unknown'}">${escapeHtml(d.status)}</div>
             </div>
@@ -240,18 +249,23 @@ function displayDeployments(deployments) {
                 ${d.failure_reason ? `<strong style="color:#c62828;">Error:</strong> <span style="color:#c62828;">${escapeHtml(d.failure_reason)}</span>` : ''}
             </div>
             <div class="job-actions">
-                ${d.status === 'InService' && d.endpoint_type === 'async' ? `
+                ${d.status === 'InService' && d.endpoint_type === 'async' && (d.instance_count == null || d.instance_count > 0) ? `
                 <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeHtml(d.endpoint_name)}', 0)" title="Scale to 0 instances (stop billing)">
                     <i class="fas fa-power-off"></i> Scale to 0
                 </button>
                 ` : ''}
-                ${d.status === 'InService' && (d.instance_count || 1) > 1 ? `
-                <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeHtml(d.endpoint_name)}', ${(d.instance_count || 1) - 1})" title="Remove one instance">
+                ${d.status === 'InService' && d.instance_count === 0 ? `
+                <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeHtml(d.endpoint_name)}', 1)" title="Scale up to 1 instance" style="color:#1e8449;">
+                    <i class="fas fa-play"></i> Scale up
+                </button>
+                ` : ''}
+                ${d.status === 'InService' && d.instance_count != null && d.instance_count > 1 ? `
+                <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeHtml(d.endpoint_name)}', ${d.instance_count - 1})" title="Remove one instance">
                     <i class="fas fa-minus"></i>
                 </button>
                 ` : ''}
-                ${d.status === 'InService' ? `
-                <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeHtml(d.endpoint_name)}', ${(d.instance_count || 1) + 1})" title="Add one instance">
+                ${d.status === 'InService' && (d.instance_count == null || d.instance_count > 0) ? `
+                <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeHtml(d.endpoint_name)}', ${(d.instance_count != null ? d.instance_count : 1) + 1})" title="Add one instance">
                     <i class="fas fa-plus"></i>
                 </button>
                 ` : ''}
