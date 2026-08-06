@@ -36,20 +36,17 @@ async function loadInferenceEndpoints() {
     const select = document.getElementById('inf-endpoint');
     if (!select) return;
 
-    // Try live AWS endpoint list first (most accurate)
+    // Try live AWS endpoint list first (enriched with task_type from local store)
     try {
         const res = await apiCall('/api/inference/endpoints');
         if (res.endpoints && res.endpoints.length > 0) {
-            // Merge with local data for task_type and output_s3_uri
-            let localData = {};
-            try {
-                const dep = await apiCall('/api/deployment/deployments?local_only=true');
-                (dep.deployments || []).forEach(d => { localData[d.endpoint_name] = d; });
-            } catch (_) {}
-
             select.innerHTML = res.endpoints.map(e => {
-                const local = localData[e.name] || {};
-                return `<option value="${escapeHtml(e.name)}" data-type="${escapeHtml(local.endpoint_type || 'realtime')}" data-output-s3="${escapeHtml(local.output_s3_uri || '')}" data-task="${escapeHtml(local.task_type || 'classification')}">${escapeHtml(e.name)}${local.endpoint_type === 'async' ? ' ⚡' : ''}</option>`;
+                const taskType    = e.task_type     || (e.name.toLowerCase().includes('segment') ? 'segmentation' : 'classification');
+                const epType      = e.endpoint_type || 'realtime';
+                const outputS3    = e.output_s3_uri || '';
+                const asyncLabel  = epType === 'async' ? ' ⚡' : '';
+                const scaledLabel = e.scaled_to_zero ? ' ⚠️ scaled to 0' : '';
+                return `<option value="${escapeHtml(e.name)}" data-type="${escapeHtml(epType)}" data-output-s3="${escapeHtml(outputS3)}" data-task="${escapeHtml(taskType)}" data-scaled="${e.scaled_to_zero ? '1' : '0'}">${escapeHtml(e.name)}${asyncLabel}${scaledLabel}</option>`;
             }).join('');
             onInfEndpointChange();
             return;
@@ -63,9 +60,12 @@ async function loadInferenceEndpoints() {
         const dep = await apiCall('/api/deployment/deployments?local_only=true');
         const active = (dep.deployments || []).filter(d => d.status === 'InService');
         if (active.length > 0) {
-            select.innerHTML = active.map(d =>
-                `<option value="${escapeHtml(d.endpoint_name)}" data-type="${escapeHtml(d.endpoint_type || 'realtime')}" data-output-s3="${escapeHtml(d.output_s3_uri || '')}" data-task="${escapeHtml(d.task_type || 'classification')}">${escapeHtml(d.endpoint_name)}${d.endpoint_type === 'async' ? ' ⚡' : ''}</option>`
-            ).join('');
+            select.innerHTML = active.map(d => {
+                const taskType   = d.task_type     || (d.endpoint_name.toLowerCase().includes('segment') ? 'segmentation' : 'classification');
+                const epType     = d.endpoint_type || 'realtime';
+                const asyncLabel = epType === 'async' ? ' ⚡' : '';
+                return `<option value="${escapeHtml(d.endpoint_name)}" data-type="${escapeHtml(epType)}" data-output-s3="${escapeHtml(d.output_s3_uri || '')}" data-task="${escapeHtml(taskType)}">${escapeHtml(d.endpoint_name)}${asyncLabel}</option>`;
+            }).join('');
             onInfEndpointChange();
             return;
         }
@@ -85,6 +85,19 @@ function onInfEndpointChange() {
     const endpointType = selected.dataset.type || 'realtime';
     const outputS3 = selected.dataset.outputS3 || '';
     const taskType = selected.dataset.task || 'classification';
+    const scaledToZero = selected.dataset.scaled === '1';
+
+    // Warn if endpoint is scaled to zero
+    const banner = document.getElementById('inf-status-banner');
+    if (banner) {
+        if (scaledToZero) {
+            banner.className = 'sm-status-banner sm-status-failed';
+            banner.innerHTML = '<i class="fas fa-exclamation-triangle"></i> This endpoint is scaled to 0 instances. Go to the Deploy tab to scale it up before invoking.';
+            banner.style.display = 'flex';
+        } else {
+            banner.style.display = 'none';
+        }
+    }
 
     // Auto-fill output S3 URI from deployment config for async endpoints
     if (endpointType === 'async' && outputS3) {
