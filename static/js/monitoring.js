@@ -188,8 +188,9 @@ async function loadMonitorEndpoints() {
         const dep    = await apiCall('/api/deployment/deployments?local_only=true');
         const active = (dep.deployments || []).filter(d => d.status === 'InService');
         select.innerHTML = active.length
-            ? active.map(d => `<option value="${escapeHtml(d.endpoint_name)}" data-capture="${escapeHtml(d.capture_s3_uri || '')}">${escapeHtml(d.endpoint_name)}${d.data_capture_enabled ? ' 📡' : ''}</option>`).join('')
+            ? active.map(d => `<option value="${escapeHtml(d.endpoint_name)}" data-capture="${escapeHtml(d.capture_s3_uri || '')}" data-type="${escapeHtml(d.endpoint_type || 'realtime')}">${escapeHtml(d.endpoint_name)}${d.data_capture_enabled ? ' 📡' : ''}${d.endpoint_type === 'async' ? ' ⚡' : ''}</option>`).join('')
             : '<option value="" disabled selected>No InService endpoints</option>';
+        select.addEventListener('change', onDcEndpointChange);
 
         // Auto-fill capture viewer if any endpoint has capture enabled
         const withCapture = active.find(d => d.data_capture_enabled && d.capture_s3_uri);
@@ -246,6 +247,25 @@ function onCvEndpointSelect() {
 }
 
 // ── Data Capture ──────────────────────────────────────────────────────────────
+
+function onDcEndpointChange() {
+    const select = document.getElementById('dc-endpoint');
+    const banner = document.getElementById('dc-status-banner');
+    const btn    = document.querySelector('#data-capture-form button[type="submit"]');
+    if (!select) return;
+
+    const selected = select.options[select.selectedIndex];
+    const isAsync  = selected?.dataset?.type === 'async';
+
+    if (isAsync) {
+        if (btn) btn.disabled = true;
+        showMonitorBanner(banner, 'error',
+            '<i class="fas fa-exclamation-triangle"></i> Data capture is not available for async endpoints — SageMaker does not support DataCaptureConfig with AsyncInferenceConfig.');
+    } else {
+        if (btn) btn.disabled = false;
+        if (banner) banner.style.display = 'none';
+    }
+}
 
 async function enableDataCapture(e) {
     e.preventDefault();
