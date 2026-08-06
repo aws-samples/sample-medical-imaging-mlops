@@ -781,14 +781,15 @@
                             <div class="form-group">
                                 <label for="inf-output-pattern">Output Filename Pattern</label>
                                 <input type="text" id="inf-output-pattern" name="output_pattern"
-                                    placeholder="{patient_id}_segmentation.nii.gz" value="{patient_id}_segmentation.nii.gz">
+                                    placeholder="{patient_id}_classification.json" value="{patient_id}_classification.json">
                                 <small style="color:var(--aws-dark-gray)">
-                                    Placeholders (given input <code>s3://bucket/test/10090344/img.nii.gz</code>):<br>
+                                    Auto-set when endpoint is selected. Placeholders (given input <code>s3://bucket/test/10090344/img.nii.gz</code>):<br>
                                     <code>{patient_id}</code> → <em>10090344</em> ·
                                     <code>{filename}</code> → <em>img</em> ·
                                     <code>{endpoint_name}</code> → <em>segmentation</em> ·
                                     <code>{model_name}</code> → <em>SegResNet</em> ·
-                                    <code>{timestamp}</code> → <em>20260731-170000</em>
+                                    <code>{timestamp}</code> → <em>20260731-170000</em><br>
+                                    Classification: <code>{patient_id}_classification.json</code> · Segmentation: <code>{patient_id}_segmentation.nii.gz</code>
                                 </small>
                             </div>
                         </div>

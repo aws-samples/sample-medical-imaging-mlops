@@ -84,11 +84,27 @@ function onInfEndpointChange() {
 
     const endpointType = selected.dataset.type || 'realtime';
     const outputS3 = selected.dataset.outputS3 || '';
+    const taskType = selected.dataset.task || 'classification';
 
     // Auto-fill output S3 URI from deployment config for async endpoints
     if (endpointType === 'async' && outputS3) {
         outputField.value = outputS3;
         outputField.parentElement.querySelector('small').textContent = 'Auto-filled from deployment config (async endpoint)';
+    }
+
+    // Auto-set output filename pattern based on task type
+    const patternInput = document.getElementById('inf-output-pattern');
+    if (patternInput) {
+        const knownDefaults = [
+            '{patient_id}_segmentation.nii.gz',
+            '{patient_id}_classification.json',
+        ];
+        const current = patternInput.value.trim();
+        if (!current || knownDefaults.includes(current)) {
+            patternInput.value = taskType === 'segmentation'
+                ? '{patient_id}_segmentation.nii.gz'
+                : '{patient_id}_classification.json';
+        }
     }
 }
 
