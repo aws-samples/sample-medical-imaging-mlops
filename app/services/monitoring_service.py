@@ -175,6 +175,10 @@ class MonitoringService:
         config_name = ep["EndpointConfigName"]
         config = sagemaker_client.describe_endpoint_config(EndpointConfigName=config_name)
 
+        # Data capture is not supported on async endpoints
+        if config.get("AsyncInferenceConfig"):
+            raise ValueError("Data capture is not supported on async endpoints. SageMaker does not allow DataCaptureConfig with AsyncInferenceConfig.")
+
         new_config_name = f"{endpoint_name}-dc-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
 
         # Strip read-only fields from ProductionVariants before reusing

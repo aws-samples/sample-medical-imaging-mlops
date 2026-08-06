@@ -128,6 +128,9 @@ class DeploymentService:
 
     def _create_async_endpoint(self, config: dict, sagemaker_session, role_arn: str) -> dict:
         """Deploy a SageMaker async inference endpoint."""
+        if config.get("enable_data_capture"):
+            raise ValueError("Data capture is not supported on async endpoints. Use a real-time endpoint for data capture.")
+
         sagemaker_client = sagemaker_session.boto_session.client("sagemaker")
         endpoint_name   = config["endpoint_name"]
         model_artifacts = config["model_artifacts"]
