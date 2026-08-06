@@ -122,15 +122,18 @@ function toggleAsyncFields() {
 
     // Data capture is not supported on async endpoints
     const captureCheckbox = document.getElementById('dep-capture');
+    const asyncNote = document.getElementById('dep-capture-async-note');
     if (captureCheckbox) {
         if (isAsync) {
             captureCheckbox.checked = false;
             captureCheckbox.disabled = true;
             captureCheckbox.closest('.checkbox-label').title = 'Data capture is not supported on async endpoints';
+            if (asyncNote) asyncNote.style.display = 'block';
             toggleCaptureFields();
         } else {
             captureCheckbox.disabled = false;
             captureCheckbox.closest('.checkbox-label').title = '';
+            if (asyncNote) asyncNote.style.display = 'none';
         }
     }
 }

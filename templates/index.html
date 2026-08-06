@@ -676,6 +676,7 @@
                                     <input type="checkbox" id="dep-capture" name="enable_data_capture" onchange="toggleCaptureFields()">
                                     <strong>Enable Data Capture</strong>
                                     <small style="color:var(--aws-dark-gray); display:block; margin-top:2px;">Save inference inputs &amp; outputs to S3 for monitoring</small>
+                                    <small id="dep-capture-async-note" style="color:#c62828; display:none; margin-top:2px;">⚠️ Not available for async endpoints — SageMaker does not support data capture with async inference.</small>
                                 </label>
                             </div>
                         </div>
