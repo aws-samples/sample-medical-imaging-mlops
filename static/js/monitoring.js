@@ -191,6 +191,7 @@ async function loadMonitorEndpoints() {
             ? active.map(d => `<option value="${escapeHtml(d.endpoint_name)}" data-capture="${escapeHtml(d.capture_s3_uri || '')}" data-type="${escapeHtml(d.endpoint_type || 'realtime')}">${escapeHtml(d.endpoint_name)}${d.data_capture_enabled ? ' 📡' : ''}${d.endpoint_type === 'async' ? ' ⚡' : ''}</option>`).join('')
             : '<option value="" disabled selected>No InService endpoints</option>';
         select.addEventListener('change', onDcEndpointChange);
+        onDcEndpointChange(); // Apply async check for initially selected endpoint
 
         // Auto-fill capture viewer if any endpoint has capture enabled
         const withCapture = active.find(d => d.data_capture_enabled && d.capture_s3_uri);
@@ -258,11 +259,11 @@ function onDcEndpointChange() {
     const isAsync  = selected?.dataset?.type === 'async';
 
     if (isAsync) {
-        if (btn) btn.disabled = true;
+        if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; btn.style.cursor = 'not-allowed'; }
         showMonitorBanner(banner, 'error',
             '<i class="fas fa-exclamation-triangle"></i> Data capture is not available for async endpoints — SageMaker does not support DataCaptureConfig with AsyncInferenceConfig.');
     } else {
-        if (btn) btn.disabled = false;
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.style.cursor = ''; }
         if (banner) banner.style.display = 'none';
     }
 }
