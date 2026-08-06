@@ -205,7 +205,9 @@ Builds and pushes 4 Docker images to ECR:
 
 ## Documentation
 
-Comprehensive documentation is available in the [`docs/`](docs/) directory:
+📖 **Official docs: [aws-samples.github.io/sample-medical-imaging-mlops](https://aws-samples.github.io/sample-medical-imaging-mlops/)**
+
+Comprehensive documentation is also available in the [`docs/`](docs/) directory:
 
 - **[Getting Started](docs/getting-started.md)** — Setup, prerequisites, and first training job
 - **[Configuration](docs/configuration.md)** — Environment variables, AWS setup, and customization
