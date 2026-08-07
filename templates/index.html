@@ -154,7 +154,7 @@
             {% for group in roadmap %}
             <div class="todo-group"{% if loop.last %} style="border-bottom:none;"{% endif %}>
                 <div class="todo-group-label"><i class="{{ group.icon }}" style="color:{{ group.color }};"></i> {{ group.section }}</div>
-                {% for item in group.items %}
+                {% for item in group.todos %}
                 <div class="todo-item todo-{{ item.priority | lower }}"{% if loop.last %} style="border-bottom:none;"{% endif %}>
                     <span class="todo-badge{% if item.priority != 'P1' %} todo-badge-{{ item.priority | lower }}{% endif %}">{{ item.priority }}</span>
                     <div>

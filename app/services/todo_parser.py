@@ -23,7 +23,7 @@ def parse_todo() -> List[Dict]:
 
     Returns a list of dicts:
         [{"section": "Training", "icon": "fas fa-brain", "color": "#8e44ad",
-          "items": [{"title": "...", "desc": "...", "priority": "P1"}]}]
+          "todos": [{"title": "...", "desc": "...", "priority": "P1"}]}]
     """
     if not TODO_PATH.exists():
         return []
@@ -73,7 +73,7 @@ def parse_todo() -> List[Dict]:
 
     # Assign default priorities if not specified (first=P1, etc.)
     for group in groups:
-        for i, item in enumerate(group["items"]):
+        for i, item in enumerate(group["todos"]):
             if not item["priority"]:
                 if i == 0:
                     item["priority"] = "P1"
@@ -94,5 +94,5 @@ def _make_group(section_name: str, items: list) -> dict:
         "section": section_name.lstrip("🔧🏋️🚀🔬📊📈⚖️📝🔄 ").strip(),
         "icon": icon,
         "color": color,
-        "items": items,
+        "todos": items,
     }
