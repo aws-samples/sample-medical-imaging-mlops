@@ -1,4 +1,8 @@
 // Fairness / Demographic Analysis
+// Depends on: escapeHtml() defined in main.js (loaded before this file)
+if (typeof escapeHtml !== 'function') {
+    throw new Error('escapeHtml() is required but not defined. Ensure main.js is loaded before fairness.js.');
+}
 
 const FAIRNESS_COLORS = [
     '#4B9CD3', '#FF9900', '#16A085', '#E74C3C',

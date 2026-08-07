@@ -1,4 +1,8 @@
 // Inference JavaScript
+// Depends on: escapeHtml() defined in main.js (loaded before this file)
+if (typeof escapeHtml !== 'function') {
+    throw new Error('escapeHtml() is required but not defined. Ensure main.js is loaded before inference.js.');
+}
 
 registerTabInit('inference', function () {
     loadInferenceEndpoints();

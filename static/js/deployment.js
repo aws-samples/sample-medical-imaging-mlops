@@ -1,4 +1,8 @@
 // Deployment JavaScript
+// Depends on: escapeHtml() defined in main.js (loaded before this file)
+if (typeof escapeHtml !== 'function') {
+    throw new Error('escapeHtml() is required but not defined. Ensure main.js is loaded before deployment.js.');
+}
 
 const INFERENCE_IMAGE_TEMPLATE = 'YOUR_ACCOUNT_ID.dkr.ecr.{region}.amazonaws.com/sm-inference-byoc-classification:latest';
 
