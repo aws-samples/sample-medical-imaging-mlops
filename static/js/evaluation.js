@@ -389,24 +389,27 @@ async function loadEvalPlots(jobName) {
             'dice_distribution.png':  'Dice Score Distribution',
         };
 
-        grid.innerHTML = Object.entries(plots).map(([fname, url]) => `
+        grid.innerHTML = Object.entries(plots).map(([fname, url]) => {
+            // Validate URL scheme to prevent javascript: URI injection
+            const safeUrl = (url && (url.startsWith('/') || url.startsWith('http://') || url.startsWith('https://'))) ? url : '';
+            return `
             <div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; overflow:hidden;">
                 <div style="padding:0.6rem 1rem; background:#f9f9f9; border-bottom:1px solid #e0e0e0; font-weight:600; font-size:0.9rem;">
                     ${escapeHtml(labels[fname] || fname)}
                 </div>
                 <div style="padding:1rem; text-align:center;">
-                    <img src="${url}" alt="${escapeHtml(fname)}"
+                    <img src="${escapeHtml(safeUrl)}" alt="${escapeHtml(fname)}"
                          style="max-width:100%; height:auto; border-radius:4px; cursor:pointer;"
-                         onclick="openPlotLightbox('${url}', '${escapeHtml(labels[fname] || fname)}')"
+                         onclick="openPlotLightbox('${escapeHtml(safeUrl)}', '${escapeHtml(labels[fname] || fname)}')"
                          onerror="this.parentElement.innerHTML='<p style=color:#c62828>Image file missing from local cache — try re-downloading</p>'">
                 </div>
                 <div style="padding:0.4rem 1rem 0.75rem; text-align:right;">
-                    <a href="${url}" target="_blank" class="btn btn-secondary" style="font-size:0.8rem; padding:0.3rem 0.75rem;">
+                    <a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="font-size:0.8rem; padding:0.3rem 0.75rem;">
                         <i class="fas fa-external-link-alt"></i> Open full size
                     </a>
                 </div>
             </div>
-        `).join('');
+        `}).join('');
     } catch (err) {
         grid.innerHTML = `<p style="color:#c62828;">Error loading plots: ${escapeHtml(err.message)}</p>`;
     }
