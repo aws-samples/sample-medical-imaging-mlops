@@ -1,0 +1,74 @@
+site_name: MedAnvil Documentation
+site_description: "Train, deploy, and monitor medical imaging AI — from your browser."
+site_url: https://aws-samples.github.io/sample-medical-imaging-mlops/
+repo_url: https://github.com/aws-samples/sample-medical-imaging-mlops
+repo_name: aws-samples/sample-medical-imaging-mlops
+
+theme:
+  name: material
+  icon:
+    logo: material/medical-bag
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+  palette:
+    - scheme: default
+      primary: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation & Setup: getting-started.md
+      - Configuration: configuration.md
+  - User Guide:
+      - Overview: user-guide/index.md
+      - Training: user-guide/training.md
+      - Deployment: user-guide/deployment.md
+      - Inference: user-guide/inference.md
+      - Evaluation: user-guide/evaluation.md
+      - Monitoring: user-guide/monitoring.md
+      - Fairness Analysis: user-guide/fairness.md
+      - Report Generation: user-guide/report-generation.md
+  - Reference:
+      - API Reference: api-reference.md
+      - Custom Model Workflow: custom-model-workflow.md
+      - Deployment Guide: deployment-guide.md
+  - Development: development.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/aws-samples/sample-medical-imaging-mlops
+
+copyright: Copyright &copy; 2024-2026 MedAnvil Team
