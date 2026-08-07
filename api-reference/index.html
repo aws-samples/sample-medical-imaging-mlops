@@ -1,0 +1,3663 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Train, deploy, and monitor medical imaging AI — from your browser.">
+      
+      
+      
+        <link rel="canonical" href="https://aws-samples.github.io/sample-medical-imaging-mlops/api-reference/">
+      
+      
+        <link rel="prev" href="../user-guide/report-generation/">
+      
+      
+        <link rel="next" href="../custom-model-workflow/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>API Reference - MedAnvil Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#api-reference" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="MedAnvil Documentation" class="md-header__button md-logo" aria-label="MedAnvil Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 3 8 5v2H5C3.85 7 3.12 8 3 9L2 19c-.12 1 .54 2 2 2h16c1.46 0 2.12-1 2-2L21 9c-.12-1-.94-2-2-2h-3V5l-2-2zm0 2h4v2h-4zm1 5h2v3h3v2h-3v3h-2v-3H8v-2h3z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            MedAnvil Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              API Reference
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="blue" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/aws-samples/sample-medical-imaging-mlops" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    aws-samples/sample-medical-imaging-mlops
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../getting-started/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../user-guide/" class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../development/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="MedAnvil Documentation" class="md-nav__button md-logo" aria-label="MedAnvil Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 3 8 5v2H5C3.85 7 3.12 8 3 9L2 19c-.12 1 .54 2 2 2h16c1.46 0 2.12-1 2-2L21 9c-.12-1-.94-2-2-2h-3V5l-2-2zm0 2h4v2h-4zm1 5h2v3h3v2h-3v3h-2v-3H8v-2h3z"/></svg>
+
+    </a>
+    MedAnvil Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/aws-samples/sample-medical-imaging-mlops" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    aws-samples/sample-medical-imaging-mlops
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation & Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/training/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Training
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/inference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/evaluation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Evaluation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monitoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/fairness/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fairness Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/report-generation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Report Generation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#get-apiconfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/config
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#get-health" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /health
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#apiaws-aws-credentials-s3-browsing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /api/aws — AWS Credentials &amp; S3 Browsing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="/api/aws — AWS Credentials &amp; S3 Browsing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-apiawsstatus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/aws/status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apiawsconfigure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/aws/configure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apiawsbuckets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/aws/buckets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apiawsbucketsbucket_nameobjects" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/aws/buckets/{bucket_name}/objects
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#apitraining-models-training-jobs-sagemaker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /api/training — Models, Training Jobs, SageMaker
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="/api/training — Models, Training Jobs, SageMaker">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-apitrainingmodels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/training/models
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apitrainingmodelsupload-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/training/models/upload-code
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apitrainingmodelsimport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/training/models/import
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apitrainingmodelsimported" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/training/models/imported
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apitrainingmodelsimportedmodel_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/training/models/imported/{model_id}
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apitrainingstart" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/training/start
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apitrainingjobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/training/jobs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apitrainingjobsjob_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/training/jobs/{job_id}
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apitrainingjobsjob_idmetrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/training/jobs/{job_id}/metrics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apitrainingjobsjob_idstop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/training/jobs/{job_id}/stop
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apitrainingsagemakervalidate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/training/sagemaker/validate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apitrainingsagemakerstart" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/training/sagemaker/start
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apitrainingsagemakerjobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/training/sagemaker/jobs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apitrainingsagemakerjobsjob_namestatus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/training/sagemaker/jobs/{job_name}/status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apitrainingsagemakerjobsjob_namestop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/training/sagemaker/jobs/{job_name}/stop
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apitrainingsagemakerjobsjob_nameresult" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/training/sagemaker/jobs/{job_name}/result
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete-apitrainingsagemakerjobsjob_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DELETE /api/training/sagemaker/jobs/{job_name}
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apitrainingsagemakerjobsjob_namearchive" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/training/sagemaker/jobs/{job_name}/archive
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apitrainingsagemakerjobsjob_namecomment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/training/sagemaker/jobs/{job_name}/comment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete-apitrainingsagemakerjobsjob_nameartifacts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DELETE /api/training/sagemaker/jobs/{job_name}/artifacts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apitrainingsagemakerfinetune" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/training/sagemaker/finetune
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apitrainingsagemakermlflow-url" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/training/sagemaker/mlflow-url
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apitrainingsagemakersync" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/training/sagemaker/sync
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#apideployment-sagemaker-endpoint-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /api/deployment — SageMaker Endpoint Deployment
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="/api/deployment — SageMaker Endpoint Deployment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#post-apideploymentdeploy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/deployment/deploy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apideploymentdeployments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/deployment/deployments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apideploymentdeploymentsendpoint_namestatus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/deployment/deployments/{endpoint_name}/status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete-apideploymentdeploymentsendpoint_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DELETE /api/deployment/deployments/{endpoint_name}
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apideploymentinvoke-async" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/deployment/invoke-async
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apideploymentsync" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/deployment/sync
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#apiinference-real-time-endpoint-invocation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /api/inference — Real-time Endpoint Invocation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="/api/inference — Real-time Endpoint Invocation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#post-apiinferenceinvoke" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/inference/invoke
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apiinferenceinvoke-local" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/inference/invoke-local
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apiinferenceendpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/inference/endpoints
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#apievaluation-endpoint-evaluation-via-processing-jobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /api/evaluation — Endpoint Evaluation via Processing Jobs
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="/api/evaluation — Endpoint Evaluation via Processing Jobs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#post-apievaluationsubmit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/evaluation/submit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apievaluationjobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/evaluation/jobs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apievaluationjobsjob_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/evaluation/jobs/{job_name}
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete-apievaluationjobsjob_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DELETE /api/evaluation/jobs/{job_name}
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apievaluationjobsjob_namedownload-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/evaluation/jobs/{job_name}/download-results
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apievaluationjobsjob_nameplots" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/evaluation/jobs/{job_name}/plots
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apievaluationjobsjob_namesubgroup-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/evaluation/jobs/{job_name}/subgroup-metrics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apievaluationsync" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/evaluation/sync
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#apimonitoring-sagemaker-model-monitor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /api/monitoring — SageMaker Model Monitor
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="/api/monitoring — SageMaker Model Monitor">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-apimonitoringcapture-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/monitoring/capture-summary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apimonitoringdata-capture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/monitoring/data-capture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apimonitoringbaselinedata-quality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/monitoring/baseline/data-quality
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apimonitoringschedulesdata-quality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/monitoring/schedules/data-quality
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apimonitoringschedulesmodel-quality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/monitoring/schedules/model-quality
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apimonitoringschedules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/monitoring/schedules
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apimonitoringbaselines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/monitoring/baselines
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apimonitoringschedulesschedule_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/monitoring/schedules/{schedule_name}
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete-apimonitoringschedulesschedule_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DELETE /api/monitoring/schedules/{schedule_name}
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete-apimonitoringbaselinesjob_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DELETE /api/monitoring/baselines/{job_name}
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#apifairness-demographic-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /api/fairness — Demographic Analysis
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="/api/fairness — Demographic Analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#post-apifairnessscan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/fairness/scan
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#apireport-paper-report-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /api/report — Paper / Report Generation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="/api/report — Paper / Report Generation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-apireportjobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/report/jobs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apireportgenerate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/report/generate
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../custom-model-workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom Model Workflow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#get-apiconfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/config
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#get-health" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /health
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#apiaws-aws-credentials-s3-browsing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /api/aws — AWS Credentials &amp; S3 Browsing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="/api/aws — AWS Credentials &amp; S3 Browsing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-apiawsstatus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/aws/status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apiawsconfigure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/aws/configure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apiawsbuckets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/aws/buckets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apiawsbucketsbucket_nameobjects" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/aws/buckets/{bucket_name}/objects
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#apitraining-models-training-jobs-sagemaker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /api/training — Models, Training Jobs, SageMaker
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="/api/training — Models, Training Jobs, SageMaker">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-apitrainingmodels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/training/models
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apitrainingmodelsupload-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/training/models/upload-code
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apitrainingmodelsimport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/training/models/import
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apitrainingmodelsimported" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/training/models/imported
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apitrainingmodelsimportedmodel_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/training/models/imported/{model_id}
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apitrainingstart" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/training/start
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apitrainingjobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/training/jobs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apitrainingjobsjob_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/training/jobs/{job_id}
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apitrainingjobsjob_idmetrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/training/jobs/{job_id}/metrics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apitrainingjobsjob_idstop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/training/jobs/{job_id}/stop
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apitrainingsagemakervalidate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/training/sagemaker/validate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apitrainingsagemakerstart" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/training/sagemaker/start
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apitrainingsagemakerjobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/training/sagemaker/jobs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apitrainingsagemakerjobsjob_namestatus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/training/sagemaker/jobs/{job_name}/status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apitrainingsagemakerjobsjob_namestop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/training/sagemaker/jobs/{job_name}/stop
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apitrainingsagemakerjobsjob_nameresult" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/training/sagemaker/jobs/{job_name}/result
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete-apitrainingsagemakerjobsjob_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DELETE /api/training/sagemaker/jobs/{job_name}
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apitrainingsagemakerjobsjob_namearchive" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/training/sagemaker/jobs/{job_name}/archive
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apitrainingsagemakerjobsjob_namecomment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/training/sagemaker/jobs/{job_name}/comment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete-apitrainingsagemakerjobsjob_nameartifacts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DELETE /api/training/sagemaker/jobs/{job_name}/artifacts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apitrainingsagemakerfinetune" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/training/sagemaker/finetune
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apitrainingsagemakermlflow-url" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/training/sagemaker/mlflow-url
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apitrainingsagemakersync" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/training/sagemaker/sync
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#apideployment-sagemaker-endpoint-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /api/deployment — SageMaker Endpoint Deployment
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="/api/deployment — SageMaker Endpoint Deployment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#post-apideploymentdeploy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/deployment/deploy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apideploymentdeployments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/deployment/deployments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apideploymentdeploymentsendpoint_namestatus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/deployment/deployments/{endpoint_name}/status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete-apideploymentdeploymentsendpoint_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DELETE /api/deployment/deployments/{endpoint_name}
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apideploymentinvoke-async" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/deployment/invoke-async
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apideploymentsync" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/deployment/sync
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#apiinference-real-time-endpoint-invocation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /api/inference — Real-time Endpoint Invocation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="/api/inference — Real-time Endpoint Invocation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#post-apiinferenceinvoke" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/inference/invoke
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apiinferenceinvoke-local" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/inference/invoke-local
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apiinferenceendpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/inference/endpoints
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#apievaluation-endpoint-evaluation-via-processing-jobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /api/evaluation — Endpoint Evaluation via Processing Jobs
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="/api/evaluation — Endpoint Evaluation via Processing Jobs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#post-apievaluationsubmit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/evaluation/submit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apievaluationjobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/evaluation/jobs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apievaluationjobsjob_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/evaluation/jobs/{job_name}
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete-apievaluationjobsjob_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DELETE /api/evaluation/jobs/{job_name}
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apievaluationjobsjob_namedownload-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/evaluation/jobs/{job_name}/download-results
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apievaluationjobsjob_nameplots" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/evaluation/jobs/{job_name}/plots
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apievaluationjobsjob_namesubgroup-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/evaluation/jobs/{job_name}/subgroup-metrics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apievaluationsync" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/evaluation/sync
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#apimonitoring-sagemaker-model-monitor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /api/monitoring — SageMaker Model Monitor
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="/api/monitoring — SageMaker Model Monitor">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-apimonitoringcapture-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/monitoring/capture-summary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apimonitoringdata-capture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/monitoring/data-capture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apimonitoringbaselinedata-quality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/monitoring/baseline/data-quality
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apimonitoringschedulesdata-quality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/monitoring/schedules/data-quality
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apimonitoringschedulesmodel-quality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/monitoring/schedules/model-quality
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apimonitoringschedules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/monitoring/schedules
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apimonitoringbaselines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/monitoring/baselines
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-apimonitoringschedulesschedule_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/monitoring/schedules/{schedule_name}
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete-apimonitoringschedulesschedule_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DELETE /api/monitoring/schedules/{schedule_name}
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete-apimonitoringbaselinesjob_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DELETE /api/monitoring/baselines/{job_name}
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#apifairness-demographic-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /api/fairness — Demographic Analysis
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="/api/fairness — Demographic Analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#post-apifairnessscan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/fairness/scan
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#apireport-paper-report-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /api/report — Paper / Report Generation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="/api/report — Paper / Report Generation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-apireportjobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/report/jobs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-apireportgenerate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /api/report/generate
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="api-reference">API Reference<a class="headerlink" href="#api-reference" title="Permanent link">&para;</a></h1>
+<p>Base URL: <code>http://localhost:8000</code></p>
+<p>All endpoints return JSON. Errors follow the format:
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="nt">&quot;detail&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Error message describing what went wrong&quot;</span><span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h2 id="get-apiconfig">GET /api/config<a class="headerlink" href="#get-apiconfig" title="Permanent link">&para;</a></h2>
+<p>Runtime configuration (non-secret values from <code>.env.local</code>).</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;aws_account_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;123456789012&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;aws_region&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;us-east-1&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;sagemaker_role_arn&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:iam::123456789012:role/SageMakerRole&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;training_image_classification&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-classification:latest&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;training_image_segmentation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-segmentation:latest&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;inference_image_classification&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;inference_image_segmentation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-segmentation:latest&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;default_data_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://your-bucket/training-data/&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h2 id="get-health">GET /health<a class="headerlink" href="#get-health" title="Permanent link">&para;</a></h2>
+<p>Health check endpoint.</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;healthy&quot;</span><span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h2 id="apiaws-aws-credentials-s3-browsing">/api/aws — AWS Credentials &amp; S3 Browsing<a class="headerlink" href="#apiaws-aws-credentials-s3-browsing" title="Permanent link">&para;</a></h2>
+<h3 id="get-apiawsstatus">GET /api/aws/status<a class="headerlink" href="#get-apiawsstatus" title="Permanent link">&para;</a></h3>
+<p>Check whether AWS credentials are configured.</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="nt">&quot;configured&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;environment&quot;</span><span class="p">}</span>
+</code></pre></div></p>
+<p><code>source</code> is <code>"environment"</code> if auto-configured from env vars/profiles, or <code>"manual"</code> if set via the <code>/configure</code> endpoint.</p>
+<hr />
+<h3 id="post-apiawsconfigure">POST /api/aws/configure<a class="headerlink" href="#post-apiawsconfigure" title="Permanent link">&para;</a></h3>
+<p>Manually set AWS credentials.</p>
+<p><strong>Request body:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;access_key_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;AKIA...&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;secret_access_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;region&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;us-east-1&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;success&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;AWS credentials configured successfully&quot;</span><span class="p">}</span>
+</code></pre></div></p>
+<p><strong>Errors:</strong> 400 (invalid credentials), 500 (internal error)</p>
+<hr />
+<h3 id="get-apiawsbuckets">GET /api/aws/buckets<a class="headerlink" href="#get-apiawsbuckets" title="Permanent link">&para;</a></h3>
+<p>List all S3 buckets in the account.</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-bucket&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;region&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;us-east-1&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;creation_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-01-15T10:30:00Z&quot;</span><span class="p">}</span>
+<span class="p">]</span>
+</code></pre></div></p>
+<p><strong>Errors:</strong> 400 (credentials not configured), 500 (AWS API error)</p>
+<hr />
+<h3 id="get-apiawsbucketsbucket_nameobjects">GET /api/aws/buckets/{bucket_name}/objects<a class="headerlink" href="#get-apiawsbucketsbucket_nameobjects" title="Permanent link">&para;</a></h3>
+<p>List objects in an S3 bucket.</p>
+<p><strong>Query parameters:</strong>
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| <code>prefix</code> | string | <code>""</code> | S3 key prefix to filter objects |</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;bucket&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-bucket&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;objects&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;data/train/&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;last_modified&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-01-15T10:30:00Z&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;data/train/image1.dcm&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">524288</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;last_modified&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-01-15T10:31:00Z&quot;</span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h2 id="apitraining-models-training-jobs-sagemaker">/api/training — Models, Training Jobs, SageMaker<a class="headerlink" href="#apitraining-models-training-jobs-sagemaker" title="Permanent link">&para;</a></h2>
+<h3 id="get-apitrainingmodels">GET /api/training/models<a class="headerlink" href="#get-apitrainingmodels" title="Permanent link">&para;</a></h3>
+<p>List available model architectures from all task registries (<code>src/classification/model_def.py</code> and <code>src/segmentation/model_def.py</code>).</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;models&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;densenet121&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;DenseNet-121 pretrained on ImageNet&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;7.0M&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;input_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;224x224&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;pretrained&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;task&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;classification&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;dimension&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2D&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;source_dir&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;src/classification&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="post-apitrainingmodelsupload-code">POST /api/training/models/upload-code<a class="headerlink" href="#post-apitrainingmodelsupload-code" title="Permanent link">&para;</a></h3>
+<p>Upload a <code>.zip</code> file containing custom model code.</p>
+<p><strong>Query parameters:</strong>
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| <code>model_name</code> | string | yes | Name for the custom model |</p>
+<p><strong>Request:</strong> <code>multipart/form-data</code> with field <code>file</code> (<code>.zip</code> only)</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;model_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my_custom_model&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;source_dir&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;data/custom_models/my_custom_model&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;files&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;model_def.py&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;train.py&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;requirements.txt&quot;</span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p><strong>Notes:</strong> Rejects absolute paths and <code>..</code> traversal in the archive.</p>
+<hr />
+<h3 id="post-apitrainingmodelsimport">POST /api/training/models/import<a class="headerlink" href="#post-apitrainingmodelsimport" title="Permanent link">&para;</a></h3>
+<p>Import a pre-trained model artifact from S3.</p>
+<p><strong>Request body:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;model_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;spine-classifier-v2&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;s3_bucket&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-bucket&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;s3_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;models/spine_model.pth&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;model_format&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pytorch&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;framework_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2.1.1&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;num_classes&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;model_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;uuid-string&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;model_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;spine-classifier-v2&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;s3_source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://my-bucket/models/spine_model.pth&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;local_path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;data/models/uuid-string/spine_model.pth&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;model_format&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pytorch&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;num_classes&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;imported_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-06-15T10:30:00&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;available&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="get-apitrainingmodelsimported">GET /api/training/models/imported<a class="headerlink" href="#get-apitrainingmodelsimported" title="Permanent link">&para;</a></h3>
+<p>List all imported models.</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code>{&quot;models&quot;: [...]}
+</code></pre></div></p>
+<hr />
+<h3 id="get-apitrainingmodelsimportedmodel_id">GET /api/training/models/imported/{model_id}<a class="headerlink" href="#get-apitrainingmodelsimportedmodel_id" title="Permanent link">&para;</a></h3>
+<p>Get details of a specific imported model.</p>
+<p><strong>Response:</strong> Single model object or 404.</p>
+<hr />
+<h3 id="post-apitrainingstart">POST /api/training/start<a class="headerlink" href="#post-apitrainingstart" title="Permanent link">&para;</a></h3>
+<p>Start a local training job.</p>
+<p><strong>Query parameters:</strong>
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| <code>dataset_path</code> | string | yes | Path to the training dataset |</p>
+<p><strong>Request body:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;model_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;densenet121&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;epochs&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;batch_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">32</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;learning_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.001</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;optimizer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;adam&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;loss_function&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cross_entropy&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p><code>model_type</code> enum: <code>resnet50</code>, <code>vgg16</code>, <code>efficientnet</code>, <code>DenseNet121</code>, <code>ViT</code>, <code>SegResNet</code>, <code>custom</code></p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;job_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;uuid-string&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pending&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;model_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;densenet121&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;created_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-06-15T10:30:00&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;completed_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;metrics&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="get-apitrainingjobs">GET /api/training/jobs<a class="headerlink" href="#get-apitrainingjobs" title="Permanent link">&para;</a></h3>
+<p>List all local training jobs.</p>
+<p><strong>Response:</strong> Array of <code>TrainingJob</code> objects.</p>
+<hr />
+<h3 id="get-apitrainingjobsjob_id">GET /api/training/jobs/{job_id}<a class="headerlink" href="#get-apitrainingjobsjob_id" title="Permanent link">&para;</a></h3>
+<p>Get a specific local training job.</p>
+<p><strong>Response:</strong> <code>TrainingJob</code> object or 404.</p>
+<hr />
+<h3 id="get-apitrainingjobsjob_idmetrics">GET /api/training/jobs/{job_id}/metrics<a class="headerlink" href="#get-apitrainingjobsjob_idmetrics" title="Permanent link">&para;</a></h3>
+<p>Get training metrics (MLflow/TensorBoard integration).</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;job_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;uuid-string&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;metrics&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;epoch&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;train_loss&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.234</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;val_loss&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.267</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;train_accuracy&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.892</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;val_accuracy&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.876</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;learning_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.001</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;tensorboard_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://localhost:6006/#scalars&amp;run=uuid-string&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;mlflow_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://localhost:5000/#/experiments/1/runs/uuid-string&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="post-apitrainingjobsjob_idstop">POST /api/training/jobs/{job_id}/stop<a class="headerlink" href="#post-apitrainingjobsjob_idstop" title="Permanent link">&para;</a></h3>
+<p>Stop a running local training job.</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="nt">&quot;job_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;uuid-string&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;stopped&quot;</span><span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="post-apitrainingsagemakervalidate">POST /api/training/sagemaker/validate<a class="headerlink" href="#post-apitrainingsagemakervalidate" title="Permanent link">&para;</a></h3>
+<p>Validate data, credentials, IAM role, and image URI before launching a training job.</p>
+<p><strong>Request body:</strong> <code>SageMakerTrainingConfig</code> (same schema as <code>/sagemaker/start</code>)</p>
+<p><strong>Response:</strong> Validation result object with checks for S3 access, role validity, ECR image accessibility, and dataset structure.</p>
+<hr />
+<h3 id="post-apitrainingsagemakerstart">POST /api/training/sagemaker/start<a class="headerlink" href="#post-apitrainingsagemakerstart" title="Permanent link">&para;</a></h3>
+<p>Start a SageMaker BYOC training job.</p>
+<p><strong>Request body:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;job_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-training-2024-06-15&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;model_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;densenet121&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;task_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;classification&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;dimension&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2D&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;epochs&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">20</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;batch_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">16</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;learning_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.001</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;num_classes&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;val_interval&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;instance_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ml.g5.xlarge&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;instance_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;image_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-classification:latest&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;data_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/training-data/&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;role_arn&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:iam::123456789012:role/SageMakerRole&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;source_dir&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;src/classification&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;entry_point&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;train.py&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;mlflow_tracking_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:sagemaker:us-east-1:123456789012:mlflow-tracking-server/my-server&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;output_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/output/&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;job_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-training-2024-06-15&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;InProgress&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SageMaker training job started&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="get-apitrainingsagemakerjobs">GET /api/training/sagemaker/jobs<a class="headerlink" href="#get-apitrainingsagemakerjobs" title="Permanent link">&para;</a></h3>
+<p>List all SageMaker training jobs. Active jobs (<code>InProgress</code>, <code>Stopping</code>) are refreshed from AWS automatically.</p>
+<p><strong>Query parameters:</strong>
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| <code>local_only</code> | bool | <code>false</code> | Skip AWS refresh; return cached state only |</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;jobs&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;job_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-training-2024-06-15&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Completed&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;model_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;densenet121&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;task_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;classification&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;instance_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ml.g5.xlarge&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;model_artifacts&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/output/my-training-2024-06-15/output/model.tar.gz&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;creation_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-06-15T10:30:00Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;training_end_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-06-15T11:15:00Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;billable_seconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2700</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;estimated_cost_usd&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">3.04</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;mlflow_tracking_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:sagemaker:...&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;archived&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;comment&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;artifacts_deleted&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;result&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="get-apitrainingsagemakerjobsjob_namestatus">GET /api/training/sagemaker/jobs/{job_name}/status<a class="headerlink" href="#get-apitrainingsagemakerjobsjob_namestatus" title="Permanent link">&para;</a></h3>
+<p>Get current status of a SageMaker training job from AWS.</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;job_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-training-2024-06-15&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Completed&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;model_artifacts&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://...&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;billable_seconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2700</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;estimated_cost_usd&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">3.04</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;creation_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-06-15T10:30:00Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;training_end_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-06-15T11:15:00Z&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="post-apitrainingsagemakerjobsjob_namestop">POST /api/training/sagemaker/jobs/{job_name}/stop<a class="headerlink" href="#post-apitrainingsagemakerjobsjob_namestop" title="Permanent link">&para;</a></h3>
+<p>Stop a running SageMaker training job.</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="nt">&quot;job_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-training-2024-06-15&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Stopping&quot;</span><span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="get-apitrainingsagemakerjobsjob_nameresult">GET /api/training/sagemaker/jobs/{job_name}/result<a class="headerlink" href="#get-apitrainingsagemakerjobsjob_nameresult" title="Permanent link">&para;</a></h3>
+<p>Fetch <code>result.json</code> from the job's <code>model.tar.gz</code>. Downloads from S3 on first call; cached thereafter.</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;job_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-training-2024-06-15&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;result&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;model_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;densenet121&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;num_classes&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;final_epoch&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">20</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;train_accuracy&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.95</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;val_accuracy&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.91</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;best_val_accuracy&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.92</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;data_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/data/&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;task_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;classification&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;dimension&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2D&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;learning_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.001</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;batch_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">16</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p>If <code>result.json</code> is absent from the archive, a reconstructed result is returned with <code>"reconstructed": true</code> and accuracy fields set to <code>null</code>.</p>
+<hr />
+<h3 id="delete-apitrainingsagemakerjobsjob_name">DELETE /api/training/sagemaker/jobs/{job_name}<a class="headerlink" href="#delete-apitrainingsagemakerjobsjob_name" title="Permanent link">&para;</a></h3>
+<p>Remove a terminal-state job from local tracking. Cannot remove active jobs.</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="nt">&quot;job_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-training-2024-06-15&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;removed&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">}</span>
+</code></pre></div></p>
+<p><strong>Errors:</strong> 404 (not found), 400 (job still active)</p>
+<hr />
+<h3 id="post-apitrainingsagemakerjobsjob_namearchive">POST /api/training/sagemaker/jobs/{job_name}/archive<a class="headerlink" href="#post-apitrainingsagemakerjobsjob_namearchive" title="Permanent link">&para;</a></h3>
+<p>Archive a job (hidden from default list).</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="nt">&quot;job_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-training-2024-06-15&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;archived&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="post-apitrainingsagemakerjobsjob_namecomment">POST /api/training/sagemaker/jobs/{job_name}/comment<a class="headerlink" href="#post-apitrainingsagemakerjobsjob_namecomment" title="Permanent link">&para;</a></h3>
+<p>Add or update a free-text comment on a job.</p>
+<p><strong>Request body:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="nt">&quot;comment&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Best run so far — 92% val accuracy&quot;</span><span class="p">}</span>
+</code></pre></div></p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="nt">&quot;job_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-training-2024-06-15&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;comment&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Best run so far — 92% val accuracy&quot;</span><span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="delete-apitrainingsagemakerjobsjob_nameartifacts">DELETE /api/training/sagemaker/jobs/{job_name}/artifacts<a class="headerlink" href="#delete-apitrainingsagemakerjobsjob_nameartifacts" title="Permanent link">&para;</a></h3>
+<p>Delete <code>model.tar.gz</code> from S3 for a completed job.</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="nt">&quot;job_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-training-2024-06-15&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;deleted_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/output/model.tar.gz&quot;</span><span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="post-apitrainingsagemakerfinetune">POST /api/training/sagemaker/finetune<a class="headerlink" href="#post-apitrainingsagemakerfinetune" title="Permanent link">&para;</a></h3>
+<p>Start a fine-tuning job from a completed job's checkpoint.</p>
+<p><strong>Request body:</strong> Same as <code>/sagemaker/start</code> with these additional fields:
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;checkpoint_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/output/previous-job/output/model.tar.gz&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;fine_tuned_from&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;previous-job-name&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p><code>checkpoint_s3_uri</code> is required for fine-tuning.</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;job_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-finetune-2024-06-16&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;InProgress&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;fine_tuned_from&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;previous-job-name&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Fine-tuning job started&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="get-apitrainingsagemakermlflow-url">GET /api/training/sagemaker/mlflow-url<a class="headerlink" href="#get-apitrainingsagemakermlflow-url" title="Permanent link">&para;</a></h3>
+<p>Resolve a SageMaker MLflow tracking server ARN to a presigned HTTP URL.</p>
+<p><strong>Query parameters:</strong>
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| <code>arn</code> | string | yes | Full ARN or server name |</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="nt">&quot;url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://mlflow-12345.studio.us-east-1.sagemaker.aws/...&quot;</span><span class="p">}</span>
+</code></pre></div></p>
+<p>Presigned URLs expire after 5 minutes. Handles both <code>mlflow-tracking-server/&lt;name&gt;</code> and <code>mlflow-app/&lt;name&gt;</code> (Studio-managed) ARN formats.</p>
+<hr />
+<h3 id="post-apitrainingsagemakersync">POST /api/training/sagemaker/sync<a class="headerlink" href="#post-apitrainingsagemakersync" title="Permanent link">&para;</a></h3>
+<p>Pull up to 100 training jobs from AWS and merge into local store.</p>
+<p><strong>Query parameters:</strong>
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| <code>name_contains</code> | string | none | Filter AWS query by job name substring |</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;added&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;new-job-1&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;new-job-2&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;updated&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;existing-job-1&quot;</span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h2 id="apideployment-sagemaker-endpoint-deployment">/api/deployment — SageMaker Endpoint Deployment<a class="headerlink" href="#apideployment-sagemaker-endpoint-deployment" title="Permanent link">&para;</a></h2>
+<h3 id="post-apideploymentdeploy">POST /api/deployment/deploy<a class="headerlink" href="#post-apideploymentdeploy" title="Permanent link">&para;</a></h3>
+<p>Create a SageMaker endpoint or import/track an existing one.</p>
+<p><strong>Request body:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;endpoint_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-classifier-endpoint&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;model_artifacts&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/output/job/output/model.tar.gz&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;image_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;role_arn&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:iam::123456789012:role/SageMakerRole&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;instance_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ml.m5.xlarge&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;instance_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;inference_script&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;inference.py&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;environment&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span>
+<span class="w">  </span><span class="nt">&quot;async_endpoint&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;output_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;max_concurrent&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;enable_data_capture&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;capture_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;capture_sampling_pct&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Default</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>model_artifacts</code></td>
+<td>—</td>
+<td>Omit to import/track an existing endpoint by name only</td>
+</tr>
+<tr>
+<td><code>image_uri</code></td>
+<td>—</td>
+<td>Required when deploying a new endpoint</td>
+</tr>
+<tr>
+<td><code>role_arn</code></td>
+<td>—</td>
+<td>Required when deploying a new endpoint</td>
+</tr>
+<tr>
+<td><code>async_endpoint</code></td>
+<td><code>false</code></td>
+<td>Set <code>true</code> for async inference; <code>output_s3_uri</code> required</td>
+</tr>
+<tr>
+<td><code>enable_data_capture</code></td>
+<td><code>false</code></td>
+<td>Enable capture at creation time</td>
+</tr>
+<tr>
+<td><code>capture_sampling_pct</code></td>
+<td><code>100</code></td>
+<td>1–100</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response (new endpoint):</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;endpoint_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-classifier-endpoint&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Creating&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;model_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-classifier-endpoint-model&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;endpoint_config_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-classifier-endpoint-config&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p><strong>Response (import existing):</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;endpoint_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-classifier-endpoint&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;InService&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;imported&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="get-apideploymentdeployments">GET /api/deployment/deployments<a class="headerlink" href="#get-apideploymentdeployments" title="Permanent link">&para;</a></h3>
+<p>List all deployments with refreshed status from AWS. <code>Deleted</code> entries are excluded.</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;deployments&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;endpoint_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-classifier-endpoint&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;InService&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;instance_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ml.m5.xlarge&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;model_artifacts&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://...&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;creation_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-06-15T12:00:00Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;invocation_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://runtime.sagemaker.us-east-1.amazonaws.com/endpoints/my-classifier-endpoint/invocations&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="get-apideploymentdeploymentsendpoint_namestatus">GET /api/deployment/deployments/{endpoint_name}/status<a class="headerlink" href="#get-apideploymentdeploymentsendpoint_namestatus" title="Permanent link">&para;</a></h3>
+<p>Get current endpoint status from AWS.</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;endpoint_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-classifier-endpoint&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;InService&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;creation_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-06-15T12:00:00Z&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="delete-apideploymentdeploymentsendpoint_name">DELETE /api/deployment/deployments/{endpoint_name}<a class="headerlink" href="#delete-apideploymentdeploymentsendpoint_name" title="Permanent link">&para;</a></h3>
+<p>Delete an endpoint, its endpoint config, and SageMaker model. The local record is removed regardless of AWS API success.</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="nt">&quot;endpoint_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-classifier-endpoint&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Deleting&quot;</span><span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="post-apideploymentinvoke-async">POST /api/deployment/invoke-async<a class="headerlink" href="#post-apideploymentinvoke-async" title="Permanent link">&para;</a></h3>
+<p>Submit an async inference request to a SageMaker async endpoint.</p>
+<p><strong>Request body:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;endpoint_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-async-endpoint&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;input_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/inputs/request.json&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;output_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/outputs/&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;output_location&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/outputs/uuid.out&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;inference_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;uuid-string&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="post-apideploymentsync">POST /api/deployment/sync<a class="headerlink" href="#post-apideploymentsync" title="Permanent link">&para;</a></h3>
+<p>Pull endpoints from AWS and merge into local store.</p>
+<p><strong>Query parameters:</strong>
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| <code>name_contains</code> | string | none | Filter by endpoint name substring |</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;added&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;new-endpoint-1&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;updated&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;existing-endpoint-1&quot;</span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h2 id="apiinference-real-time-endpoint-invocation">/api/inference — Real-time Endpoint Invocation<a class="headerlink" href="#apiinference-real-time-endpoint-invocation" title="Permanent link">&para;</a></h2>
+<h3 id="post-apiinferenceinvoke">POST /api/inference/invoke<a class="headerlink" href="#post-apiinferenceinvoke" title="Permanent link">&para;</a></h3>
+<p>Invoke a SageMaker real-time endpoint with a JSON payload.</p>
+<p><strong>Request body:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;endpoint_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-classifier-endpoint&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;task_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;classification&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;input_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3_uri&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;input_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/images/scan.dcm&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;output_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/results/&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Values</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>task_type</code></td>
+<td><code>classification</code>, <code>segmentation</code></td>
+<td>Determines response format</td>
+</tr>
+<tr>
+<td><code>input_type</code></td>
+<td><code>s3_uri</code>, <code>file_path</code></td>
+<td>How to send the input to the endpoint</td>
+</tr>
+<tr>
+<td><code>output_s3_uri</code></td>
+<td>—</td>
+<td>Optional; saves raw response to S3</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response (classification):</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;predictions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[[</span><span class="mf">0.1034</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1202</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1366</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0866</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1258</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1408</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1155</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1713</span><span class="p">]],</span>
+<span class="w">  </span><span class="nt">&quot;predicted_class&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">7</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.1713</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;task_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;classification&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;s3_result_path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/results/my-classifier-endpoint-result.json&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p><strong>Response (segmentation):</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;mask_nifti_b64&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;base64-encoded .nii.gz bytes&gt;&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;shape&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">128</span><span class="p">,</span><span class="w"> </span><span class="mi">128</span><span class="p">,</span><span class="w"> </span><span class="mi">64</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;voxels_positive&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">14823</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;voxels_total&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1048576</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;volume_fraction&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0141</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;task_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;segmentation&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="post-apiinferenceinvoke-local">POST /api/inference/invoke-local<a class="headerlink" href="#post-apiinferenceinvoke-local" title="Permanent link">&para;</a></h3>
+<p>Invoke an endpoint with raw file bytes uploaded from the browser.</p>
+<p><strong>Query parameters:</strong>
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| <code>endpoint_name</code> | string | yes | SageMaker endpoint name |
+| <code>task_type</code> | string | no | <code>classification</code> (default) or <code>segmentation</code> |</p>
+<p><strong>Request body:</strong> Raw binary file content (the entire request body is the file).</p>
+<p><strong>Response:</strong> Same format as <code>/invoke</code> based on <code>task_type</code>.</p>
+<hr />
+<h3 id="get-apiinferenceendpoints">GET /api/inference/endpoints<a class="headerlink" href="#get-apiinferenceendpoints" title="Permanent link">&para;</a></h3>
+<p>List all <code>InService</code> SageMaker endpoints.</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;endpoints&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-classifier-endpoint&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;InService&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;created&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-06-15T12:00:00Z&quot;</span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h2 id="apievaluation-endpoint-evaluation-via-processing-jobs">/api/evaluation — Endpoint Evaluation via Processing Jobs<a class="headerlink" href="#apievaluation-endpoint-evaluation-via-processing-jobs" title="Permanent link">&para;</a></h2>
+<h3 id="post-apievaluationsubmit">POST /api/evaluation/submit<a class="headerlink" href="#post-apievaluationsubmit" title="Permanent link">&para;</a></h3>
+<p>Submit a SageMaker Processing Job to evaluate a deployed endpoint against a labeled test set.</p>
+<p><strong>Request body:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;endpoint_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-classifier-endpoint&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;data_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/test-data/&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;output_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/eval-results/my-eval&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;image_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;role_arn&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:iam::123456789012:role/SageMakerRole&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;instance_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ml.m5.xlarge&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;task_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;classification&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p><code>task_type</code>: <code>classification</code> or <code>segmentation</code></p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;job_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eval-my-classifier-20240615-103000&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;InProgress&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;endpoint_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-classifier-endpoint&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;data_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/test-data/&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;output_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/eval-results/my-eval&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;task_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;classification&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;created_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-06-15T10:30:00Z&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="get-apievaluationjobs">GET /api/evaluation/jobs<a class="headerlink" href="#get-apievaluationjobs" title="Permanent link">&para;</a></h3>
+<p>List all evaluation jobs. In-progress jobs are refreshed from AWS.</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code>{&quot;jobs&quot;: [...]}
+</code></pre></div></p>
+<hr />
+<h3 id="get-apievaluationjobsjob_name">GET /api/evaluation/jobs/{job_name}<a class="headerlink" href="#get-apievaluationjobsjob_name" title="Permanent link">&para;</a></h3>
+<p>Get status and metrics for a specific evaluation job.</p>
+<p><strong>Response:</strong> Job record with status, metrics (once completed), and cached result paths.</p>
+<hr />
+<h3 id="delete-apievaluationjobsjob_name">DELETE /api/evaluation/jobs/{job_name}<a class="headerlink" href="#delete-apievaluationjobsjob_name" title="Permanent link">&para;</a></h3>
+<p>Remove a job record and its local cache. Does not delete S3 outputs.</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="nt">&quot;deleted&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eval-my-classifier-20240615-103000&quot;</span><span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="post-apievaluationjobsjob_namedownload-results">POST /api/evaluation/jobs/{job_name}/download-results<a class="headerlink" href="#post-apievaluationjobsjob_namedownload-results" title="Permanent link">&para;</a></h3>
+<p>Download output files from S3 into the local cache.</p>
+<p><strong>Query parameters:</strong>
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| <code>plots_only</code> | bool | <code>false</code> | Download only PNG plots (faster) |</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;cached&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;metrics.json&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/evaluation-results/job-name/metrics.json&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;confusion_matrix.png&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/evaluation-results/job-name/confusion_matrix.png&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;roc_auc.png&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/evaluation-results/job-name/roc_auc.png&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;job_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eval-my-classifier-20240615-103000&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="get-apievaluationjobsjob_nameplots">GET /api/evaluation/jobs/{job_name}/plots<a class="headerlink" href="#get-apievaluationjobsjob_nameplots" title="Permanent link">&para;</a></h3>
+<p>Return local cache URLs for plot files.</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;plots&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;confusion_matrix.png&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/evaluation-results/job-name/confusion_matrix.png&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;roc_auc.png&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/evaluation-results/job-name/roc_auc.png&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;task_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;classification&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;output_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/eval-results/my-eval&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cache&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p>Classification plots: <code>confusion_matrix.png</code>, <code>roc_auc.png</code>, <code>subgroup_accuracy.png</code>
+Segmentation plots: <code>dice_distribution.png</code></p>
+<hr />
+<h3 id="get-apievaluationjobsjob_namesubgroup-metrics">GET /api/evaluation/jobs/{job_name}/subgroup-metrics<a class="headerlink" href="#get-apievaluationjobsjob_namesubgroup-metrics" title="Permanent link">&para;</a></h3>
+<p>Fetch <code>subgroup_metrics.json</code> from the job's S3 output. Available only if the test data contained DICOM files with demographic tags.</p>
+<p><strong>Response:</strong> JSON object with per-subgroup accuracy/metrics breakdowns.</p>
+<p><strong>Errors:</strong> 404 if <code>subgroup_metrics.json</code> not found.</p>
+<hr />
+<h3 id="post-apievaluationsync">POST /api/evaluation/sync<a class="headerlink" href="#post-apievaluationsync" title="Permanent link">&para;</a></h3>
+<p>Pull evaluation processing jobs from AWS and merge into local store.</p>
+<p><strong>Query parameters:</strong>
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| <code>name_contains</code> | string | none | Filter by job name substring |</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;added&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;eval-job-1&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;updated&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;eval-job-2&quot;</span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h2 id="apimonitoring-sagemaker-model-monitor">/api/monitoring — SageMaker Model Monitor<a class="headerlink" href="#apimonitoring-sagemaker-model-monitor" title="Permanent link">&para;</a></h2>
+<h3 id="get-apimonitoringcapture-summary">GET /api/monitoring/capture-summary<a class="headerlink" href="#get-apimonitoringcapture-summary" title="Permanent link">&para;</a></h3>
+<p>Read and aggregate the latest captured traffic for an endpoint.</p>
+<p><strong>Query parameters:</strong>
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| <code>endpoint_name</code> | string | — | Required. Endpoint to analyze |
+| <code>capture_s3_uri</code> | string | — | Required. Root S3 prefix for capture data |
+| <code>max_files</code> | int | <code>20</code> | Maximum <code>.jsonl</code> files to scan |</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;class_distribution&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;class_a&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">45</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;class_b&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">32</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;class_c&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">23</span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;confidence_histogram&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span><span class="w"> </span><span class="mi">18</span><span class="p">,</span><span class="w"> </span><span class="mi">22</span><span class="p">,</span><span class="w"> </span><span class="mi">15</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;avg_confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.847</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;recent_records&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;time&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-06-15T14:30:00Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;predicted_class&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;class_a&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.92</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;probabilities&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;class_a&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.92</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;class_b&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.05</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;class_c&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.03</span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;total_records&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;files_scanned&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p>Returns a zero-record summary with a descriptive message if no capture files are found.</p>
+<hr />
+<h3 id="post-apimonitoringdata-capture">POST /api/monitoring/data-capture<a class="headerlink" href="#post-apimonitoringdata-capture" title="Permanent link">&para;</a></h3>
+<p>Enable or update data capture on an existing SageMaker endpoint.</p>
+<p><strong>Request body:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;endpoint_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-classifier-endpoint&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;capture_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/capture-data/&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;sampling_percentage&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p><code>sampling_percentage</code>: 1–100 (default <code>100</code>).</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;endpoint_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-classifier-endpoint&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Updating&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;capture_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/capture-data/&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p>SageMaker updates the endpoint in-place (status shows <code>Updating</code> for a few minutes).</p>
+<hr />
+<h3 id="post-apimonitoringbaselinedata-quality">POST /api/monitoring/baseline/data-quality<a class="headerlink" href="#post-apimonitoringbaselinedata-quality" title="Permanent link">&para;</a></h3>
+<p>Submit a SageMaker Processing Job to compute data quality baseline statistics and constraints.</p>
+<p><strong>Request body:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;baseline_data_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/baseline-data/&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;output_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/baseline-output/&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;role_arn&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:iam::123456789012:role/SageMakerRole&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;instance_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ml.m5.xlarge&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;job_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;dq-baseline-20240615&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p><code>job_name</code> is optional (auto-generated if omitted).</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;job_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;dq-baseline-20240615&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;InProgress&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;baseline&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;output_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/baseline-output/&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;created_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-06-15T10:30:00Z&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="post-apimonitoringschedulesdata-quality">POST /api/monitoring/schedules/data-quality<a class="headerlink" href="#post-apimonitoringschedulesdata-quality" title="Permanent link">&para;</a></h3>
+<p>Create a data quality monitoring schedule.</p>
+<p><strong>Request body:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;schedule_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-dq-schedule&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;endpoint_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-classifier-endpoint&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;baseline_constraints_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/baseline-output/constraints.json&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;baseline_statistics_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/baseline-output/statistics.json&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;output_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/monitor-output/&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;role_arn&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:iam::123456789012:role/SageMakerRole&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;instance_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ml.m5.xlarge&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;schedule_expression&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cron(0 * ? * * *)&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;schedule_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-dq-schedule&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;endpoint_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-classifier-endpoint&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Scheduled&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;data_quality&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;schedule_expression&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cron(0 * ? * * *)&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;created_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-06-15T10:30:00Z&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="post-apimonitoringschedulesmodel-quality">POST /api/monitoring/schedules/model-quality<a class="headerlink" href="#post-apimonitoringschedulesmodel-quality" title="Permanent link">&para;</a></h3>
+<p>Create a model quality monitoring schedule.</p>
+<p><strong>Request body:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;schedule_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-mq-schedule&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;endpoint_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-classifier-endpoint&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;ground_truth_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/ground-truth/&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;output_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/mq-output/&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;role_arn&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:iam::123456789012:role/SageMakerRole&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;instance_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ml.m5.xlarge&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;schedule_expression&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cron(0 * ? * * *)&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;problem_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;MulticlassClassification&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;inference_attribute&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;predicted_label&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;probability_attribute&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;ground_truth_attribute&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;label&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p><code>problem_type</code>: <code>BinaryClassification</code>, <code>MulticlassClassification</code>, or <code>Regression</code>.</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;schedule_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-mq-schedule&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;endpoint_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-classifier-endpoint&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Scheduled&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;model_quality&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;created_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-06-15T10:30:00Z&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="get-apimonitoringschedules">GET /api/monitoring/schedules<a class="headerlink" href="#get-apimonitoringschedules" title="Permanent link">&para;</a></h3>
+<p>List all monitoring schedules (newest first).</p>
+<p><strong>Query parameters:</strong>
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| <code>local_only</code> | bool | <code>false</code> | Skip AWS refresh |</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code>{&quot;schedules&quot;: [...]}
+</code></pre></div></p>
+<hr />
+<h3 id="get-apimonitoringbaselines">GET /api/monitoring/baselines<a class="headerlink" href="#get-apimonitoringbaselines" title="Permanent link">&para;</a></h3>
+<p>List all baseline jobs.</p>
+<p><strong>Query parameters:</strong>
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| <code>local_only</code> | bool | <code>false</code> | Skip AWS refresh for in-progress baselines |</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code>{&quot;baselines&quot;: [...]}
+</code></pre></div></p>
+<hr />
+<h3 id="get-apimonitoringschedulesschedule_name">GET /api/monitoring/schedules/{schedule_name}<a class="headerlink" href="#get-apimonitoringschedulesschedule_name" title="Permanent link">&para;</a></h3>
+<p>Get status and latest execution summary for a monitoring schedule.</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;schedule_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-dq-schedule&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Scheduled&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;last_execution_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Completed&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;last_execution_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-06-15T14:00:00Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;processing_job_arn&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:sagemaker:...&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;failure_reason&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="delete-apimonitoringschedulesschedule_name">DELETE /api/monitoring/schedules/{schedule_name}<a class="headerlink" href="#delete-apimonitoringschedulesschedule_name" title="Permanent link">&para;</a></h3>
+<p>Stop and delete a monitoring schedule from AWS and remove from local store.</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="nt">&quot;deleted&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-dq-schedule&quot;</span><span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="delete-apimonitoringbaselinesjob_name">DELETE /api/monitoring/baselines/{job_name}<a class="headerlink" href="#delete-apimonitoringbaselinesjob_name" title="Permanent link">&para;</a></h3>
+<p>Remove a baseline job record from local tracking.</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="nt">&quot;deleted&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;dq-baseline-20240615&quot;</span><span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h2 id="apifairness-demographic-analysis">/api/fairness — Demographic Analysis<a class="headerlink" href="#apifairness-demographic-analysis" title="Permanent link">&para;</a></h2>
+<h3 id="post-apifairnessscan">POST /api/fairness/scan<a class="headerlink" href="#post-apifairnessscan" title="Permanent link">&para;</a></h3>
+<p>Scan DICOM files under an S3 prefix and extract demographic distributions for bias auditing.</p>
+<p><strong>Request body:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/dicom-data/&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;max_files&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">200</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;total_found&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">200</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;total_scanned&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">195</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;errors&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;distributions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;PatientSex&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;M&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">98</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;F&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">92</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;Modality&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;CR&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">150</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;DX&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">45</span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;BodyPartExamined&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;SPINE&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">120</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;CHEST&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">75</span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;age_buckets&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;0-17&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;18-29&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">35</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;30-44&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">52</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;45-59&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">48</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;60-74&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">33</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;75+&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">15</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;missing_rates&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;PatientSex&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2.6</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;PatientAge&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">5.1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;EthnicGroup&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">85.0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;PatientRace&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">90.0</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;sample&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;file&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;patient001/image.dcm&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;PatientSex&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;M&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;PatientAge&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;045Y&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Modality&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CR&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p>Extracts: <code>PatientSex</code>, <code>PatientAge</code>, <code>EthnicGroup</code>, <code>PatientRace</code>, <code>Modality</code>, <code>BodyPartExamined</code>. Age strings (<code>045Y</code>, <code>6M</code>, <code>2W</code>) are normalized to integer years and bucketed. Sample is capped at 50 rows.</p>
+<hr />
+<h2 id="apireport-paper-report-generation">/api/report — Paper / Report Generation<a class="headerlink" href="#apireport-paper-report-generation" title="Permanent link">&para;</a></h2>
+<h3 id="get-apireportjobs">GET /api/report/jobs<a class="headerlink" href="#get-apireportjobs" title="Permanent link">&para;</a></h3>
+<p>List completed training and evaluation jobs available for report generation.</p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;training_jobs&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;job_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-training-2024-06-15&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Completed&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;model_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;densenet121&quot;</span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;evaluation_jobs&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;job_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eval-my-classifier-20240615&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Completed&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;endpoint_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my-endpoint&quot;</span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p>Returns only non-archived, <code>Completed</code> training jobs and <code>Completed</code> evaluation jobs.</p>
+<hr />
+<h3 id="post-apireportgenerate">POST /api/report/generate<a class="headerlink" href="#post-apireportgenerate" title="Permanent link">&para;</a></h3>
+<p>Generate structured academic paper sections from selected jobs.</p>
+<p><strong>Request body:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Spine X-ray Classification Using DenseNet-121&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;training_job_names&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;my-training-2024-06-15&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;evaluation_job_names&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;eval-my-classifier-20240615&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;sections&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;abstract&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;methods&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;results&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;discussion&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;include_fairness&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p><strong>Response:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Spine X-ray Classification Using DenseNet-121&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;sections&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;abstract&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;This study presents a deep learning approach...&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;methods&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;We trained a DenseNet-121 model...&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;results&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;The model achieved 92% validation accuracy...&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;discussion&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Our results demonstrate...&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024-2026 MedAnvil Team
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/aws-samples/sample-medical-imaging-mlops" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
