@@ -1,6 +1,14 @@
 """
 Inference script for medical image segmentation on SageMaker.
 
+⚠️ RESEARCH USE ONLY — This inference handler produces AI predictions for
+research and development purposes. Outputs must NOT be used as the sole basis
+for clinical decisions. Clinical deployment requires:
+  - Regulatory clearance (FDA 510(k)/De Novo, CE marking, or equivalent)
+  - Clinical validation studies
+  - Qualified healthcare professional review of all predictions
+  - Fairness and bias evaluation across demographic subgroups
+
 Supports SegResNet and SwinUNETR models trained with MONAI.
 Accepts NIfTI files via S3 URI, local path, or base64-encoded payload.
 Returns segmentation mask as a base64-encoded NIfTI file.
@@ -318,6 +326,7 @@ def predict_fn(input_data: Dict[str, str], model_components: Dict[str, Any]) -> 
             "segmented_voxels": voxel_count,
             "total_voxels": total_voxels,
             "segmentation_percentage": round(seg_percentage, 2),
+            "disclaimer": "Research use only. Not a clinical diagnosis. Requires review by qualified healthcare professionals.",
         }
         if mask_s3_uri:
             result["mask_s3_uri"] = mask_s3_uri
