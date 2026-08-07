@@ -149,123 +149,25 @@
     <div class="card" style="margin-top:1.5rem;">
         <div class="card-header">
             <h3><i class="fas fa-road"></i> Coming Soon</h3>
-            <span style="font-size:0.78rem; color:#888; font-weight:400;">Planned features in priority order</span>
+            <span style="font-size:0.78rem; color:#888; font-weight:400;">Planned features from TODO.md — auto-generated</span>
         </div>
         <div class="card-body" style="padding:0;">
-
-            <div class="todo-group">
-                <div class="todo-group-label"><i class="fas fa-eye" style="color:#8e44ad;"></i> Explainability</div>
-                <div class="todo-item todo-p1">
-                    <span class="todo-badge">P1</span>
+            {% for group in roadmap %}
+            <div class="todo-group"{% if loop.last %} style="border-bottom:none;"{% endif %}>
+                <div class="todo-group-label"><i class="{{ group.icon }}" style="color:{{ group.color }};"></i> {{ group.section }}</div>
+                {% for item in group.items %}
+                <div class="todo-item todo-{{ item.priority | lower }}"{% if loop.last %} style="border-bottom:none;"{% endif %}>
+                    <span class="todo-badge{% if item.priority != 'P1' %} todo-badge-{{ item.priority | lower }}{% endif %}">{{ item.priority }}</span>
                     <div>
-                        <div class="todo-title">Grad-CAM visualization</div>
-                        <div class="todo-desc">Heatmap overlay on DICOM inputs showing which regions drove the prediction. Supports ResNet50, DenseNet121, EfficientNet, ViT with auto target-layer detection.</div>
+                        <div class="todo-title">{{ item.title }}</div>
+                        <div class="todo-desc">{{ item.desc }}</div>
                     </div>
                 </div>
-                <div class="todo-item todo-p2">
-                    <span class="todo-badge todo-badge-p2">P2</span>
-                    <div>
-                        <div class="todo-title">SageMaker Clarify — image explainability</div>
-                        <div class="todo-desc">KernelSHAP super-pixel heatmaps via <code>SageMakerClarifyProcessor</code> at scale. Output: per-image heatmap PNGs in S3.</div>
-                    </div>
-                </div>
-                <div class="todo-item todo-p3">
-                    <span class="todo-badge todo-badge-p3">P3</span>
-                    <div>
-                        <div class="todo-title">Grad-CAM via SageMaker Processing Job</div>
-                        <div class="todo-desc">Run Grad-CAM at scale on a full test set using the inference container; save overlays to S3.</div>
-                    </div>
-                </div>
+                {% endfor %}
             </div>
-
-            <div class="todo-group">
-                <div class="todo-group-label"><i class="fas fa-layer-group" style="color:#1a6fa0;"></i> Model Registry</div>
-                <div class="todo-item todo-p1">
-                    <span class="todo-badge">P1</span>
-                    <div>
-                        <div class="todo-title">Register model after training</div>
-                        <div class="todo-desc">Auto-register completed SageMaker jobs in SageMaker Model Registry with metrics, ARN, data URI, and container image as metadata.</div>
-                    </div>
-                </div>
-                <div class="todo-item todo-p1">
-                    <span class="todo-badge">P1</span>
-                    <div>
-                        <div class="todo-title">Approval workflow</div>
-                        <div class="todo-desc">Approve / reject model versions in <code>PendingManualApproval</code> state directly from the dashboard. Only approved versions are deployable.</div>
-                    </div>
-                </div>
-                <div class="todo-item todo-p2">
-                    <span class="todo-badge todo-badge-p2">P2</span>
-                    <div>
-                        <div class="todo-title">Deploy from registry</div>
-                        <div class="todo-desc">Deploy directly from a registry version ARN instead of a raw <code>model.tar.gz</code> S3 URI.</div>
-                    </div>
-                </div>
-                <div class="todo-item todo-p3">
-                    <span class="todo-badge todo-badge-p3">P3</span>
-                    <div>
-                        <div class="todo-title">Model lineage</div>
-                        <div class="todo-desc">Trace training job → model version → endpoint lineage in the dashboard.</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="todo-group">
-                <div class="todo-group-label"><i class="fas fa-brain" style="color:#8e44ad;"></i> Training</div>
-                <div class="todo-item todo-p1">
-                    <span class="todo-badge">P1</span>
-                    <div>
-                        <div class="todo-title">Custom train.py upload</div>
-                        <div class="todo-desc">Upload a custom <code>train.py</code> (and optionally <code>utils.py</code>, <code>model_def.py</code>) via the UI to use as <code>source_dir</code> for SageMaker jobs.</div>
-                    </div>
-                </div>
-                <div class="todo-item todo-p2">
-                    <span class="todo-badge todo-badge-p2">P2</span>
-                    <div>
-                        <div class="todo-title">Multi-GPU support</div>
-                        <div class="todo-desc">DDP / FSDP training strategy selector in the SageMaker form.</div>
-                    </div>
-                </div>
-                <div class="todo-item todo-p2">
-                    <span class="todo-badge todo-badge-p2">P2</span>
-                    <div>
-                        <div class="todo-title">Spot instance &amp; warm pool support</div>
-                        <div class="todo-desc">Checkbox for <code>use_spot_instances</code> and <code>keep_alive_period_in_seconds</code> to reduce training costs.</div>
-                    </div>
-                </div>
-                <div class="todo-item todo-p3">
-                    <span class="todo-badge todo-badge-p3">P3</span>
-                    <div>
-                        <div class="todo-title">Segmentation num_classes auto-detection</div>
-                        <div class="todo-desc">Derive class count from unique label values in NIfTI masks instead of requiring manual input.</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="todo-group" style="border-bottom:none;">
-                <div class="todo-group-label"><i class="fas fa-heartbeat" style="color:#1e8449;"></i> Monitoring</div>
-                <div class="todo-item todo-p2">
-                    <span class="todo-badge todo-badge-p2">P2</span>
-                    <div>
-                        <div class="todo-title">Model quality monitoring</div>
-                        <div class="todo-desc">Schedule a <code>ModelQualityMonitor</code> job to track accuracy and AUC over time against ground-truth labels in S3.</div>
-                    </div>
-                </div>
-                <div class="todo-item todo-p3" style="border-bottom:none;">
-                    <span class="todo-badge todo-badge-p3">P3</span>
-                    <div>
-                        <div class="todo-title">Auto-rebuild container from UI</div>
-                        <div class="todo-desc">Trigger an ECR container rebuild and push directly from the dashboard when source files change.</div>
-                    </div>
-                </div>
-                <div class="todo-item todo-p2" style="border-bottom:none;">
-                    <span class="todo-badge todo-badge-p2">P2</span>
-                    <div>
-                        <div class="todo-title">Async segmentation monitoring</div>
-                        <div class="todo-desc">Alternative monitoring for async endpoints (data capture not supported): S3 event notifications, CloudWatch metrics for invocation counts/latency, and output statistics tracking.</div>
-                    </div>
-                </div>
-            </div>
+            {% endfor %}
+        </div>
+    </div>
 
         </div>
     </div>

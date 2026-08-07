@@ -40,9 +40,12 @@ app.include_router(fairness_router.router, prefix="/api/fairness", tags=["Fairne
 app.include_router(evaluation_router.router, prefix="/api/evaluation", tags=["Evaluation"])
 app.include_router(monitoring_router.router, prefix="/api/monitoring", tags=["Monitoring"])
 
+from app.services.todo_parser import parse_todo
+
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    return templates.TemplateResponse(request=request, name="index.html")
+    roadmap = parse_todo()
+    return templates.TemplateResponse(request=request, name="index.html", context={"roadmap": roadmap})
 
 @app.get("/api/config")
 async def get_config():
