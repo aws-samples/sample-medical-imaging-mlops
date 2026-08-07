@@ -289,7 +289,7 @@ async function enableDataCapture(e) {
             }),
         });
         showMonitorBanner(banner, 'success',
-            `<i class="fas fa-check-circle"></i> Data capture enabled on <strong>${result.endpoint_name}</strong> — endpoint updating`);
+            `<i class="fas fa-check-circle"></i> Data capture enabled on <strong>${escapeHtml(result.endpoint_name)}</strong> — endpoint updating`);
     } catch (err) {
         showMonitorBanner(banner, 'error', `<i class="fas fa-exclamation-circle"></i> ${escapeHtml(err.message)}`);
     } finally {
@@ -321,7 +321,7 @@ async function runBaseline(e) {
             }),
         });
         showMonitorBanner(banner, 'success',
-            `<i class="fas fa-check-circle"></i> Baseline job <strong>${result.job_name}</strong> submitted`);
+            `<i class="fas fa-check-circle"></i> Baseline job <strong>${escapeHtml(result.job_name)}</strong> submitted`);
         loadBaselineJobs();
         refreshDQBaselinePicker();
     } catch (err) {
@@ -357,7 +357,7 @@ async function createDQSchedule(e) {
             }),
         });
         showMonitorBanner(banner, 'success',
-            `<i class="fas fa-check-circle"></i> Schedule <strong>${result.schedule_name}</strong> created`);
+            `<i class="fas fa-check-circle"></i> Schedule <strong>${escapeHtml(result.schedule_name)}</strong> created`);
         loadMonitorSchedules();
     } catch (err) {
         showMonitorBanner(banner, 'error', `<i class="fas fa-exclamation-circle"></i> ${escapeHtml(err.message)}`);
@@ -391,7 +391,7 @@ async function createMQSchedule(e) {
             }),
         });
         showMonitorBanner(banner, 'success',
-            `<i class="fas fa-check-circle"></i> Schedule <strong>${result.schedule_name}</strong> created`);
+            `<i class="fas fa-check-circle"></i> Schedule <strong>${escapeHtml(result.schedule_name)}</strong> created`);
         loadMonitorSchedules();
     } catch (err) {
         showMonitorBanner(banner, 'error', `<i class="fas fa-exclamation-circle"></i> ${escapeHtml(err.message)}`);
