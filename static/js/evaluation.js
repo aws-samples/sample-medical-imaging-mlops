@@ -424,13 +424,16 @@ function openPlotLightbox(url, title) {
     const existing = document.getElementById('plot-lightbox');
     if (existing) existing.remove();
 
+    const validatedUrl = safeUrl(url);
+    if (!validatedUrl) return;
+
     const overlay = document.createElement('div');
     overlay.id = 'plot-lightbox';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:zoom-out;';
     overlay.onclick = () => overlay.remove();
     overlay.innerHTML = `
         <div style="color:#fff; font-size:1rem; font-weight:600; margin-bottom:0.75rem;">${escapeHtml(title)}</div>
-        <img src="${url}" style="max-width:90vw; max-height:85vh; border-radius:6px; box-shadow:0 8px 40px rgba(0,0,0,0.6);">
+        <img src="${escapeHtml(validatedUrl)}" style="max-width:90vw; max-height:85vh; border-radius:6px; box-shadow:0 8px 40px rgba(0,0,0,0.6);">
         <div style="color:#aaa; font-size:0.8rem; margin-top:0.6rem;">Click anywhere to close</div>
     `;
     document.body.appendChild(overlay);
