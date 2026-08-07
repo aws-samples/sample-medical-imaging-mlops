@@ -408,8 +408,8 @@ async function viewJobMetrics(jobId) {
                     <div class="metric"><strong>Learning Rate:</strong> ${escapeHtml(String(metrics.metrics.learning_rate))}</div>
                     
                     <div class="links">
-                        <a href="${escapeHtml(metrics.metrics.tensorboard_url)}" target="_blank">Open TensorBoard</a>
-                        <a href="${escapeHtml(metrics.metrics.mlflow_url)}" target="_blank">Open MLflow</a>
+                        <a href="${escapeHtml(safeUrl(metrics.metrics.tensorboard_url))}" target="_blank" rel="noopener noreferrer">Open TensorBoard</a>
+                        <a href="${escapeHtml(safeUrl(metrics.metrics.mlflow_url))}" target="_blank" rel="noopener noreferrer">Open MLflow</a>
                     </div>
                 </body>
             </html>

@@ -11,6 +11,14 @@ function escapeHtml(str) {
         .replace(/'/g, '&#39;');
 }
 
+// ── URL sanitization (prevents javascript: URI injection in href attributes) ──
+function safeUrl(url) {
+    if (!url) return '';
+    const s = String(url).trim();
+    if (s.startsWith('/') || s.startsWith('http://') || s.startsWith('https://')) return s;
+    return '';
+}
+
 // ── Tab system ────────────────────────────────────────────────────────────────
 const _tabInits   = {};
 const _tabVisited = {};
