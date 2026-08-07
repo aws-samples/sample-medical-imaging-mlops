@@ -396,12 +396,12 @@ async function viewJobMetrics(jobId) {
                 <body>
                     <h1>Training Metrics</h1>
                     <h2>Job ID: ${escapeHtml(jobId)}</h2>
-                    <div class="metric"><strong>Epoch:</strong> ${metrics.metrics.epoch}</div>
-                    <div class="metric"><strong>Training Loss:</strong> ${metrics.metrics.train_loss}</div>
-                    <div class="metric"><strong>Validation Loss:</strong> ${metrics.metrics.val_loss}</div>
-                    <div class="metric"><strong>Training Accuracy:</strong> ${(metrics.metrics.train_accuracy * 100).toFixed(2)}%</div>
-                    <div class="metric"><strong>Validation Accuracy:</strong> ${(metrics.metrics.val_accuracy * 100).toFixed(2)}%</div>
-                    <div class="metric"><strong>Learning Rate:</strong> ${metrics.metrics.learning_rate}</div>
+                    <div class="metric"><strong>Epoch:</strong> ${escapeHtml(String(metrics.metrics.epoch))}</div>
+                    <div class="metric"><strong>Training Loss:</strong> ${escapeHtml(String(metrics.metrics.train_loss))}</div>
+                    <div class="metric"><strong>Validation Loss:</strong> ${escapeHtml(String(metrics.metrics.val_loss))}</div>
+                    <div class="metric"><strong>Training Accuracy:</strong> ${escapeHtml(String((metrics.metrics.train_accuracy * 100).toFixed(2)))}%</div>
+                    <div class="metric"><strong>Validation Accuracy:</strong> ${escapeHtml(String((metrics.metrics.val_accuracy * 100).toFixed(2)))}%</div>
+                    <div class="metric"><strong>Learning Rate:</strong> ${escapeHtml(String(metrics.metrics.learning_rate))}</div>
                     
                     <div class="links">
                         <a href="${escapeHtml(metrics.metrics.tensorboard_url)}" target="_blank">Open TensorBoard</a>
