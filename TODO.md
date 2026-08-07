@@ -66,6 +66,8 @@
 
 - [ ] **Monitoring dashboard** — Surface Model Monitor violation reports and drift statistics in the dashboard; show per-feature drift scores and flag endpoints with active violations.
 
+- [ ] **Async segmentation monitoring** — Since SageMaker does not support DataCaptureConfig on async endpoints, implement alternative monitoring for async segmentation: S3 event notifications on the output bucket to log inference results, CloudWatch metrics for invocation counts and latency, and a dashboard view to track async endpoint health and output statistics.
+
 ## UI / UX
 
 - [ ] **S3 browser for data URI** — Add a browse button next to the Data S3 URI field that opens the S3 bucket browser and lets users select a path directly.
