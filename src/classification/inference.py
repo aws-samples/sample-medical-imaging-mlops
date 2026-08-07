@@ -1,5 +1,13 @@
 """Inference script for medical image classification.
 
+⚠️ RESEARCH USE ONLY — This inference handler produces AI predictions for
+research and development purposes. Outputs must NOT be used as the sole basis
+for clinical decisions. Clinical deployment requires:
+  - Regulatory clearance (FDA 510(k)/De Novo, CE marking, or equivalent)
+  - Clinical validation studies
+  - Qualified healthcare professional review of all predictions
+  - Fairness and bias evaluation across demographic subgroups
+
 Loaded by the SageMaker PyTorch container via SAGEMAKER_PROGRAM=inference.py.
 model.tar.gz is expected to contain:
   - best_model.pth / model.pth   (weights)
@@ -180,6 +188,7 @@ def output_fn(prediction: torch.Tensor, accept: str) -> str:
         "probabilities":   prob_dict,
         "model_name":      result_meta.get("model_name"),
         "num_classes":     len(prob_list),
+        "disclaimer":      "Research use only. Not a clinical diagnosis. Requires review by qualified healthcare professionals.",
     }
 
     if accept == "application/json;verbose":
