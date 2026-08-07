@@ -89,10 +89,15 @@ def model_fn(model_dir: str) -> Dict[str, Any]:
     for weight_file in weight_files:
         weight_path = os.path.join(model_dir, weight_file)
         if os.path.exists(weight_path):
-            # weights_only=False required here because training checkpoints contain
-            # dicts with "model", "epoch", "optimizer" keys — not just raw tensors.
-            # Trust boundary: model artifacts come from our own training pipeline via S3.
-            checkpoint = torch.load(weight_path, map_location=device, weights_only=False)
+            # Use weights_only=True for security — prevents arbitrary code execution
+            # during deserialization. Checkpoints from our training pipeline contain
+            # only tensors and basic Python types (dict, list, int, str).
+            try:
+                checkpoint = torch.load(weight_path, map_location=device, weights_only=True)
+            except Exception as e:
+                logger.warning(f"weights_only=True failed for {weight_file}: {e}. "
+                               "Verify checkpoint was produced by a trusted training pipeline.")
+                raise
             if isinstance(checkpoint, dict) and "model" in checkpoint:
                 model.load_state_dict(checkpoint["model"])
             elif isinstance(checkpoint, dict) and "state_dict" in checkpoint:
