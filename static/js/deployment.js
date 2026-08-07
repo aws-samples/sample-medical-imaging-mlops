@@ -303,31 +303,31 @@ function displayDeployments(deployments) {
             </div>
             <div class="job-actions">
                 ${d.status === 'InService' && d.endpoint_type === 'async' && (d.instance_count == null || d.instance_count > 0) ? `
-                <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeHtml(d.endpoint_name)}', 0)" title="Scale to 0 instances (stop billing)">
+                <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeJsString(d.endpoint_name)}', 0)" title="Scale to 0 instances (stop billing)">
                     <i class="fas fa-power-off"></i> Scale to 0
                 </button>
                 ` : ''}
                 ${d.status === 'InService' && d.instance_count === 0 ? `
-                <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeHtml(d.endpoint_name)}', 1)" title="Scale up to 1 instance" style="color:#1e8449;">
+                <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeJsString(d.endpoint_name)}', 1)" title="Scale up to 1 instance" style="color:#1e8449;">
                     <i class="fas fa-play"></i> Scale up
                 </button>
                 ` : ''}
                 ${d.status === 'InService' && d.instance_count != null && d.instance_count > 1 ? `
-                <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeHtml(d.endpoint_name)}', ${d.instance_count - 1})" title="Remove one instance">
+                <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeJsString(d.endpoint_name)}', ${d.instance_count - 1})" title="Remove one instance">
                     <i class="fas fa-minus"></i>
                 </button>
                 ` : ''}
                 ${d.status === 'InService' && (d.instance_count == null || d.instance_count > 0) ? `
-                <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeHtml(d.endpoint_name)}', ${(d.instance_count != null ? d.instance_count : 1) + 1})" title="Add one instance">
+                <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeJsString(d.endpoint_name)}', ${(d.instance_count != null ? d.instance_count : 1) + 1})" title="Add one instance">
                     <i class="fas fa-plus"></i>
                 </button>
                 ` : ''}
                 ${!['InService', 'Failed', 'Deleting', 'Deleted'].includes(d.status) ? `
-                <button class="btn btn-secondary" onclick="refreshDeployment('${escapeHtml(d.endpoint_name)}')">
+                <button class="btn btn-secondary" onclick="refreshDeployment('${escapeJsString(d.endpoint_name)}')">
                     <i class="fas fa-sync"></i> Refresh
                 </button>` : ''}
                 ${!['Deleting','Deleted'].includes(d.status) ? `
-                <button class="btn btn-secondary" onclick="deleteDeployment('${escapeHtml(d.endpoint_name)}')" style="color:#c62828;">
+                <button class="btn btn-secondary" onclick="deleteDeployment('${escapeJsString(d.endpoint_name)}')" style="color:#c62828;">
                     <i class="fas fa-trash"></i> Delete
                 </button>` : ''}
             </div>
@@ -387,7 +387,7 @@ async function openFillFromJobModal() {
         list.innerHTML = jobs.map(j => `
             <div style="padding:0.6rem 0.5rem; border-bottom:1px solid #f0f0f0; cursor:pointer; border-radius:4px;"
                  onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''"
-                 onclick="fillFromJob('${escapeHtml(j.model_artifacts)}', '${escapeHtml(j.job_name)}')">
+                 onclick="fillFromJob('${escapeJsString(j.model_artifacts)}', '${escapeJsString(j.job_name)}')">
                 <div style="font-weight:600; font-size:0.9rem;">${escapeHtml(j.job_name)}</div>
                 <div style="font-size:0.78rem; color:#666; margin-top:2px;">${escapeHtml(j.model_artifacts)}</div>
                 <div style="font-size:0.75rem; color:#888; margin-top:2px;">

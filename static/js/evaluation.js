@@ -111,22 +111,22 @@ function renderEvalJobs(jobs) {
             </div>
             <div class="job-actions">
                 ${j.status === 'InProgress' ? `
-                <button class="btn btn-secondary" onclick="refreshEvalJob('${escapeHtml(j.job_name)}')">
+                <button class="btn btn-secondary" onclick="refreshEvalJob('${escapeJsString(j.job_name)}')">
                     <i class="fas fa-sync"></i> Refresh
                 </button>` : ''}
                 ${j.status === 'Completed' ? `
-                <button class="btn btn-secondary" onclick="downloadEvalResults('${escapeHtml(j.job_name)}', this)">
+                <button class="btn btn-secondary" onclick="downloadEvalResults('${escapeJsString(j.job_name)}', this)">
                     <i class="fas fa-download"></i> ${j.cached_results ? 'Re-download' : 'Download Results'}
                 </button>` : ''}
                 ${j.cached_results ? `
-                <button class="btn btn-secondary" onclick="clearEvalCache('${escapeHtml(j.job_name)}', this)" style="color:#c62828;" title="Remove locally cached files">
+                <button class="btn btn-secondary" onclick="clearEvalCache('${escapeJsString(j.job_name)}', this)" style="color:#c62828;" title="Remove locally cached files">
                     <i class="fas fa-trash"></i> Clear Cache
                 </button>` : ''}
-                <button class="btn btn-secondary" onclick="deleteEvalJob('${escapeHtml(j.job_name)}', this)" style="color:#c62828;" title="Delete this job record">
+                <button class="btn btn-secondary" onclick="deleteEvalJob('${escapeJsString(j.job_name)}', this)" style="color:#c62828;" title="Delete this job record">
                     <i class="fas fa-times-circle"></i> Delete
                 </button>
                 ${j.metrics ? `
-                <button class="btn btn-secondary" onclick="showEvalResults('${escapeHtml(j.job_name)}')">
+                <button class="btn btn-secondary" onclick="showEvalResults('${escapeJsString(j.job_name)}')">
                     <i class="fas fa-chart-bar"></i> View Results
                 </button>` : ''}
             </div>
@@ -404,7 +404,7 @@ async function loadEvalPlots(jobName) {
                 <div style="padding:1rem; text-align:center;">
                     <img src="${escapeHtml(safeUrl)}" alt="${escapeHtml(fname)}"
                          style="max-width:100%; height:auto; border-radius:4px; cursor:pointer;"
-                         onclick="openPlotLightbox('${escapeHtml(safeUrl)}', '${escapeHtml(labels[fname] || fname)}')"
+                         onclick="openPlotLightbox('${escapeJsString(safeUrl)}', '${escapeJsString(labels[fname] || fname)}')"
                          onerror="this.parentElement.innerHTML='<p style=color:#c62828>Image file missing from local cache — try re-downloading</p>'">
                 </div>
                 <div style="padding:0.4rem 1rem 0.75rem; text-align:right;">

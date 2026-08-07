@@ -62,7 +62,7 @@ function displayModels(models) {
                 <div style="display:flex; gap:4px; align-items:center;">
                     ${isCustom ? '<span class="model-tag" style="background:#f3eeff; color:#7b2ff7; border:1px solid #c9b0f5;">Custom</span>' : ''}
                     <span class="model-tag ${taskClass}">${taskLabel}</span>
-                    ${isCustom ? `<button type="button" title="Remove" onclick="removeCustomModel('${escapeHtml(model.name)}', event)"
+                    ${isCustom ? `<button type="button" title="Remove" onclick="removeCustomModel('${escapeJsString(model.name)}', event)"
                         style="background:none; border:none; cursor:pointer; color:#c62828; font-size:0.75rem; padding:0 2px;">
                         <i class="fas fa-times"></i></button>` : ''}
                 </div>
@@ -366,11 +366,11 @@ function displayTrainingJobs(jobs) {
                 ${job.completed_at ? `<div><strong>Completed:</strong> ${escapeHtml(formatDate(job.completed_at))}</div>` : ''}
             </div>
             <div class="job-actions">
-                <button onclick="viewJobMetrics('${escapeHtml(job.job_id)}')" class="btn btn-secondary">
+                <button onclick="viewJobMetrics('${escapeJsString(job.job_id)}')" class="btn btn-secondary">
                     <i class="fas fa-chart-line"></i> View Metrics
                 </button>
                 ${job.status === 'running' ? 
-                    `<button onclick="stopTrainingJob('${escapeHtml(job.job_id)}')" class="btn btn-secondary">
+                    `<button onclick="stopTrainingJob('${escapeJsString(job.job_id)}')" class="btn btn-secondary">
                         <i class="fas fa-stop"></i> Stop
                     </button>` : ''
                 }
@@ -876,10 +876,10 @@ function displaySageMakerJobs(jobs) {
             <div id="sm-job-status-detail-${escapeHtml(job.job_name)}" class="job-status-detail" style="display:none;"></div>
             <div class="job-actions">
                 ${!terminal ? `
-                <button onclick="checkSageMakerStatus('${escapeHtml(job.job_name)}')" class="btn btn-secondary" id="sm-status-btn-${escapeHtml(job.job_name)}">
+                <button onclick="checkSageMakerStatus('${escapeJsString(job.job_name)}')" class="btn btn-secondary" id="sm-status-btn-${escapeHtml(job.job_name)}">
                     <i class="fas fa-sync"></i> Fetch Status
                 </button>
-                <button onclick="stopSageMakerJob('${escapeHtml(job.job_name)}')" class="btn btn-secondary">
+                <button onclick="stopSageMakerJob('${escapeJsString(job.job_name)}')" class="btn btn-secondary">
                     <i class="fas fa-stop"></i> Stop
                 </button>` : ''}
                 ${job.mlflow_tracking_uri ? `
@@ -887,25 +887,25 @@ function displaySageMakerJobs(jobs) {
                     <i class="fas fa-flask"></i> MLflow
                 </button>` : ''}
                 ${terminal ? `
-                <button onclick="openCommentModal('${escapeHtml(job.job_name)}', \`${(job.comment||'').replace(/`/g,"'")}\`)" class="btn btn-secondary" title="Add comment">
+                <button onclick="openCommentModal('${escapeJsString(job.job_name)}', \`${(job.comment||'').replace(/`/g,"'")}\`)" class="btn btn-secondary" title="Add comment">
                     <i class="fas fa-comment-alt"></i> Comment
                 </button>
-                <button onclick="archiveSageMakerJob('${escapeHtml(job.job_name)}')" class="btn btn-secondary" title="Archive" ${job.archived || tab !== 'completed' ? 'style="display:none"' : ''}>
+                <button onclick="archiveSageMakerJob('${escapeJsString(job.job_name)}')" class="btn btn-secondary" title="Archive" ${job.archived || tab !== 'completed' ? 'style="display:none"' : ''}>
                     <i class="fas fa-archive"></i> Archive
                 </button>
                 ${job.status === 'Completed' && !job.result && job.model_artifacts && !job.artifacts_deleted ? `
-                <button onclick="loadJobResult('${escapeHtml(job.job_name)}')" class="btn btn-secondary" title="Load result.json from model artifacts">
+                <button onclick="loadJobResult('${escapeJsString(job.job_name)}')" class="btn btn-secondary" title="Load result.json from model artifacts">
                     <i class="fas fa-download"></i> Load Results
                 </button>` : ''}
                 ${job.status === 'Completed' && job.model_artifacts && !job.artifacts_deleted ? `
-                <button onclick="openFineTuneModal('${escapeHtml(job.job_name)}')" class="btn btn-finetune" title="Fine-tune from this checkpoint">
+                <button onclick="openFineTuneModal('${escapeJsString(job.job_name)}')" class="btn btn-finetune" title="Fine-tune from this checkpoint">
                     <i class="fas fa-sliders-h"></i> Fine-tune
                 </button>` : ''}
                 ${job.model_artifacts && !job.artifacts_deleted ? `
-                <button onclick="deleteJobArtifacts('${escapeHtml(job.job_name)}')" class="btn btn-secondary" title="Delete model.tar.gz from S3" style="color:#c62828;">
+                <button onclick="deleteJobArtifacts('${escapeJsString(job.job_name)}')" class="btn btn-secondary" title="Delete model.tar.gz from S3" style="color:#c62828;">
                     <i class="fas fa-trash"></i> Delete Artifacts
                 </button>` : ''}
-                <button onclick="removeSageMakerJob('${escapeHtml(job.job_name)}')" class="btn btn-secondary" style="color:#c62828;" title="Remove from list">
+                <button onclick="removeSageMakerJob('${escapeJsString(job.job_name)}')" class="btn btn-secondary" style="color:#c62828;" title="Remove from list">
                     <i class="fas fa-times"></i> Remove
                 </button>` : ''}
             </div>

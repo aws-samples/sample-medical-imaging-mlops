@@ -467,11 +467,11 @@ function renderBaselineJobs(baselines) {
                 </div>` : ''}
             </div>
             <div class="job-actions">
-                <button class="btn btn-secondary" onclick="deleteBaselineJob('${escapeHtml(b.job_name)}')">
+                <button class="btn btn-secondary" onclick="deleteBaselineJob('${escapeJsString(b.job_name)}')">
                     <i class="fas fa-times"></i> Remove
                 </button>
                 ${b.status === 'Completed' ? `
-                <button class="btn btn-secondary" onclick="fillScheduleFromBaseline('${escapeHtml(b.output_s3_uri)}')">
+                <button class="btn btn-secondary" onclick="fillScheduleFromBaseline('${escapeJsString(b.output_s3_uri)}')">
                     <i class="fas fa-arrow-right"></i> Use in Schedule
                 </button>` : ''}
             </div>
@@ -595,10 +595,10 @@ function renderMonitorSchedules(schedules) {
             </div>
             <div class="job-actions">
                 ${s.type === 'schedule' ? `
-                <button class="btn btn-secondary" onclick="refreshMonitorSchedule('${escapeHtml(name)}')">
+                <button class="btn btn-secondary" onclick="refreshMonitorSchedule('${escapeJsString(name)}')">
                     <i class="fas fa-sync"></i> Refresh
                 </button>
-                <button class="btn btn-secondary" onclick="deleteMonitorSchedule('${escapeHtml(name)}')" style="color:#c62828;">
+                <button class="btn btn-secondary" onclick="deleteMonitorSchedule('${escapeJsString(name)}')" style="color:#c62828;">
                     <i class="fas fa-trash"></i> Delete
                 </button>` : ''}
             </div>

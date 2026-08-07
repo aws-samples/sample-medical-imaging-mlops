@@ -19,6 +19,20 @@ function safeUrl(url) {
     return '';
 }
 
+// ── JavaScript string escaping (for use inside inline onclick handlers) ───────
+// HTML-escaping alone is insufficient in JS string contexts because browsers
+// HTML-decode attribute values before executing them as JavaScript.
+function escapeJsString(str) {
+    if (str == null) return '';
+    return String(str)
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '\\"')
+        .replace(/</g, '\\x3c')
+        .replace(/>/g, '\\x3e')
+        .replace(/&/g, '\\x26');
+}
+
 // ── Tab system ────────────────────────────────────────────────────────────────
 const _tabInits   = {};
 const _tabVisited = {};
