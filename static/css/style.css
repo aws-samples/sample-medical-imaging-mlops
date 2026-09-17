@@ -294,6 +294,34 @@ input:focus, select:focus, textarea:focus {
     margin-top: 1rem;
 }
 
+/* Group heading inside the models grid (e.g. "MONAI Model Zoo") */
+.model-group-heading {
+    grid-column: 1 / -1;
+    margin-top: 0.75rem;
+    padding: 0.4rem 0 0.35rem;
+    border-top: 1px solid #e0e0e0;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #232f3e;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.model-group-heading i { color: #0972d3; }
+
+/* MONAI Model Zoo info panel — mirrors the Model Info card look */
+#monai-zoo-info-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+}
+#monai-zoo-info-card .model-info-placeholder {
+    color: #888;
+    text-align: center;
+    padding: 1.5rem 0;
+}
+
 .training-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;

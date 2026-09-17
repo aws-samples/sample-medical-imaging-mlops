@@ -12,6 +12,7 @@ from app.routers import inference_router
 from app.routers import fairness_router
 from app.routers import evaluation_router
 from app.routers import monitoring_router
+from app.routers import monai_bundle_router
 from app.services.aws_service import AWSService
 
 # Load .env first, then .env.local overrides (if present)
@@ -39,6 +40,7 @@ app.include_router(inference_router.router, prefix="/api/inference", tags=["Infe
 app.include_router(fairness_router.router, prefix="/api/fairness", tags=["Fairness"])
 app.include_router(evaluation_router.router, prefix="/api/evaluation", tags=["Evaluation"])
 app.include_router(monitoring_router.router, prefix="/api/monitoring", tags=["Monitoring"])
+app.include_router(monai_bundle_router.router, prefix="/api/monai-bundle", tags=["MONAI Bundle"])
 
 from app.services.todo_parser import parse_todo
 

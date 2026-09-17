@@ -1,0 +1,32 @@
+# MONAI Bundle INFERENCE image for SageMaker real-time / async endpoints.
+#
+# Mirrors the proven Dockerfile.inference pattern (used by the working
+# classification/segmentation endpoints): based on the AWS PyTorch INFERENCE
+# DLC, which provides the 'serve' entrypoint, nginx, gunicorn, and the
+# multi-model server SageMaker needs. The DLC calls our handler
+# (inference.py: model_fn/input_fn/predict_fn/output_fn) via SAGEMAKER_PROGRAM.
+#
+# The handler is baked in the IMAGE at /opt/program (SAGEMAKER_SUBMIT_DIRECTORY);
+# the model.tar.gz carries ONLY the bundle (configs/ + models/). SageMaker
+# extracts the artifact to /opt/ml/model and model_fn reads it there.
+#
+# Build (from medical-image-training-dashboard/):
+#   DOCKER_BUILDKIT=0 docker build --platform linux/amd64 \
+#     -f Dockerfile.monai-bundle-inference \
+#     -t <acct>.dkr.ecr.<region>.amazonaws.com/sm-monai-bundle-inference:latest .
+
+FROM 763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-inference:2.6.0-gpu-py312-cu124-ubuntu22.04-sagemaker
+
+# ── MONAI bundle runtime dependencies ────────────────────────────────────────
+COPY src/monai_bundle/requirements-inference.txt /tmp/requirements-monai-bundle-inference.txt
+RUN pip install --no-cache-dir -r /tmp/requirements-monai-bundle-inference.txt
+
+# ── Handler baked at /opt/program (discovered via SAGEMAKER_PROGRAM) ─────────
+COPY src/monai_bundle/inference.py    /opt/program/inference.py
+COPY src/monai_bundle/bundle_utils.py /opt/program/bundle_utils.py
+
+ENV SAGEMAKER_PROGRAM inference.py
+ENV SAGEMAKER_SUBMIT_DIRECTORY /opt/program
+
+# NOTE: SageMaker inference containers require root for nginx/gunicorn/MMS.
+# HEALTHCHECK is managed by SageMaker via its /ping route.

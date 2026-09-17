@@ -1390,7 +1390,185 @@
     </div>
 </div>
 
+<div id="tab-monai-bundle" class="tab-panel">
+  <div style="display:flex; align-items:center; gap:0.75rem;">
+    <a href="https://github.com/project-monai" target="_blank" rel="noopener noreferrer" title="Project MONAI on GitHub">
+      <img src="https://avatars.githubusercontent.com/u/56449156?v=4" alt="Project MONAI logo"
+           width="44" height="44" style="border-radius:8px; display:block;"
+           onerror="this.style.display='none';">
+    </a>
+    <h2 style="margin:0;">MONAI Bundle</h2>
+  </div>
+  <p class="section-subtitle">Stage, fine-tune, and track MONAI bundles on SageMaker. Research use only — outputs are not clinical diagnoses.</p>
+
+  <div class="card">
+    <div class="card-header">
+      <h3><i class="fas fa-download"></i> 1. Stage a bundle</h3>
+    </div>
+    <div class="card-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>MONAI bundle GitHub link</label>
+          <input type="text" id="mb-repo-id" value="https://github.com/Project-MONAI/model-zoo/tree/dev/models/spleen_ct_segmentation" placeholder="https://github.com/Project-MONAI/model-zoo/tree/dev/models/<bundle>">
+        </div>
+        <div class="form-group">
+          <label>Destination S3 URI (model.tar.gz)</label>
+          <input type="text" id="mb-stage-s3" placeholder="s3://your-bucket/monai-bundles/spleen/model.tar.gz">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="mbStageBundle()"><i class="fas fa-download"></i> Stage bundle</button>
+      <div id="mb-stage-result" class="result-highlight" style="display:none;"></div>
+
+      <div style="margin-top:1rem; padding-top:0.75rem; border-top:1px solid #eee;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
+          <label style="margin:0; font-weight:600;">Staged bundles</label>
+          <button class="btn btn-secondary" onclick="mbLoadStaged()" style="font-size:0.8rem; padding:0.35rem 0.7rem;">
+            <i class="fas fa-sync"></i> Refresh
+          </button>
+        </div>
+        <div id="mb-staged-list" style="display:flex; flex-direction:column; gap:0.75rem;">
+          <p style="color:#888; padding:0.5rem;">Loading…</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3><i class="fas fa-brain"></i> 2. Fine-tune</h3>
+    </div>
+    <div class="card-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Bundle artifact (model.tar.gz)</label>
+          <input type="text" id="mb-model-artifacts" placeholder="s3://your-bucket/monai-bundles/spleen/model.tar.gz">
+        </div>
+        <div class="form-group">
+          <label>Dataset S3 URI (Decathlon)</label>
+          <input type="text" id="mb-data-s3" placeholder="s3://your-bucket/Task09_Spleen/">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Training config (optional — defaults to bundle's)</label>
+        <input type="text" id="mb-train-config" placeholder="train.json">
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Epochs</label><input type="number" id="mb-epochs" min="1" placeholder="2"></div>
+        <div class="form-group"><label>Cache rate (0–1)</label><input type="number" id="mb-cache-rate" step="0.1" min="0" max="1" placeholder="1.0"></div>
+        <div class="form-group"><label>Learning rate</label><input type="number" id="mb-lr" step="0.0001" placeholder="0.002"></div>
+        <div class="form-group"><label>Batch size</label><input type="number" id="mb-batch" min="1" placeholder="2"></div>
+        <div class="form-group"><label>Instance type</label><input type="text" id="mb-instance" value="ml.g5.4xlarge"></div>
+      </div>
+      <div class="form-group">
+        <label>Extra config overrides (JSON, optional)</label>
+        <input type="text" id="mb-overrides" placeholder='{"num_workers": 4}'>
+      </div>
+      <button class="btn btn-primary" onclick="mbFinetune()"><i class="fas fa-brain"></i> Launch fine-tune</button>
+      <p style="font-size:0.78rem;color:#666;margin-top:0.5rem;">
+        <i class="fas fa-triangle-exclamation"></i> Launches a billable SageMaker GPU training job. Research use only.
+      </p>
+      <div id="mb-finetune-result" class="result-highlight" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3><i class="fas fa-list"></i> 3. Jobs</h3>
+    </div>
+    <div class="card-body">
+      <div class="jobs-tab-bar" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap;">
+        <div>
+          <button class="jobs-tab" id="mb-tab-active" onclick="mbSwitchJobsTab('active')">
+            <i class="fas fa-running"></i> Active
+          </button>
+          <button class="jobs-tab active" id="mb-tab-completed" onclick="mbSwitchJobsTab('completed')">
+            <i class="fas fa-check-circle"></i> Completed
+          </button>
+          <button class="jobs-tab" id="mb-tab-failed" onclick="mbSwitchJobsTab('failed')">
+            <i class="fas fa-times-circle"></i> Failed
+          </button>
+          <button class="jobs-tab" id="mb-tab-archived" onclick="mbSwitchJobsTab('archived')">
+            <i class="fas fa-archive"></i> Archived
+          </button>
+        </div>
+        <button class="btn btn-secondary" onclick="mbRefreshJobs()" style="font-size:0.8rem; padding:0.4rem 0.8rem;">
+          <i class="fas fa-sync"></i> Refresh
+        </button>
+      </div>
+      <div id="mb-jobs-list" class="jobs-list" style="margin-top:0.75rem;"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3><i class="fas fa-rocket"></i> Deploy (async endpoint)</h3>
+    </div>
+    <div class="card-body">
+      <div class="form-group">
+        <label>Deploy source</label>
+        <div class="checkbox-group">
+          <label class="checkbox-label">
+            <input type="radio" name="mb_deploy_source" value="base" checked onchange="mbOnDeploySourceChange()"> Base MONAI bundle
+          </label>
+          <label class="checkbox-label">
+            <input type="radio" name="mb_deploy_source" value="finetuned" onchange="mbOnDeploySourceChange()"> Fine-tuned bundle
+          </label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label id="mb-deploy-artifact-label">Base bundle</label>
+        <select id="mb-deploy-artifact-select" onchange="mbOnArtifactSelect()">
+          <option value="" disabled selected>Loading…</option>
+        </select>
+        <div id="mb-deploy-finetuned-list" style="display:none; max-height:260px; overflow-y:auto; border:1px solid #eee; border-radius:6px;"></div>
+      </div>
+      <div class="form-group">
+        <label>Model artifact (model.tar.gz)</label>
+        <input type="text" id="mb-deploy-artifacts" placeholder="auto-filled from selection, or paste s3://.../model.tar.gz">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Endpoint name</label>
+          <input type="text" id="mb-endpoint-name" placeholder="monai-bundle-spleen-endpoint">
+        </div>
+        <div class="form-group">
+          <label>Async output S3 location</label>
+          <input type="text" id="mb-deploy-output" placeholder="s3://your-bucket/monai-bundle-async-output/">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Instance type</label><input type="text" id="mb-deploy-instance" value="ml.g5.xlarge"></div>
+        <div class="form-group"><label>Instance count</label><input type="number" id="mb-deploy-count" min="1" value="1"></div>
+        <div class="form-group"><label>Max concurrent</label><input type="number" id="mb-deploy-concurrent" min="1" value="4"></div>
+      </div>
+      <button class="btn btn-primary" onclick="mbDeploy()"><i class="fas fa-rocket"></i> Deploy async endpoint</button>
+      <p style="font-size:0.78rem;color:#666;margin-top:0.5rem;">
+        <i class="fas fa-triangle-exclamation"></i> Creates a billable SageMaker async endpoint (runs until deleted).
+        Async is used because 3D bundle inference is slow / large-payload. Research use only.
+      </p>
+      <div id="mb-deploy-result" class="result-highlight" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" style="display:flex; align-items:center; justify-content:space-between;">
+      <h3><i class="fas fa-server"></i> 5. Deployed models</h3>
+      <button class="btn btn-secondary" onclick="mbLoadDeployments()" style="font-size:0.8rem; padding:0.4rem 0.8rem;">
+        <i class="fas fa-sync"></i> Refresh
+      </button>
+    </div>
+    <div class="card-body">
+      <div id="mb-deployments-list" class="jobs-list">
+        <p style="color:#888; padding:0.5rem;">Loading…</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <style>
+.mb-hp-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0.5rem 0.75rem; margin:0.5rem 0; }
+.mb-hp-grid label { font-size:0.78rem; color:#555; display:block; margin-bottom:2px; }
+.mb-hp-grid input { width:100%; }
 .home-feature-card { background:#fff; border:1px solid #e0e0e0; border-radius:10px; padding:1.1rem 1.25rem; display:flex; gap:1rem; align-items:flex-start; cursor:pointer; transition:box-shadow 0.15s, border-color 0.15s; }
 .home-feature-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.08); border-color:#4B9CD3; }
 .home-feature-icon { width:40px; height:40px; min-width:40px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; }
@@ -1425,6 +1603,7 @@
 <script src="/static/js/fairness.js"></script>
 <script src="/static/js/evaluation.js"></script>
 <script src="/static/js/monitoring.js"></script>
+<script src="/static/js/monai_bundle.js"></script>
 <script>
 // Load runtime config from backend (.env.local) and populate form defaults
 (async function loadConfig() {

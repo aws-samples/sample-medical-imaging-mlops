@@ -5,6 +5,7 @@
 :caption: User Guide
 
 training
+monai-bundle
 deployment
 inference
 evaluation
@@ -29,6 +30,7 @@ This guide covers the end-to-end workflow for training, deploying, and monitorin
 | Guide | Description |
 |---|---|
 | [Training](training.md) | Launch local or SageMaker training jobs for classification and segmentation models |
+| [MONAI Bundle](monai-bundle.md) | Bring any MONAI bundle (Model Zoo or your own) — stage, fine-tune, and deploy to async endpoints |
 | [Deployment](deployment.md) | Deploy trained models to SageMaker real-time or async endpoints |
 | [Inference](inference.md) | Invoke deployed endpoints with DICOM, NIfTI, or image files |
 | [Evaluation](evaluation.md) | Run evaluation processing jobs against deployed endpoints |

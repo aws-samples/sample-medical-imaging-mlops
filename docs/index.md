@@ -12,6 +12,7 @@
 | Feature | Description |
 |---|---|
 | 🏋️ **Train** | Classification & segmentation on SageMaker (ResNet50, DenseNet121, EfficientNet, ViT, SegResNet, SwinUNETR) with MLflow tracking |
+| 📦 **MONAI Bundle** | Bring any MONAI bundle (spleen/whole-body CT, VISTA3D/NV-Segment-CT, or your own): stage → fine-tune → deploy to async endpoints |
 | 🚀 **Deploy** | One-click deployment to real-time or async SageMaker endpoints |
 | 🔬 **Invoke** | Test endpoints from the UI — DICOM, NIfTI, S3 URIs, or local files |
 | 📊 **Evaluate** | Run evaluation jobs against deployed endpoints with per-class metrics, confusion matrices, and ROC curves |
@@ -35,6 +36,7 @@ Step-by-step guides for every workflow:
 
 - [User Guide Overview](user-guide/index.md)
 - [Training](user-guide/training.md) — Launch local and SageMaker training jobs
+- [MONAI Bundle](user-guide/monai-bundle.md) — Bring any MONAI bundle: stage, fine-tune, and deploy async
 - [Deployment](user-guide/deployment.md) — Deploy models to SageMaker endpoints
 - [Inference](user-guide/inference.md) — Test endpoints with medical images
 - [Evaluation](user-guide/evaluation.md) — Run evaluation jobs and view metrics

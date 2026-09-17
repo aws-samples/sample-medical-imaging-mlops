@@ -1,0 +1,8 @@
+# MONAI Bundle inference (serving) dependencies.
+# Same MONAI runtime as training; the serving stack (nginx/gunicorn/MMS) comes
+# from the PyTorch inference DLC base image.
+monai==1.3.*
+numpy<2
+nibabel>=5.1.0
+fire>=0.5.0
+pytorch-ignite>=0.4.11

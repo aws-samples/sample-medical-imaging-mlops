@@ -22,8 +22,10 @@ if [[ -f "$ENV_LOCAL" ]]; then
     eval "$(grep -E '^(AWS_ACCOUNT_ID|AWS_DEFAULT_REGION)=' "$ENV_LOCAL")"
 fi
 
-if [[ -z "${AWS_ACCOUNT_ID:-}" ]]; then
-    echo "❌ Error: AWS_ACCOUNT_ID not set. Add it to .env.local or export it."
+# ECR account comes from .env.local's AWS_ACCOUNT_ID (override with ECR_ACCOUNT).
+ECR_ACCOUNT="${ECR_ACCOUNT:-${AWS_ACCOUNT_ID:-}}"
+if [[ -z "${ECR_ACCOUNT:-}" ]]; then
+    echo "❌ Error: AWS_ACCOUNT_ID not set. Add it to .env.local or export ECR_ACCOUNT."
     exit 1
 fi
 
@@ -44,7 +46,7 @@ done
 
 AWS_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
 ECR_REPO="sm-inference-byoc-${TASK}"
-IMAGE="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:latest"
+IMAGE="${ECR_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:latest"
 DLC_REGISTRY="763104351884.dkr.ecr.${AWS_REGION}.amazonaws.com"
 
 if [[ "$DO_BUILD" == true ]]; then
@@ -68,7 +70,7 @@ if [[ "$DO_PUSH" == true ]]; then
     echo "Logging in to ECR..."
     aws ecr get-login-password --region "$AWS_REGION" \
       | docker login --username AWS --password-stdin \
-        "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        "${ECR_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 
     echo "Creating ECR repository (if not exists)..."
     aws ecr create-repository --repository-name "$ECR_REPO" --region "$AWS_REGION" 2>/dev/null || true

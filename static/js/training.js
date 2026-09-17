@@ -40,43 +40,43 @@ async function loadAvailableModels() {
     }
 }
 
+function createModelCard(model, onSelect) {
+    const task = (model.task || 'classification').toLowerCase();
+    const taskClass = task === 'segmentation' ? 'model-tag-segmentation' : 'model-tag-classification';
+    const taskLabel = task === 'segmentation' ? 'Segmentation' : 'Classification';
+    const isCustom  = !!model.custom;
+
+    const modelElement = document.createElement('div');
+    modelElement.className = `model-item model-item-${task}`;
+    modelElement.dataset.modelType = model.name;
+
+    modelElement.innerHTML = `
+        <div class="model-item-header">
+            <div class="model-name">${escapeHtml(getDisplayName(model.name))}</div>
+            <div style="display:flex; gap:4px; align-items:center;">
+                ${isCustom ? '<span class="model-tag" style="background:#f3eeff; color:#7b2ff7; border:1px solid #c9b0f5;">Custom</span>' : ''}
+                <span class="model-tag ${taskClass}">${taskLabel}</span>
+                ${isCustom ? `<button type="button" title="Remove" onclick="removeCustomModel('${escapeJsString(model.name)}', event)"
+                    style="background:none; border:none; cursor:pointer; color:#c62828; font-size:0.75rem; padding:0 2px;">
+                    <i class="fas fa-times"></i></button>` : ''}
+            </div>
+        </div>
+        <div class="model-description">${escapeHtml(model.description)}</div>
+        <div class="model-specs">
+            <span>Parameters: ${escapeHtml(model.parameters)}</span>
+            <span>Input: ${escapeHtml(model.input_size)}</span>
+        </div>
+    `;
+
+    modelElement.addEventListener('click', () => (onSelect || selectModel)(model, modelElement));
+    return modelElement;
+}
+
 function displayModels(models) {
     const container = document.getElementById('models-list');
     if (!container) return;
-
     container.innerHTML = '';
-
-    models.forEach(model => {
-        const task = (model.task || 'classification').toLowerCase();
-        const taskClass = task === 'segmentation' ? 'model-tag-segmentation' : 'model-tag-classification';
-        const taskLabel = task === 'segmentation' ? 'Segmentation' : 'Classification';
-        const isCustom  = !!model.custom;
-
-        const modelElement = document.createElement('div');
-        modelElement.className = `model-item model-item-${task}`;
-        modelElement.dataset.modelType = model.name;
-
-        modelElement.innerHTML = `
-            <div class="model-item-header">
-                <div class="model-name">${escapeHtml(getDisplayName(model.name))}</div>
-                <div style="display:flex; gap:4px; align-items:center;">
-                    ${isCustom ? '<span class="model-tag" style="background:#f3eeff; color:#7b2ff7; border:1px solid #c9b0f5;">Custom</span>' : ''}
-                    <span class="model-tag ${taskClass}">${taskLabel}</span>
-                    ${isCustom ? `<button type="button" title="Remove" onclick="removeCustomModel('${escapeJsString(model.name)}', event)"
-                        style="background:none; border:none; cursor:pointer; color:#c62828; font-size:0.75rem; padding:0 2px;">
-                        <i class="fas fa-times"></i></button>` : ''}
-                </div>
-            </div>
-            <div class="model-description">${escapeHtml(model.description)}</div>
-            <div class="model-specs">
-                <span>Parameters: ${escapeHtml(model.parameters)}</span>
-                <span>Input: ${escapeHtml(model.input_size)}</span>
-            </div>
-        `;
-
-        modelElement.addEventListener('click', () => selectModel(model, modelElement));
-        container.appendChild(modelElement);
-    });
+    models.forEach(model => container.appendChild(createModelCard(model)));
 }
 
 function removeCustomModel(name, event) {
@@ -141,6 +141,22 @@ const FOLDER_STRUCTURE = {
             { label: "<weights>.pt / .pth", note: "PyTorch checkpoint" },
             { label: "<weights>.onnx", note: "ONNX export (optional)" },
             { label: "<weights>.pb / .h5", note: "TensorFlow (optional)" },
+        ]
+    },
+    monai_bundle: {
+        label: "s3://your-bucket/dataset/",
+        note: "MONAI Decathlon format",
+        children: [
+            { label: "dataset.json", note: 'has "training" list of image/label pairs' },
+            { label: "imagesTr/", children: [
+                { label: "case_001.nii.gz" },
+                { label: "case_002.nii.gz  …", children: [] },
+            ]},
+            { label: "labelsTr/", children: [
+                { label: "case_001.nii.gz" },
+                { label: "case_002.nii.gz  …", children: [] },
+            ]},
+            { label: "imagesTs/", note: "optional (test)", children: [] },
         ]
     }
 };
@@ -241,6 +257,37 @@ function selectModel(model, element) {
     showModelInfo(model);
 }
 
+// Render a FOLDER_STRUCTURE node as the "Data Layout" tree HTML.
+function renderFolderTreeHtml(fs) {
+    function renderTree(nodes) {
+        return nodes.map(n => {
+            const hasChildren = n.children && n.children.length;
+            const icon = hasChildren
+                ? '<i class="fas fa-folder"></i>'
+                : '<i class="fas fa-file"></i>';
+            const note = n.note ? `<span class="folder-tree-note">${escapeHtml(n.note)}</span>` : '';
+            const childHtml = hasChildren
+                ? `<div class="folder-tree-children">${renderTree(n.children)}</div>`
+                : '';
+            return `<div class="folder-tree-file">
+                <span class="folder-tree-icon">${icon}</span>
+                <span class="folder-tree-name">${escapeHtml(n.label)}</span>${note}
+                ${childHtml}
+            </div>`;
+        }).join('');
+    }
+    const rootNote = fs.note ? `<span class="folder-tree-note">${escapeHtml(fs.note)}</span>` : '';
+    return `
+        <h4 class="model-papers-heading"><i class="fas fa-folder-open"></i> Data Layout</h4>
+        <div class="folder-tree">
+            <div class="folder-tree-root">
+                <i class="fas fa-folder-open"></i>
+                <span>${escapeHtml(fs.label)}</span>${rootNote}
+            </div>
+            <div class="folder-tree-children">${renderTree(fs.children)}</div>
+        </div>`;
+}
+
 function showModelInfo(model) {
     const key = Object.keys(MODEL_INFO).find(
         k => k.toLowerCase() === (model.name || '').toLowerCase()
@@ -262,6 +309,19 @@ function showModelInfo(model) {
             model.input_size  ? `<span class="model-meta-tag"><strong>Input:</strong> ${escapeHtml(model.input_size)}</span>` : '',
             model.task        ? `<span class="model-meta-tag"><strong>Task:</strong> ${escapeHtml(model.task)}</span>` : '',
         ].join('');
+
+        // Data layout — MONAI bundles use the Decathlon tree; others none.
+        const fbFolder = document.getElementById('model-folder-structure');
+        if (fbFolder) {
+            const fs = model.monai_bundle ? FOLDER_STRUCTURE.monai_bundle : null;
+            if (fs) {
+                fbFolder.innerHTML = renderFolderTreeHtml(fs);
+                fbFolder.style.display = 'block';
+            } else {
+                fbFolder.style.display = 'none';
+            }
+        }
+
         document.getElementById('model-papers-list').innerHTML = '<li>No papers listed.</li>';
         return;
     }

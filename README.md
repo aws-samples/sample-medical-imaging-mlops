@@ -56,6 +56,17 @@ Launch SageMaker training jobs with state-of-the-art architectures. Configure hy
 
 All experiments are tracked in MLflow with full hyperparameter, metric, and artifact logging.
 
+### 📦 MONAI Bundle
+
+Bring **any [MONAI Bundle](https://docs.monai.io/en/stable/bundle_intro.html)** into MedAnvil — the NVIDIA Model Zoo bundles (`spleen_ct_segmentation`, `wholeBody_ct_segmentation`, VISTA3D / NV-Segment-CT) or your own. From the **MONAI Bundle** tab:
+
+- **Stage** a bundle by pasting its **MONAI model-zoo GitHub link** (or a Hugging Face URL / repo id) into S3 as a deployable `model.tar.gz`. Staged bundles show as cards with key papers, data organization, and a GitHub link — all read from the bundle's own `metadata.json`
+- **Fine-tune** it on your MONAI Decathlon dataset on SageMaker (epochs, cache rate, LR, batch size, and arbitrary bundle config overrides); jobs are tracked under Active / Completed / Failed / Archived tabs
+- **Deploy** the base or fine-tuned bundle to an **async** SageMaker endpoint (3D inference is slow/large-payload), with live status and a deployed-models list (scale to 0 / up / delete)
+- **Infer** — the endpoint runs `monai.bundle run` on GPU and writes the segmentation mask as a `.nii.gz` to S3
+
+One model-agnostic image serves any bundle; the model artifact is just `configs/` + `models/`. See the [MONAI Bundle guide](docs/user-guide/monai-bundle.md) for full instructions on bringing a new bundle to MedAnvil.
+
 ### 🚀 Deploy
 
 One-click deployment to SageMaker endpoints. Choose real-time or async inference. Monitor endpoint health and auto-scaling from the dashboard.

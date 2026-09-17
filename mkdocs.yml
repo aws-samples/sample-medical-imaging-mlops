@@ -54,6 +54,7 @@ nav:
   - User Guide:
       - Overview: user-guide/index.md
       - Training: user-guide/training.md
+      - MONAI Bundle: user-guide/monai-bundle.md
       - Deployment: user-guide/deployment.md
       - Inference: user-guide/inference.md
       - Evaluation: user-guide/evaluation.md

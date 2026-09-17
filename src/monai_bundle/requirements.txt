@@ -1,0 +1,14 @@
+# MONAI Bundle runtime dependencies.
+# MONAI held at 1.3.x (VISTA3D and many NVIDIA bundles target MONAI Core 1.3).
+# torch is provided by the base Deep Learning Container.
+#
+# numpy pinned <2: MONAI 1.3.x is built for NumPy 1.x. Under NumPy 2.x,
+# transform seeding hits `OverflowError: 4294967296 out of bounds for uint32`
+# (MAX_SEED == 2**32) when instantiating Compose. Pinning avoids it.
+monai==1.3.*
+numpy<2
+nibabel>=5.1.0
+fire>=0.5.0
+# MONAI bundle training loops use PyTorch-Ignite (SupervisedTrainer, handlers,
+# ignite.metrics.*). Required to run a bundle's train.json.
+pytorch-ignite>=0.4.11

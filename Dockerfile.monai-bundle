@@ -1,0 +1,34 @@
+# MONAI Bundle training/inference image for SageMaker BYOC.
+#
+# Runs ANY MONAI bundle via `python -m monai.bundle run`. The bundle itself
+# (configs/ models/ scripts/) is staged at runtime from the SageMaker `model`
+# channel / model.tar.gz, so this single image serves any supported bundle.
+#
+# Build (from the medical-image-training-dashboard/ dir):
+#   DOCKER_BUILDKIT=0 docker build --platform linux/amd64 \
+#       -f Dockerfile.monai-bundle \
+#       -t <acct>.dkr.ecr.<region>.amazonaws.com/sm-monai-bundle:latest .
+#
+# NOTE: BuildKit is disabled at build time (see build_and_push*.sh) so the image
+# uses the Docker V2 manifest format SageMaker requires (it rejects OCI manifests).
+
+# NOTE: platform is pinned to linux/amd64 because the AWS Deep Learning
+# Container base and SageMaker training/inference hosts are x86_64. This ensures
+# the correct architecture even when built on an arm64 host (e.g. Apple Silicon),
+# independent of any --platform build flag.
+FROM --platform=linux/amd64 763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-training:2.9.0-gpu-py312-cu130-ubuntu22.04-sagemaker
+
+# ── MONAI bundle runtime dependencies ────────────────────────────────────────
+COPY src/monai_bundle/requirements.txt /tmp/requirements-monai-bundle.txt
+RUN pip install --no-cache-dir -r /tmp/requirements-monai-bundle.txt
+
+# ── Generic entry points + helpers ───────────────────────────────────────────
+COPY src/monai_bundle/ /opt/program/
+
+ENV SAGEMAKER_PROGRAM=train.py
+# The bundle staged at runtime (its scripts/) must be importable.
+ENV PYTHONPATH=/opt/program:${PYTHONPATH}
+
+# NOTE: SageMaker training containers run as root to write /opt/ml and drive the
+# training toolkit; a non-root USER is intentionally not added (matches
+# Dockerfile.sagemaker). HEALTHCHECK is managed by SageMaker orchestration.
