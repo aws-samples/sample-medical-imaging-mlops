@@ -453,7 +453,9 @@ function mbDisplayStaged(items) {
         const tree = (d.layout || []).map(escapeHtml).join('\n');
         const rowStyle = 'font-size:0.75rem; color:#555; overflow-wrap:anywhere; word-break:break-word;';
         const dataTitle = tree
-            ? '<i class="fas fa-folder-tree"></i> Training data layout (MedAnvil fine-tune pipeline)'
+            ? '<i class="fas fa-folder-tree"></i> Training data layout' +
+              (d.layout_source ? ' <span style="font-weight:normal; color:#888;">(from ' + escapeHtml(d.layout_source) + ')</span>'
+                               : ' <span style="font-weight:normal; color:#888;">(MedAnvil fine-tune pipeline)</span>')
             : '<i class="fas fa-right-left"></i> Model inputs &amp; classes';
         const noteHtml = d.training_data_note
             ? '<div style="' + rowStyle + ' margin-top:0.3rem; padding:0.35rem 0.5rem; background:#fff8e1; border:1px solid #ffe082; border-radius:6px;">' +

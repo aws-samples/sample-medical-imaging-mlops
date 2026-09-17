@@ -319,6 +319,26 @@ class MonaiBundleService:
         # of a misleading one-size-fits-all tree.
         trainable = bool(info.train_configs)
         msd_compatible = str(meta.get("data_type", "")).lower() in ("nibabel", "nifti")
+
+        # Interpret the data organization from the bundle's OWN train config —
+        # the glob patterns it applies to dataset_dir are the ground truth of how
+        # training data must be arranged (e.g. spleen: imagesTr/*.nii.gz;
+        # HoVer-Net: Train/*image.npy triplets). This beats any generic template.
+        import re as _re
+        train_globs, uses_datalist_file = [], False
+        train_cfg_name = info.default_train_config()
+        if trainable and train_cfg_name:
+            try:
+                with open(os.path.join(path, "configs", train_cfg_name), "r",
+                          encoding="utf-8") as f:
+                    raw_train_cfg = f.read()
+                train_globs = sorted(set(_re.findall(
+                    r"glob\.glob\(\s*@dataset_dir\s*\+\s*'([^']+)'", raw_train_cfg)))
+                uses_datalist_file = "data_list_file_path" in raw_train_cfg
+            except Exception as e:  # noqa: BLE001 - YAML/unusual config
+                logger.warning("Could not interpret %s for data layout: %s",
+                               train_cfg_name, e)
+
         training_data_note = None
         if trainable and not msd_compatible:
             training_data_note = (
@@ -328,7 +348,27 @@ class MonaiBundleService:
                 "for dataset preparation."
             )
         data_layout = None
-        if trainable and msd_compatible:
+        if train_globs:
+            # Layout derived directly from the bundle's train config.
+            data_layout = {
+                "format": f"Derived from the bundle's {train_cfg_name}",
+                "description": (
+                    "File patterns the bundle's own training config globs from "
+                    "the dataset directory (the SageMaker data channel). Arrange "
+                    "your dataset so these patterns match."
+                ),
+                "layout": ["s3://<your-bucket>/<dataset>/   (becomes dataset_dir)"] + [
+                    f"{p.lstrip('/')}   # required by {train_cfg_name}"
+                    for p in train_globs
+                ],
+                "expected_inputs": inputs or None,
+                "expected_outputs": outputs or None,
+                "notes": ([training_data_note] if training_data_note else []) + (
+                    ["The config also reads a datalist file (data_list_file_path); "
+                     "MedAnvil can generate one from a Decathlon dataset.json "
+                     "(generate_datalist=true)."] if uses_datalist_file else []),
+            }
+        elif trainable and msd_compatible:
             data_layout = {
             "format": "Medical Segmentation Decathlon (MSD) — MedAnvil fine-tune pipeline",
             "description": (
@@ -370,11 +410,15 @@ class MonaiBundleService:
         # model-card info (papers + data organization) read from the bundle's own
         # configs/metadata.json — the authoritative Model Zoo source.
         card = bundle_card_from_metadata(meta)
-        # The MSD layout tree only belongs on cards where MedAnvil's pipeline can
-        # actually consume it; other bundles get the honest note instead.
+        # Card layout preference: (1) derived from the bundle's own train config
+        # globs, (2) the MSD tree only when MedAnvil's pipeline consumes it,
+        # (3) none — with the honest note instead.
         data_org = card["data_org"]
         if isinstance(data_org, dict):
-            if not (trainable and msd_compatible):
+            if train_globs:
+                data_org["layout"] = data_layout["layout"]
+                data_org["layout_source"] = train_cfg_name
+            elif not (trainable and msd_compatible):
                 data_org = {k: v for k, v in data_org.items() if k != "layout"}
             if training_data_note:
                 data_org["training_data_note"] = training_data_note

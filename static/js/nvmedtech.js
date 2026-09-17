@@ -33,7 +33,7 @@ async function nvLoadBundleCard() {
                     (papers ? '<div style="flex:1 1 260px; min-width:0;"><div style="font-weight:600; font-size:0.8rem; margin-bottom:0.25rem;"><i class="fas fa-book"></i> Key papers</div><ul style="font-size:0.75rem; margin:0; padding-left:1.1rem; overflow-wrap:anywhere; word-break:break-word;">' + papers + '</ul></div>' : '') +
                     ((d.modality || tree)
                         ? '<div style="flex:1 1 260px; min-width:0;">' +
-                            '<div style="font-weight:600; font-size:0.8rem; margin-bottom:0.25rem;"><i class="fas fa-folder-tree"></i> How to organize training data</div>' +
+                            '<div style="font-weight:600; font-size:0.8rem; margin-bottom:0.25rem;"><i class="fas fa-folder-tree"></i> Training data layout' + (d.layout_source ? ' <span style="font-weight:normal; color:#888;">(from ' + escapeHtml(d.layout_source) + ')</span>' : '') + '</div>' +
                             (d.modality ? '<div style="' + rowStyle + '"><strong>Modality:</strong> ' + escapeHtml(d.modality) + '</div>' : '') +
                             (d.labels ? '<div style="' + rowStyle + '"><strong>Classes:</strong> ' + escapeHtml(d.labels) + '</div>' : '') +
                             (d.data_source ? '<div style="' + rowStyle + '"><strong>Source:</strong> ' + escapeHtml(d.data_source) + '</div>' : '') +

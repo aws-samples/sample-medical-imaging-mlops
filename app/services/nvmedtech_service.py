@@ -84,6 +84,7 @@ class NvMedtechService:
             "├── labelsTr/        # label volumes (.nii.gz), indices per your dataset",
             "└── dataset.json     # OPTIONAL — only needed with generate_datalist=true",
         ]
+        data_org["layout_source"] = "train.json + train_continual.json (shipped datalist)"
         data_org["training_data_note"] = (
             "Datalist: for MSD Task09_Spleen the bundle ships its own folds "
             "datalist (nothing extra needed). For other datasets provide a "
