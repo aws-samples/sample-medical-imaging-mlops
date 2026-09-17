@@ -136,6 +136,20 @@ async def list_jobs():
     return {"jobs": monai_bundle_service.refresh_jobs(aws_service.sagemaker_client)}
 
 
+@router.delete("/staged/{name}")
+async def delete_staged(name: str, delete_artifact: bool = True):
+    """Remove a staged bundle (record + optionally its S3 model.tar.gz)."""
+    try:
+        return monai_bundle_service.delete_staged(
+            name, delete_artifact=delete_artifact,
+            region=os.environ.get("AWS_DEFAULT_REGION", "us-east-1"))
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error("Delete staged failed: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/jobs/{job_name}")
 async def get_job(job_name: str):
     """Get status of a MONAI bundle job."""

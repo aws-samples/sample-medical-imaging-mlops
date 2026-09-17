@@ -75,6 +75,17 @@ SUPPORTED_BUNDLES = [
         "default_train_config": "train.json",
         "default_inference_config": "inference.json",
     },
+    {
+        "name": "wholeBrainSeg_Large_UNEST_segmentation",
+        "repo_id": "MONAI/wholeBrainSeg_Large_UNEST_segmentation",
+        "task": "segmentation",
+        "dimension": "3D",
+        "description": "Whole-brain segmentation in T1-weighted MRI, 133 structures (UNEST Large). MONAI Model Zoo bundle. Metadata declares MONAI 1.4/torch 2.4, but it runs on the shared sm-monai-bundle images (verified: async inference + training) — its extra deps (timm/einops) install from the artifact requirements at runtime.",
+        "parameters": "133 classes, ~349 MB checkpoint",
+        "input_size": "3D T1w MRI (NIfTI)",
+        "default_train_config": "train.json",
+        "default_inference_config": "inference.json",
+    },
 ]
 
 
@@ -583,6 +594,35 @@ class MonaiBundleService:
 
     def list_jobs(self) -> list:
         return [{"job_name": k, **v} for k, v in self.jobs.items()]
+
+    def delete_staged(self, name: str, delete_artifact: bool = True,
+                      region: str = "us-east-1") -> dict:
+        """Remove a staged bundle record and (optionally) its S3 artifact.
+
+        The registry entry (if any) is code and remains — the bundle reverts to
+        an unstaged placeholder. Fine-tuned job artifacts are not touched.
+        NOTE: deleting the S3 artifact breaks scale-up-from-zero for any
+        endpoint deployed from it (new instances re-pull ModelDataUrl).
+        """
+        rec = self.staged.get(name)
+        if rec is None:
+            raise KeyError(f"No staged bundle named '{name}'")
+        rec = rec if isinstance(rec, dict) else {"s3_uri": rec}
+        artifact_deleted = False
+        s3_uri = rec.get("s3_uri")
+        if delete_artifact and s3_uri:
+            try:
+                import boto3
+                bucket, key = parse_s3_uri(s3_uri)
+                boto3.client("s3", region_name=region).delete_object(Bucket=bucket, Key=key)
+                artifact_deleted = True
+            except Exception as e:  # noqa: BLE001 - record removal still proceeds
+                logger.warning("Could not delete artifact %s: %s", s3_uri, e)
+        del self.staged[name]
+        self._save_jobs()
+        logger.info("Removed staged bundle %s (artifact_deleted=%s)", name, artifact_deleted)
+        return {"name": name, "removed": True,
+                "artifact_deleted": artifact_deleted, "s3_uri": s3_uri}
 
     def refresh_jobs(self, sagemaker_client) -> list:
         """Refresh status for non-terminal jobs from AWS, then return all jobs.

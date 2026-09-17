@@ -506,6 +506,7 @@ function mbDisplayStaged(items) {
                 '<div class="job-actions">' +
                     (trainable ? '<button class="btn btn-secondary" onclick="mbUseStagedForFinetune(\'' + escapeJsString(art) + '\')" title="Fill the fine-tune bundle artifact"><i class="fas fa-dumbbell"></i> Fine-tune</button>' : '') +
                     '<button class="btn btn-secondary" onclick="mbUseStagedForDeploy(\'' + escapeJsString(art) + '\', \'' + escapeJsString(b.name) + '\')" title="Fill the deploy artifact"><i class="fas fa-rocket"></i> Deploy</button>' +
+                    '<button class="btn btn-secondary" onclick="mbDeleteStaged(\'' + escapeJsString(b.name) + '\')" style="color:#c62828;" title="Remove the staged record and its S3 artifact"><i class="fas fa-trash"></i> Delete</button>' +
                 '</div>' +
             '</div>';
 
@@ -515,6 +516,19 @@ function mbDisplayStaged(items) {
                 rightCols +
             '</div>';
     }).join('');
+}
+
+async function mbDeleteStaged(name) {
+    if (!confirm('Remove staged bundle "' + name + '"?\n\nThis deletes the staged record AND its model.tar.gz from S3. ' +
+                 'Fine-tuned job artifacts are NOT affected, but any endpoint deployed from this artifact ' +
+                 'will fail to scale up from zero afterwards (new instances re-download it from S3).')) return;
+    try {
+        const r = await fetch('/api/monai-bundle/staged/' + encodeURIComponent(name), { method: 'DELETE' });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.detail || 'delete failed');
+        mbLoadStaged();
+        if (typeof mbLoadArtifacts === 'function') mbLoadArtifacts();
+    } catch (e) { alert('Delete failed: ' + e.message); }
 }
 
 function mbUseStagedForFinetune(artifact) {

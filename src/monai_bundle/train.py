@@ -112,6 +112,44 @@ def _apply_overrides(cfg_path: str, overrides: dict):
     logger.info("Applied overrides to %s: %s", os.path.basename(cfg_path), list(overrides))
 
 
+def _install_bundle_requirements(bundle_dir: str):
+    """Install the artifact's CURATED code/requirements.txt (written by staging:
+    base deps + bundle metadata packages, with framework-coupled pins like
+    torch*/cucim already skipped). The inference DLC installs this automatically
+    at endpoint startup, but TRAINING containers do not — e.g. wholeBrainSeg's
+    UNEST network needs `timm` at training time. Per-package fallback: only a
+    monai failure is fatal; optional packages are skipped with a warning."""
+    reqs = os.path.join(bundle_dir, "code", "requirements.txt")
+    if not os.path.isfile(reqs):
+        return
+    logger.info("Installing bundle requirements from %s", reqs)
+    result = subprocess.run(
+        [sys.executable, "-m", "pip", "install", "--no-cache-dir", "-r", reqs],
+        capture_output=True, text=True,
+    )
+    if result.returncode == 0:
+        logger.info("Bundle requirements installed.")
+        return
+    logger.warning("Bulk install failed, retrying per package:\n%s",
+                   (result.stderr or "")[-2000:])
+    failed = []
+    with open(reqs, "r", encoding="utf-8") as f:
+        lines = [ln.strip() for ln in f if ln.strip() and not ln.strip().startswith("#")]
+    for line in lines:
+        r = subprocess.run(
+            [sys.executable, "-m", "pip", "install", "--no-cache-dir", line],
+            capture_output=True, text=True,
+        )
+        if r.returncode != 0:
+            failed.append(line)
+            logger.warning("Could not install '%s' (continuing)", line)
+    hard = [f for f in failed if f.lower().startswith("monai")]
+    if hard:
+        raise RuntimeError(f"Failed to install required package(s): {hard}")
+    if failed:
+        logger.warning("Skipped optional/unavailable packages: %s", failed)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--train_config", type=str,
@@ -143,6 +181,7 @@ def main():
 
     work_dir = "/opt/ml/bundle_work"
     bundle_dir = _stage_bundle(args.bundle_channel, work_dir)
+    _install_bundle_requirements(bundle_dir)
     _ensure_pretrained_checkpoint(bundle_dir)
 
     train_config = _resolve_train_config(bundle_dir, args.train_config)
@@ -163,12 +202,26 @@ def main():
 
     _apply_overrides(cfg_path, overrides)
 
+    # Detect the config's training run id — monai.bundle defaults to 'run', but
+    # many bundles name their section differently (e.g. wholeBrainSeg: 'training',
+    # HoVer-Net: 'train'). Pick the first executable section present.
+    run_id = "run"
+    try:
+        with open(cfg_path, "r", encoding="utf-8") as f:
+            _cfg = json.load(f)
+        for cand in ("run", "training", "train", "run_training"):
+            if cand in _cfg:
+                run_id = cand
+                break
+    except Exception as e:  # noqa: BLE001 - YAML/unusual config; keep default
+        logger.warning("Could not detect run_id in %s: %s", train_config, e)
+
     cmd = [
         sys.executable, "-m", "monai.bundle", "run",
         "--config_file", os.path.join("configs", train_config),
         "--dataset_dir", dataset_dir,
-    ] + cli_overrides
-    logger.info("Running: %s (cwd=%s)", " ".join(cmd), bundle_dir)
+    ] + (["--run_id", run_id] if run_id != "run" else []) + cli_overrides
+    logger.info("Running (run_id=%s): %s (cwd=%s)", run_id, " ".join(cmd), bundle_dir)
     subprocess.run(cmd, cwd=bundle_dir, check=True)
 
     # Collect produced checkpoint(s) + result.json into SM_MODEL_DIR.
