@@ -1,0 +1,39 @@
+# NV-Segment-CT (VISTA-3D) training/fine-tuning image for SageMaker BYOC.
+#
+# DEDICATED image for the NVIDIA-Medtech NV-Segment-CT bundle
+# (https://github.com/NVIDIA-Medtech/NV-Segment-CTMR/tree/main/NV-Segment-CT).
+# The bundle requires MONAI 1.4 on PyTorch 2.4 — a materially different
+# framework stack than the shared sm-monai-bundle image (MONAI 1.3 / torch 2.9),
+# so per the MONAI-bundle skill's dedicated-image rule it gets its own base:
+# the PyTorch 2.4 (cu124) TRAINING DLC, with the bundle's dependencies baked in.
+#
+# One image covers BOTH training and fine-tuning: they are the same process
+# (train.py composes the bundle's own recipe
+#   ['configs/train.json', 'configs/train_continual.json']
+# and fine-tunes from the pretrained checkpoint in the model channel).
+#
+# Build (from the medical-image-training-dashboard/ dir):
+#   bash build_and_push_nvmedtech.sh
+#
+# NOTE: BuildKit is disabled at build time (see build_and_push_nvmedtech.sh) so
+# the image uses the Docker V2 manifest format SageMaker requires (it rejects
+# OCI manifests).
+
+# NOTE: platform pinned to linux/amd64 — DLC base and SageMaker hosts are x86_64.
+FROM --platform=linux/amd64 763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-training:2.4.0-gpu-py311-cu124-ubuntu22.04-sagemaker
+
+# ── VISTA-3D runtime dependencies (MONAI 1.4 stack; cucim intentionally
+#    excluded — no installable wheel in this container, optional GPU accel) ───
+COPY src/nvmedtech/requirements.txt /tmp/requirements-nvmedtech.txt
+RUN pip install --no-cache-dir -r /tmp/requirements-nvmedtech.txt
+
+# ── Entry point + helpers ────────────────────────────────────────────────────
+COPY src/nvmedtech/ /opt/program/
+
+ENV SAGEMAKER_PROGRAM=train.py
+# The bundle staged at runtime (its scripts/) must be importable.
+ENV PYTHONPATH=/opt/program:${PYTHONPATH}
+
+# NOTE: SageMaker training containers run as root to write /opt/ml and drive the
+# training toolkit; a non-root USER is intentionally not added (matches the
+# other training Dockerfiles). HEALTHCHECK is managed by SageMaker orchestration.

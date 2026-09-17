@@ -53,6 +53,28 @@ SUPPORTED_BUNDLES = [
         "default_train_config": "train.json",
         "default_inference_config": "inference.json",
     },
+    {
+        "name": "breast_density_classification",
+        "repo_id": "MONAI/breast_density_classification",
+        "task": "classification",
+        "dimension": "2D",
+        "description": "Mammographic breast density classification, BI-RADS A-D (InceptionV3). MONAI Model Zoo bundle. Inference-only: the bundle ships no training config.",
+        "parameters": "4 classes",
+        "input_size": "2D mammogram JPEG (299x299)",
+        "default_train_config": None,
+        "default_inference_config": "inference.json",
+    },
+    {
+        "name": "pathology_nuclei_segmentation_classification",
+        "repo_id": "MONAI/pathology_nuclei_segmentation_classification",
+        "task": "segmentation",
+        "dimension": "2D",
+        "description": "HoVer-Net nuclear segmentation + classification in H&E histology patches (CoNSeP). MONAI Model Zoo bundle. Requires MONAI 1.4 / torch 2.4 — deploy with the sm-nvmedtech-inference image via per-bundle image_uri, not the shared image.",
+        "parameters": "instance + type maps",
+        "input_size": "2D H&E patch PNG (256x256)",
+        "default_train_config": "train.json",
+        "default_inference_config": "inference.json",
+    },
 ]
 
 
@@ -245,8 +267,21 @@ class MonaiBundleService:
                     base_reqs[name] = line
 
         meta = info.metadata or {}
-        required = meta.get("required_packages_version", {}) or {}
+        # Older zoo bundles (e.g. HoVer-Net) declare deps under the deprecated
+        # 'optional_packages_version' key instead of 'required_packages_version'.
+        required = dict(meta.get("optional_packages_version") or {})
+        required.update(meta.get("required_packages_version") or {})
+        # Never merge framework-coupled packages: their pins track the bundle's
+        # torch generation (e.g. torchvision==0.14.1 → torch 1.13) and would make
+        # pip downgrade/break the DLC's torch at endpoint startup. The DLC ships
+        # matched torch/torchvision/torchaudio already. (Same lesson class as
+        # cucim: some declared deps must not be pip-installed at runtime.)
+        FRAMEWORK_SKIP = ("torch", "torchvision", "torchaudio", "cucim", "cupy")
+        skipped = []
         for pkg, ver in required.items():
+            if pkg.lower().startswith(FRAMEWORK_SKIP):
+                skipped.append(f"{pkg}=={ver}")
+                continue
             base_reqs[pkg] = f"{pkg}=={ver}"
 
         with open(os.path.join(code_dir, "requirements.txt"), "w") as f:
@@ -259,7 +294,10 @@ class MonaiBundleService:
         # Advisory: framework versions the bundle expects vs. what the image ships.
         # A hard mismatch here (torch/CUDA) may need a dedicated image, not pip.
         deps_report = {
-            "extra_packages_installed_at_startup": sorted(required.keys()),
+            "extra_packages_installed_at_startup": sorted(
+                p for p in required.keys() if not p.lower().startswith(FRAMEWORK_SKIP)
+            ),
+            "framework_packages_skipped": sorted(skipped),
             "bundle_framework_versions": {
                 k: meta.get(k) for k in ("monai_version", "pytorch_version", "numpy_version")
                 if meta.get(k)
@@ -273,12 +311,31 @@ class MonaiBundleService:
         ndf = meta.get("network_data_format", {}) or {}
         inputs = ndf.get("inputs", {}) or {}
         outputs = ndf.get("outputs", {}) or {}
-        data_layout = {
-            "format": "Medical Segmentation Decathlon (MSD)",
+        # Fine-tuning is only meaningful when the bundle ships a training config.
+        # And the MSD layout below is what MEDANVIL'S generic fine-tune pipeline
+        # (datalist_gen.py) consumes — it only applies to Decathlon-style NIfTI
+        # bundles. Bundles with other training-data formats (e.g. HoVer-Net's
+        # CoNSeP .npy patches) get an honest pointer to their own docs instead
+        # of a misleading one-size-fits-all tree.
+        trainable = bool(info.train_configs)
+        msd_compatible = str(meta.get("data_type", "")).lower() in ("nibabel", "nifti")
+        training_data_note = None
+        if trainable and not msd_compatible:
+            training_data_note = (
+                f"This bundle uses its own training-data format (data_type: "
+                f"{meta.get('data_type', 'unknown')}) — MedAnvil's generic MSD "
+                "fine-tune layout does not apply. See the bundle's documentation "
+                "for dataset preparation."
+            )
+        data_layout = None
+        if trainable and msd_compatible:
+            data_layout = {
+            "format": "Medical Segmentation Decathlon (MSD) — MedAnvil fine-tune pipeline",
             "description": (
-                "Upload a dataset directory containing a dataset.json plus the image "
-                "and label volumes it references. Fine-tuning reads dataset.json and "
-                "auto-splits it into training/validation."
+                "This is the dataset layout MedAnvil's generic fine-tune pipeline "
+                "expects (not bundle-specific): a dataset directory with a "
+                "dataset.json plus the image and label volumes it references. "
+                "Fine-tuning reads dataset.json and auto-splits train/validation."
             ),
             "layout": [
                 "s3://<your-bucket>/<dataset>/",
@@ -313,15 +370,23 @@ class MonaiBundleService:
         # model-card info (papers + data organization) read from the bundle's own
         # configs/metadata.json — the authoritative Model Zoo source.
         card = bundle_card_from_metadata(meta)
-        # Authoritative source of the papers/data-organization info shown on the
-        # card: the bundle's own configs/metadata.json in the MONAI model-zoo.
+        # The MSD layout tree only belongs on cards where MedAnvil's pipeline can
+        # actually consume it; other bundles get the honest note instead.
+        data_org = card["data_org"]
+        if isinstance(data_org, dict):
+            if not (trainable and msd_compatible):
+                data_org = {k: v for k, v in data_org.items() if k != "layout"}
+            if training_data_note:
+                data_org["training_data_note"] = training_data_note
+            data_org = data_org or None
         self.staged[short] = {
             "s3_uri": s3_uri,
             "repo_id": hf_repo_id,
             "task": info.task,
+            "trainable": trainable,
             "description": meta.get("description"),
             "papers": card["papers"],
-            "data_org": card["data_org"],
+            "data_org": data_org,
             "source_url": source_url,
         }
         self._save_jobs()
@@ -330,6 +395,7 @@ class MonaiBundleService:
             "repo_id": hf_repo_id,
             "model_artifacts": s3_uri,
             "task": info.task,
+            "trainable": trainable,
             "train_configs": info.train_configs,
             "inference_configs": info.inference_configs,
             "default_train_config": info.default_train_config(),
@@ -337,7 +403,7 @@ class MonaiBundleService:
             "deps": deps_report,
             "data_layout": data_layout,
             "papers": card["papers"],
-            "data_org": card["data_org"],
+            "data_org": data_org,
             "source_url": source_url,
         }
 
@@ -372,6 +438,17 @@ class MonaiBundleService:
         parse_s3_uri(data_s3_uri)
         if output_s3_uri:
             parse_s3_uri(output_s3_uri)
+
+        # Refuse fine-tune for artifacts we know are inference-only (the bundle
+        # ships no training config) — otherwise SageMaker would start a billable
+        # job that is guaranteed to fail in train.py minutes later.
+        for name, s in self.staged.items():
+            rec = s if isinstance(s, dict) else {"s3_uri": s}
+            if rec.get("s3_uri") == model_artifacts and rec.get("trainable") is False:
+                raise ValueError(
+                    f"Bundle '{name}' is inference-only (it ships no training "
+                    "config) — fine-tuning is not available for this artifact."
+                )
 
         overrides = dict(config_overrides or {})
 
@@ -507,10 +584,17 @@ class MonaiBundleService:
             if not uri:
                 continue
             reg = registry_by_name.get(name.lower(), {})
+            # trainable: from the staged record (metadata-derived); for records
+            # staged before the flag existed, fall back to the registry (a null
+            # default_train_config marks an inference-only bundle).
+            trainable = s.get("trainable")
+            if trainable is None:
+                trainable = reg.get("default_train_config", "train.json") is not None
             base.append({
                 "name": name,
                 "task": s.get("task") or reg.get("task"),
                 "description": s.get("description") or reg.get("description"),
+                "trainable": trainable,
                 # Papers + data organization from the bundle's own metadata.json.
                 "papers": s.get("papers", []),
                 "data_org": s.get("data_org"),

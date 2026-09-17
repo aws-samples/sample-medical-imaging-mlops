@@ -95,8 +95,10 @@ async function mbStageBundle() {
                     '</label>' +
                 '</div>' +
             '</div>';
-        // Prefill the fine-tune artifact field for convenience.
-        document.getElementById('mb-model-artifacts').value = data.model_artifacts;
+        // Prefill the fine-tune artifact field for convenience (trainable bundles only).
+        if (data.trainable !== false) {
+            document.getElementById('mb-model-artifacts').value = data.model_artifacts;
+        }
         if (typeof mbLoadStaged === 'function') mbLoadStaged();
     } catch (e) {
         out.innerHTML = '<span style="color:#c00">' + escapeHtml(e.message) + '</span>';
@@ -443,17 +445,28 @@ function mbDisplayStaged(items) {
               '</div>'
             : '';
 
-        // Data organization (from the bundle's metadata.json).
+        // Data organization (from the bundle's metadata.json). The MSD layout tree
+        // appears only when MedAnvil's fine-tune pipeline actually consumes it;
+        // bundles with their own training-data format get an honest note instead.
+        const trainable = b.trainable !== false;
         const d = b.data_org || {};
         const tree = (d.layout || []).map(escapeHtml).join('\n');
         const rowStyle = 'font-size:0.75rem; color:#555; overflow-wrap:anywhere; word-break:break-word;';
-        const dataCol = (d.modality || d.labels || d.data_source || tree)
+        const dataTitle = tree
+            ? '<i class="fas fa-folder-tree"></i> Training data layout (MedAnvil fine-tune pipeline)'
+            : '<i class="fas fa-right-left"></i> Model inputs &amp; classes';
+        const noteHtml = d.training_data_note
+            ? '<div style="' + rowStyle + ' margin-top:0.3rem; padding:0.35rem 0.5rem; background:#fff8e1; border:1px solid #ffe082; border-radius:6px;">' +
+              '<i class="fas fa-circle-info"></i> ' + escapeHtml(d.training_data_note) + '</div>'
+            : '';
+        const dataCol = (d.modality || d.labels || d.data_source || tree || noteHtml)
             ? '<div style="flex:1 1 260px; min-width:0;">' +
-                '<div style="font-weight:600; font-size:0.8rem; margin-bottom:0.25rem;"><i class="fas fa-folder-tree"></i> How to organize training data</div>' +
+                '<div style="font-weight:600; font-size:0.8rem; margin-bottom:0.25rem;">' + dataTitle + '</div>' +
                 (d.modality ? '<div style="' + rowStyle + '"><strong>Modality:</strong> ' + escapeHtml(d.modality) + '</div>' : '') +
                 (d.labels ? '<div style="' + rowStyle + '"><strong>Classes:</strong> ' + escapeHtml(d.labels) + '</div>' : '') +
                 (d.data_source ? '<div style="' + rowStyle + '"><strong>Source:</strong> ' + escapeHtml(d.data_source) + '</div>' : '') +
                 (tree ? '<pre style="background:#f6f8fa; border:1px solid #eee; border-radius:6px; padding:0.5rem; font-size:0.72rem; white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; margin:0.3rem 0 0;">' + tree + '</pre>' : '') +
+                noteHtml +
               '</div>'
             : '';
 
@@ -480,15 +493,16 @@ function mbDisplayStaged(items) {
         // Left column: identity + artifact + actions.
         const leftCol =
             '<div style="flex:1 1 220px; min-width:0;">' +
-                '<div style="display:flex; align-items:center; gap:6px; margin-bottom:0.35rem;">' +
+                '<div style="display:flex; align-items:center; gap:6px; margin-bottom:0.35rem; flex-wrap:wrap;">' +
                     '<span class="model-name" style="overflow-wrap:anywhere;">' + escapeHtml(b.name) + '</span>' +
                     '<span class="model-tag ' + taskClass + '">' + escapeHtml(taskLabel) + '</span>' +
+                    (!trainable ? '<span class="model-tag" style="background:#fff3e0; color:#e65100; border:1px solid #ffcc80;">Inference-only</span>' : '') +
                 '</div>' +
-                '<div style="font-size:0.78rem; color:#555; overflow-wrap:anywhere; margin-bottom:0.4rem;">' + escapeHtml(b.description || 'MONAI bundle staged for fine-tuning / deployment.') + '</div>' +
+                '<div style="font-size:0.78rem; color:#555; overflow-wrap:anywhere; margin-bottom:0.4rem;">' + escapeHtml(b.description || 'MONAI bundle staged for deployment.') + '</div>' +
                 '<div style="font-size:0.72rem; color:#888; overflow-wrap:anywhere; word-break:break-all; margin-bottom:0.5rem;"><strong>Artifact:</strong> ' + escapeHtml(art) + '</div>' +
                 githubHtml +
                 '<div class="job-actions">' +
-                    '<button class="btn btn-secondary" onclick="mbUseStagedForFinetune(\'' + escapeJsString(art) + '\')" title="Fill the fine-tune bundle artifact"><i class="fas fa-dumbbell"></i> Fine-tune</button>' +
+                    (trainable ? '<button class="btn btn-secondary" onclick="mbUseStagedForFinetune(\'' + escapeJsString(art) + '\')" title="Fill the fine-tune bundle artifact"><i class="fas fa-dumbbell"></i> Fine-tune</button>' : '') +
                     '<button class="btn btn-secondary" onclick="mbUseStagedForDeploy(\'' + escapeJsString(art) + '\', \'' + escapeJsString(b.name) + '\')" title="Fill the deploy artifact"><i class="fas fa-rocket"></i> Deploy</button>' +
                 '</div>' +
             '</div>';

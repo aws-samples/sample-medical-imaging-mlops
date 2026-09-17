@@ -46,3 +46,6 @@ context
 # Reference notebooks (separate repo)
 sample-migration-of-training-medical-imaging-modes-from-ec2-to-sagemaker/
 site/
+
+# NV-Segment-CT weights are fetched from Hugging Face at stage time — never in git
+NVIDIA-MedTech/**/models/
