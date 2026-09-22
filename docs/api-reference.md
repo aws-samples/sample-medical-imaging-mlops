@@ -784,6 +784,73 @@ List all `InService` SageMaker endpoints.
 
 ---
 
+## /api/viewer — Prediction Viewer (Experimental)
+
+Backs the standalone `/viewer` page (NiiVue). Research use only — rendered
+predictions are not clinical diagnoses.
+
+### GET /api/viewer/fetch
+
+Stream a NIfTI or single-file DICOM object from S3 through the backend
+(same-origin, so no bucket CORS configuration is needed). DICOM objects are
+converted server-side to gzipped NIfTI via pydicom + Pillow.
+
+**Query parameters:**
+
+| Parameter | Required | Description |
+|---|---|---|
+| `s3_uri` | yes | `s3://bucket/key` ending in `.nii`, `.nii.gz`, or `.dcm` |
+
+**Response:** binary volume data (`application/gzip` or
+`application/octet-stream`), streamed in 256 KB chunks. DICOM sources return
+converted gzipped NIfTI.
+
+**Errors:** 400 (invalid URI or unsupported extension), 403 (S3 access
+denied / expired credentials), 404 (object not found), 422 (DICOM could not
+be decoded)
+
+### GET /api/viewer/presign
+
+Generate a short-lived (15 min) presigned GET URL for a NIfTI object.
+The viewer page itself uses `/fetch`; this endpoint remains for direct S3
+access when the bucket's CORS policy allows it.
+
+**Query parameters:** `s3_uri` (required, `.nii`/`.nii.gz` only)
+
+**Response:**
+```json
+{"url": "https://bucket.s3.amazonaws.com/key?...", "expires_in": 900}
+```
+
+### GET /api/viewer/recent-masks
+
+List the most recent prediction masks written by async endpoints. Scans the
+bucket named by the `VIEWER_MASKS_BUCKET` environment variable under the
+prefixes in `MASK_PREFIXES` (`app/routers/viewer_router.py`).
+
+**Query parameters:** `limit` (optional, default `25`)
+
+**Response:**
+```json
+{
+  "masks": [
+    {
+      "s3_uri": "s3://your-output-bucket/masks/case_1_seg.nii.gz",
+      "name": "case_1_seg.nii.gz",
+      "size": 184320,
+      "last_modified": "2026-09-21T18:20:00+00:00"
+    }
+  ]
+}
+```
+
+If `VIEWER_MASKS_BUCKET` is unset, returns `{"masks": [], "note": "..."}`.
+
+**Errors:** 400 (credentials not configured), 403 (access denied listing the
+bucket)
+
+---
+
 ## /api/evaluation — Endpoint Evaluation via Processing Jobs
 
 ### POST /api/evaluation/submit

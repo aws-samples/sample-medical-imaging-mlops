@@ -57,6 +57,7 @@ nav:
       - MONAI Bundle: user-guide/monai-bundle.md
       - Deployment: user-guide/deployment.md
       - Inference: user-guide/inference.md
+      - Prediction Viewer: user-guide/viewer.md
       - Evaluation: user-guide/evaluation.md
       - Monitoring: user-guide/monitoring.md
       - Fairness Analysis: user-guide/fairness.md

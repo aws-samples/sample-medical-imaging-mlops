@@ -141,6 +141,20 @@ No additional configuration is needed in the inference UI — select the endpoin
 
 For async endpoints, the result panel shows the S3 output location and polls for completion automatically.
 
+## Viewing Results in the Prediction Viewer
+
+After a run completes, results can be inspected visually in the
+[Prediction Viewer](viewer.md) (experimental):
+
+- **Segmentation** — click **View in viewer** on the result card to open the
+  source image with the prediction mask overlaid
+- **Classification** — click **View source image in viewer** to open the
+  input image with the predicted class, confidence, and probability bars in
+  the sidebar
+
+The **Open Prediction Viewer** button on the Inference tab opens the viewer
+prefilled with your most recent run.
+
 ## CLI Tools
 
 For quick testing without the dashboard:

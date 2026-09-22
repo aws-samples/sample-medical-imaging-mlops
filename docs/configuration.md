@@ -85,6 +85,7 @@ These variables are unique to your AWS account and should never be committed.
 | `DEFAULT_DATA_S3_URI` | Default training data S3 URI (pre-populates the UI form) | `s3://<your-bucket-name>/training/spine-xr/` |
 | `TEST_IMAGE_S3_URI` | S3 URI of a test DICOM image for integration tests | `s3://<your-bucket-name>/test/sample.dcm` |
 | `TEST_SEGMENTATION_S3_URI` | S3 URI of a test NIfTI volume for segmentation tests | `s3://<your-bucket-name>/test/volume.nii.gz` |
+| `VIEWER_MASKS_BUCKET` | Bucket the Prediction Viewer scans for recent prediction masks (optional) | `your-output-bucket` |
 
 ### Example `.env.local`
 
