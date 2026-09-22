@@ -37,7 +37,12 @@ function escapeJsString(str) {
 const _tabInits   = {};
 const _tabVisited = {};
 
-function registerTabInit(tabId, fn) { _tabInits[tabId] = fn; }
+function registerTabInit(tabId, fn) {
+    // Chain: multiple modules may register for the same tab (e.g. inference +
+    // the prediction viewer). Overwriting would silently drop earlier inits.
+    const prev = _tabInits[tabId];
+    _tabInits[tabId] = prev ? function () { prev(); fn(); } : fn;
+}
 
 function switchTab(tabId, btn) {
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedAnvil — Prediction Viewer</title>
+    <link href="/static/vendor/fontawesome/css/all.min.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <style>
+        body { margin:0; overflow:hidden; background:#f5f7fa; }
+        .viewer-shell { display:flex; flex-direction:column; height:100vh; }
+
+        .viewer-topbar { display:flex; align-items:center; gap:0.75rem; padding:0.6rem 1.25rem;
+                         background:#232f3e; color:#fff; flex-shrink:0; }
+        .viewer-topbar img { width:26px; height:26px; }
+        .viewer-topbar h1 { margin:0; font-size:1rem; font-weight:700; }
+        .viewer-topbar .disclaimer { margin-left:auto; font-size:0.72rem; color:rgba(255,255,255,0.55); }
+
+        .viewer-controls { display:flex; align-items:flex-end; gap:0.75rem; flex-wrap:wrap;
+                           padding:0.75rem 1.25rem; background:#fff; border-bottom:1px solid #e2e6ea; flex-shrink:0; }
+        .viewer-controls .field { display:flex; flex-direction:column; gap:0.2rem; }
+        .viewer-controls .field label { font-size:0.72rem; color:#666; }
+        .viewer-controls .field input[type=text] { width:340px; padding:0.4rem 0.5rem; border:1px solid #ccc;
+                                                   border-radius:4px; font-size:0.8rem; }
+        .viewer-controls select { padding:0.4rem 0.5rem; border:1px solid #ccc; border-radius:4px; font-size:0.8rem; }
+
+        .viewer-main { display:flex; flex:1; min-height:0; }
+        .viewer-canvas-wrap { flex:1; background:#15171c; min-width:0; }
+        #viewer-canvas { width:100%; height:100%; display:block; }
+
+        .viewer-side { width:320px; min-width:320px; background:#fff; border-left:1px solid #e2e6ea;
+                       display:flex; flex-direction:column; }
+        .viewer-side h3 { margin:0; padding:0.75rem 1rem; font-size:0.85rem; color:#232f3e;
+                          border-bottom:1px solid #eee; display:flex; align-items:center; justify-content:space-between; }
+        #viewer-recent-list { flex:1; overflow-y:auto; }
+
+        .viewer-statusbar { padding:0.35rem 1.25rem; background:#fff; border-top:1px solid #e2e6ea;
+                            font-size:0.75rem; color:#666; flex-shrink:0; display:flex; gap:1.5rem; }
+    </style>
+</head>
+<body>
+<div class="viewer-shell">
+    <div class="viewer-topbar">
+        <img src="/static/favicon.svg" alt="">
+        <h1>MedAnvil — Prediction Viewer
+            <span style="color:#ff6b6b; font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; vertical-align:middle; margin-left:0.4rem;">Experimental</span>
+        </h1>
+        <span class="disclaimer"><i class="fas fa-exclamation-triangle"></i>
+            Research use only — rendered predictions are not clinical diagnoses.</span>
+    </div>
+
+    <div class="viewer-controls">
+        <div class="field">
+            <label>Source image (S3 URI, .nii/.nii.gz/.dcm) — mask optional</label>
+            <input type="text" id="viewer-image-uri" placeholder="s3://your-bucket/dataset/imagesTs/case_1.nii.gz">
+        </div>
+        <div class="field">
+            <label>Prediction mask (S3 URI, .nii/.nii.gz) — optional</label>
+            <input type="text" id="viewer-mask-uri" placeholder="s3://your-bucket/masks/case_1_seg.nii.gz">
+        </div>
+        <button class="btn btn-primary" onclick="viewerLoad()"><i class="fas fa-eye"></i> Load</button>
+        <div class="field">
+            <label>View</label>
+            <select id="viewer-slice-type" onchange="viewerSetSliceType(this.value)">
+                <option value="multiplanar" selected>Multiplanar + 3D</option>
+                <option value="axial">Axial</option>
+                <option value="coronal">Coronal</option>
+                <option value="sagittal">Sagittal</option>
+                <option value="render">3D render</option>
+            </select>
+        </div>
+        <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.8rem; margin:0 0 0.35rem;">
+            Overlay opacity
+            <input type="range" min="0" max="1" step="0.05" value="0.55"
+                   oninput="viewerSetOpacity(this.value)" style="width:130px;">
+            <span id="viewer-opacity-label" style="color:#666; min-width:36px;">55%</span>
+        </label>
+    </div>
+
+    <div class="viewer-main">
+        <div class="viewer-canvas-wrap">
+            <canvas id="viewer-canvas"></canvas>
+        </div>
+        <div class="viewer-side">
+            <div id="viewer-classification" style="display:none; border-bottom:1px solid #eee;">
+                <h3><span><i class="fas fa-tags"></i> Classification result</span></h3>
+                <div id="viewer-classification-body" style="padding:0.75rem 1rem;"></div>
+            </div>
+            <h3>
+                <span><i class="fas fa-clock-rotate-left"></i> Recent predictions</span>
+                <button class="btn btn-secondary" onclick="viewerLoadRecent()"
+                        style="font-size:0.72rem; padding:0.3rem 0.6rem;">
+                    <i class="fas fa-sync"></i> Refresh
+                </button>
+            </h3>
+            <div id="viewer-recent-list"></div>
+        </div>
+    </div>
+
+    <div class="viewer-statusbar">
+        <span id="viewer-status"></span>
+        <span style="margin-left:auto;">Drag to change slices · scroll to zoom · right-drag for contrast</span>
+    </div>
+</div>
+
+<script src="/static/vendor/niivue/niivue.umd.js"></script>
+<script src="/static/js/viewer.js"></script>
+</body>
+</html>

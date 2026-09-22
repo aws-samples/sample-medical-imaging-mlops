@@ -10,6 +10,30 @@ registerTabInit('inference', function () {
     if (form) form.addEventListener('submit', runInference);
 });
 
+// Open the standalone full-page viewer (/viewer) in a new tab, deep-linked
+// to the given volumes. Used by the "View in viewer" result buttons.
+function openInViewer(imageUri, maskUri) {
+    const params = new URLSearchParams();
+    if (imageUri) params.set('image', imageUri);
+    if (maskUri) params.set('mask', maskUri);
+    window.open('/viewer' + (params.toString() ? '?' + params.toString() : ''),
+                '_blank', 'noopener,noreferrer');
+}
+
+// Persist the latest run's volumes so the /viewer page can prefill its
+// source-image and mask fields (localStorage is same-origin, so the viewer
+// tab sees it). Classification runs store the source image with no mask,
+// plus the result so the viewer can display it alongside the image.
+function _rememberViewerVolumes(imageUri, maskUri, classification) {
+    const mask = (maskUri && /\.nii(\.gz)?$/i.test(maskUri)) ? maskUri : '';
+    if (!imageUri && !mask) return;   // nothing viewable — keep previous entry
+    try {
+        localStorage.setItem('medanvil_viewer_last', JSON.stringify({
+            image: imageUri || '', mask: mask,
+            classification: classification || null, ts: Date.now() }));
+    } catch (_) { /* storage full/disabled — prefill is best-effort */ }
+}
+
 // Fallback: also load on DOMContentLoaded in case tab init doesn't fire
 document.addEventListener('DOMContentLoaded', function() {
     const select = document.getElementById('inf-endpoint');
@@ -133,6 +157,15 @@ async function runInference(e) {
     const inputValue = fd.get('input_value');
     const filePicker = document.getElementById('inf-file-picker');
 
+    // Remember the source volume (S3 URIs only) so segmentation results can
+    // prefill the viewer with image + mask (sync and async paths).
+    window._lastInputImage =
+        (inputType === 's3_uri' && /\.(nii(\.gz)?|dcm)$/i.test((inputValue || '').trim()))
+            ? inputValue.trim() : '';
+    // Store it right away so the viewer shows the source image even for
+    // classification runs (no mask); segmentation overwrites with the pair.
+    _rememberViewerVolumes(window._lastInputImage, '');
+
     const btn    = e.target.querySelector('button[type="submit"]');
     const banner = document.getElementById('inf-status-banner');
     const result = document.getElementById('inference-result');
@@ -173,7 +206,8 @@ async function runInference(e) {
         if (result) result.style.display = 'block';
 
         if (res.async) {
-            // Async endpoint — show submission card and start polling
+            // Async endpoint — show submission card and start polling.
+            // (window._lastInputImage already remembers the source volume.)
             if (banner) { banner.className = 'sm-status-banner sm-status-submitting'; banner.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Async inference submitted — waiting for result...'; }
             displayAsyncResult(res);
         } else {
@@ -283,7 +317,16 @@ async function pollAsyncResult(outputLocation, inferenceId) {
                     const rawOutputDiv = document.createElement('div');
                     rawOutputDiv.style.cssText = 'margin-top:0.75rem; font-size:0.8rem;';
                     const outputUri = res.result?.mask_s3_uri || outputLocation;
+                    const maskUri = res.result?.mask_s3_uri || '';
+                    const srcImg = window._lastInputImage || '';
+                    _rememberViewerVolumes(srcImg, maskUri);
+                    const viewBtn = maskUri
+                        ? `<button class="btn btn-secondary" style="margin-bottom:0.5rem;" onclick="openInViewer('${escapeJsString(srcImg)}', '${escapeJsString(maskUri)}')">
+                               <i class="fas fa-eye"></i> View in viewer
+                           </button>`
+                        : '';
                     rawOutputDiv.innerHTML = `
+                        ${viewBtn}
                         <div style="margin-bottom:0.5rem;">
                             <strong>Output S3:</strong> <code style="word-break:break-all;">${escapeHtml(outputUri)}</code>
                         </div>
@@ -328,6 +371,14 @@ function displayClassificationResult(res) {
     const predClass  = res.predicted_class || res.predicted_class_index;
     const confidence = res.confidence != null ? (res.confidence * 100).toFixed(1) + '%' : 'N/A';
 
+    // Update the viewer's remembered entry with the result so /viewer can
+    // show the classification alongside the source image.
+    _rememberViewerVolumes(window._lastInputImage || '', '', {
+        predicted_class: predClass,
+        confidence: res.confidence != null ? res.confidence : null,
+        probabilities: res.probabilities || null,
+    });
+
     const classEl = card?.querySelector('.inf-predicted-class');
     const confEl  = card?.querySelector('.inf-confidence');
     if (classEl) classEl.textContent = predClass;
@@ -351,6 +402,12 @@ function displayClassificationResult(res) {
     // Show output file location and raw response
     const outputEl = document.getElementById('inf-saved-to');
     if (outputEl) {
+        const srcImg = window._lastInputImage || '';
+        const viewBtn = srcImg
+            ? `<div style="margin-bottom:0.5rem;"><button class="btn btn-secondary" onclick="openInViewer('${escapeJsString(srcImg)}', '')">
+                   <i class="fas fa-eye"></i> View source image in viewer
+               </button></div>`
+            : '';
         const savedHtml = res.saved_to
             ? `<div style="padding:0.5rem; background:#e8f8f0; border-radius:4px; font-size:0.8rem; margin-bottom:0.5rem;"><i class="fas fa-check-circle" style="color:#1e8449;"></i> Saved to: <code style="word-break:break-all;">${escapeHtml(res.saved_to)}</code></div>`
             : '';
@@ -360,7 +417,7 @@ function displayClassificationResult(res) {
                 <pre style="margin-top:0.5rem; padding:0.75rem; background:#f4f6f9; border-radius:4px; overflow-x:auto; font-size:0.75rem; max-height:300px; overflow-y:auto;">${escapeHtml(JSON.stringify(res, null, 2))}</pre>
             </details>
         `;
-        outputEl.innerHTML = savedHtml + rawHtml;
+        outputEl.innerHTML = viewBtn + savedHtml + rawHtml;
     }
 }
 
@@ -373,6 +430,13 @@ function displaySegmentationResult(res) {
     const stats = document.getElementById('inf-seg-stats');
     if (stats) {
         const maskUri = res.mask_s3_uri || res.saved_to || '';
+        const srcImg = window._lastInputImage || '';
+        _rememberViewerVolumes(srcImg, maskUri);
+        const viewBtn = maskUri && /\.nii(\.gz)?$/i.test(maskUri)
+            ? `<div style="margin-top:0.75rem;"><button class="btn btn-secondary" onclick="openInViewer('${escapeJsString(srcImg)}', '${escapeJsString(maskUri)}')">
+                   <i class="fas fa-eye"></i> View in viewer
+               </button></div>`
+            : '';
         stats.innerHTML = `
             <div class="status-detail-row"><span>Model:</span><strong>${escapeHtml(res.model_name || 'N/A')}</strong></div>
             <div class="status-detail-row"><span>Original shape:</span><strong>${(res.original_shape || res.shape || []).join(' × ')}</strong></div>
@@ -381,6 +445,7 @@ function displaySegmentationResult(res) {
             <div class="status-detail-row"><span>Total voxels:</span><strong>${(res.total_voxels || 0).toLocaleString()}</strong></div>
             <div class="status-detail-row"><span>Segmentation %:</span><strong>${res.segmentation_percentage != null ? res.segmentation_percentage + '%' : (res.volume_fraction != null ? (res.volume_fraction * 100).toFixed(2) + '%' : 'N/A')}</strong></div>
             ${maskUri ? `<div style="margin-top:0.75rem; padding:0.5rem; background:#e8f8f0; border-radius:4px; font-size:0.8rem;"><i class="fas fa-check-circle" style="color:#1e8449;"></i> Mask saved to: <code style="word-break:break-all;">${escapeHtml(maskUri)}</code></div>` : ''}
+            ${viewBtn}
         `;
     }
 }
