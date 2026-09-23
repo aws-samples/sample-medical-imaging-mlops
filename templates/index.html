@@ -58,6 +58,14 @@
             </div>
         </div>
 
+        <div class="home-feature-card" onclick="switchTab('preprocessing', document.querySelector('[data-tab=preprocessing]'))">
+            <div class="home-feature-icon" style="background:#eafaf1;"><i class="fas fa-wand-magic-sparkles" style="color:#16a085;"></i></div>
+            <div>
+                <div class="home-feature-title">Preprocessing</div>
+                <div class="home-feature-desc">Build a MONAI preprocessing pipeline — format conversion, intensity/spatial ops, dataset prep. Preview on one image, then run it over your whole S3 dataset on SageMaker.</div>
+            </div>
+        </div>
+
         <div class="home-feature-card" onclick="switchTab('training', document.querySelector('[data-tab=training]'))">
             <div class="home-feature-icon" style="background:#f4ecf7;"><i class="fas fa-brain" style="color:#8e44ad;"></i></div>
             <div>
@@ -270,6 +278,145 @@
         </div>
     </div><!-- /panel-body -->
 </div><!-- /tab-fairness -->
+
+<!-- ── Preprocessing Tab ── -->
+<div id="tab-preprocessing" class="tab-panel">
+<div class="panel-header"><h2><i class="fas fa-wand-magic-sparkles"></i> Preprocessing</h2></div>
+<div class="panel-body">
+
+    <div style="background:#fff3cd; border:1px solid #ffc107; border-left:4px solid #ff9800; border-radius:6px; padding:0.75rem 1rem; margin-bottom:1.25rem; font-size:0.82rem; color:#664d03; display:flex; align-items:flex-start; gap:0.6rem;">
+        <i class="fas fa-exclamation-triangle" style="color:#e65100; margin-top:2px; flex-shrink:0;"></i>
+        <span><strong>Research Use Only</strong> — Preprocessing transforms imaging data for research and development. It performs no diagnosis. Preview a pipeline on one image, then run the identical pipeline over your dataset on SageMaker.</span>
+    </div>
+
+    <!-- Step 1: Build the pipeline -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-sliders"></i> 1. Build Pipeline</h3>
+            <p style="margin:0; font-size:0.88rem; color:#666;">Compose an ordered list of MONAI preprocessing steps. The same pipeline is used for the local preview and the SageMaker batch job.</p>
+        </div>
+        <div class="card-body">
+            <div style="background:#eef6fb; border:1px solid #cfe6f3; border-radius:6px; padding:0.6rem 0.9rem; margin-bottom:1rem; font-size:0.82rem; color:#0d47a1;">
+                <i class="fas fa-circle-info"></i> Task type is derived from your dataset's <code>dataset.json</code>: entries with a <code>label</code> are treated as <strong>segmentation</strong> (spatial steps apply to both image and label, nearest interpolation for labels); image-only entries are treated as <strong>classification</strong>. Use <em>Resolve dataset</em> below to confirm.
+            </div>
+
+            <div class="form-group">
+                <label>Steps</label>
+                <div style="display:flex; gap:8px; align-items:center; margin-bottom:0.5rem;">
+                    <select id="pp-step-picker" style="flex:1;"></select>
+                    <button type="button" class="btn btn-secondary" onclick="ppAddStep()"><i class="fas fa-plus"></i> Add Step</button>
+                    <button type="button" class="btn btn-secondary" onclick="ppLoadDefault()"><i class="fas fa-rotate"></i> Load Default</button>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('pp-import-file').click()"><i class="fas fa-file-import"></i> Import JSON</button>
+                    <input type="file" id="pp-import-file" accept=".json,application/json" style="display:none;">
+                </div>
+                <div id="pp-steps-list" style="border:1px solid #e3e6ea; border-radius:6px; padding:0.5rem; min-height:60px; background:#fafbfc;"></div>
+                <div id="pp-import-status" style="display:none; margin-top:0.5rem; font-size:0.82rem;"></div>
+            </div>
+
+            <details style="margin-top:0.75rem;">
+                <summary style="cursor:pointer; font-size:0.85rem; color:#555;">Paste / edit pipeline spec (JSON)</summary>
+                <textarea id="pp-spec-editor" spellcheck="false" style="width:100%; min-height:180px; font-family:monospace; font-size:0.78rem; margin-top:0.5rem;"></textarea>
+                <div style="display:flex; gap:8px; margin-top:0.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="ppImportFromEditor()"><i class="fas fa-check"></i> Validate &amp; Load spec</button>
+                    <button type="button" class="btn btn-secondary" onclick="ppSyncEditorFromSteps()"><i class="fas fa-arrow-down"></i> Fill from current steps</button>
+                </div>
+            </details>
+        </div>
+    </div>
+
+    <!-- Step 2: Local preview -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-eye"></i> 2. Preview on One Image (local, free)</h3>
+            <p style="margin:0; font-size:0.88rem; color:#666;">Run the pipeline on a single image on this server to check the result before spending on a batch job. No S3 writes, no cost.</p>
+        </div>
+        <div class="card-body">
+            <form id="pp-preview-form">
+                <div class="form-group">
+                    <label for="pp-preview-input">Input (local path or S3 URI to one image)</label>
+                    <input type="text" id="pp-preview-input" placeholder="s3://your-bucket/case001/  or  /path/to/image.nii.gz" required>
+                    <small style="color:var(--aws-dark-gray)">A NIfTI file (.nii/.nii.gz) or a DICOM series directory.</small>
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-eye"></i> Run Preview</button>
+            </form>
+            <div id="pp-preview-status" class="sm-status-banner" style="display:none; margin-top:1rem;"></div>
+            <div id="pp-preview-results" style="display:none; margin-top:1.25rem;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+                    <div class="card"><div class="card-header"><h3>Before / After</h3></div><div class="card-body" id="pp-preview-stats"></div></div>
+                    <div class="card"><div class="card-header"><h3>Preview Slice</h3></div><div class="card-body" style="text-align:center;"><img id="pp-preview-image" alt="preview slice" style="max-width:100%; border-radius:6px; display:none;"><div id="pp-preview-noimage" style="color:#888; font-size:0.85rem;">No preview image returned.</div></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 3: Approve & run batch -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-cloud"></i> 3. Approve &amp; Run on Dataset (SageMaker)</h3>
+            <p style="margin:0; font-size:0.88rem; color:#666;">Runs the identical pipeline over every image under the input S3 prefix and writes processed NIfTI (and an optional Decathlon <code>dataset.json</code>) to the output prefix.</p>
+        </div>
+        <div class="card-body">
+            <form id="pp-submit-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="pp-input-s3">Input S3 URI (dataset prefix)</label>
+                        <input type="text" id="pp-input-s3" placeholder="s3://your-bucket/raw/" required>
+                        <small style="color:var(--aws-dark-gray)">Segmentation: needs a <code>dataset.json</code> (MSD/Decathlon) at the root. Classification: a <code>dataset.json</code> <em>or</em> <code>&lt;class&gt;/&lt;images&gt;</code> subfolders.</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="pp-output-s3">Output S3 URI (processed prefix)</label>
+                        <input type="text" id="pp-output-s3" placeholder="s3://your-bucket/processed/" required>
+                    </div>
+                </div>
+
+                <div style="margin:0.25rem 0 1rem;">
+                    <button type="button" class="btn btn-secondary" onclick="ppResolveDataset()"><i class="fas fa-magnifying-glass"></i> Resolve dataset (dry-run)</button>
+                    <small style="color:var(--aws-dark-gray); display:block; margin-top:0.3rem;">Reads only <code>dataset.json</code> and shows the derived task type + first pairs — confirm before submitting.</small>
+                    <div id="pp-resolve-status" class="sm-status-banner" style="display:none; margin-top:0.75rem;"></div>
+                    <div id="pp-resolve-results" style="display:none; margin-top:0.75rem;"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="pp-image-uri">Processing Image URI (ECR)</label>
+                        <input type="text" id="pp-image-uri" placeholder="Auto-filled from config if available">
+                    </div>
+                    <div class="form-group">
+                        <label for="pp-role-arn">SageMaker Role ARN</label>
+                        <input type="text" id="pp-role-arn" placeholder="Auto-filled from config if available">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="pp-instance-type">Instance Type</label>
+                        <input type="text" id="pp-instance-type" value="ml.m5.xlarge">
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label" style="margin-top:1.6rem;"><input type="checkbox" id="pp-dataset-prep" checked> Generate train/val/test split + <code>dataset.json</code></label>
+                    </div>
+                </div>
+                <button type="button" id="pp-submit-btn" class="btn btn-primary" disabled title="Run a successful preview first" onclick="ppSubmitBatch(event)">
+                    <i class="fas fa-cloud-arrow-up"></i> Approve &amp; Submit Batch Job
+                </button>
+                <small id="pp-submit-hint" style="display:block; margin-top:0.4rem; color:var(--aws-dark-gray)">Run a successful preview above to enable submission.</small>
+            </form>
+            <div id="pp-submit-status" class="sm-status-banner" style="display:none; margin-top:1rem;"></div>
+        </div>
+    </div>
+
+    <!-- Jobs -->
+    <div class="card">
+        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <h3><i class="fas fa-list"></i> Preprocessing Jobs</h3>
+            <div style="display:flex; gap:8px;">
+                <button type="button" class="btn btn-secondary" onclick="ppSyncJobs()"><i class="fas fa-sync"></i> Sync</button>
+                <button type="button" class="btn btn-secondary" onclick="ppLoadJobs()"><i class="fas fa-rotate"></i> Refresh</button>
+            </div>
+        </div>
+        <div class="card-body" id="pp-jobs-table"><p style="color:#888; font-size:0.85rem;">No jobs yet.</p></div>
+    </div>
+
+    </div><!-- /panel-body -->
+</div><!-- /tab-preprocessing -->
 
 <!-- ── Training Tab ── -->
 <div id="tab-training" class="tab-panel">
@@ -1768,6 +1915,7 @@
 <script src="/static/js/deployment.js"></script>
 <script src="/static/js/inference.js"></script>
 <script src="/static/js/fairness.js"></script>
+<script src="/static/js/preprocessing.js"></script>
 <script src="/static/js/evaluation.js"></script>
 <script src="/static/js/monitoring.js"></script>
 <script src="/static/js/monai_bundle.js"></script>

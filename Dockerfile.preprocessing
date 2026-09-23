@@ -1,0 +1,47 @@
+# CPU-only preprocessing image for a SageMaker Processing Job.
+#
+# Deliberately NOT based on the GPU Deep Learning Container — preprocessing is
+# CPU/IO-bound (resample, window, resize, crop), so this uses a slim Python base
+# with CPU-only PyTorch. Result: a much smaller, faster-to-push image that runs
+# on non-GPU instances (e.g. ml.m5.2xlarge).
+#
+# Build (from the medical-image-training-dashboard/ dir):
+#   DOCKER_BUILDKIT=0 docker build --platform linux/amd64 \
+#       -f Dockerfile.preprocessing \
+#       -t <acct>.dkr.ecr.<region>.amazonaws.com/sm-preprocessing:latest .
+#
+# NOTE: BuildKit is disabled at build time (see build_and_push_preprocessing.sh)
+# so the image uses the Docker V2 manifest format SageMaker requires (it rejects
+# OCI manifests).
+
+FROM --platform=linux/amd64 python:3.12-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# System libs some medical-imaging wheels expect at runtime.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libgomp1 libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# CPU-only PyTorch first (from the CPU wheel index) so no CUDA is pulled in.
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
+# Preprocessing runtime dependencies.
+COPY src/preprocessing/requirements.txt /tmp/requirements-preprocessing.txt
+RUN pip install --no-cache-dir -r /tmp/requirements-preprocessing.txt
+
+# Ship the shared builder/resolver/script. Copied under /opt/program so the
+# batch script's sibling imports (pipeline_builder, dataset_resolver) resolve;
+# the Processing Job also stages a fresh copy + spec.json into
+# /opt/ml/processing/code at runtime.
+COPY src/preprocessing/ /opt/program/src/preprocessing/
+COPY src/__init__.py /opt/program/src/__init__.py
+ENV PYTHONPATH=/opt/program:${PYTHONPATH}
+
+WORKDIR /opt/program
+
+# Processing Jobs invoke the entrypoint from AppSpecification; this default is a
+# convenience for local `docker run` testing.
+ENTRYPOINT ["python", "/opt/program/src/preprocessing/preprocess.py"]

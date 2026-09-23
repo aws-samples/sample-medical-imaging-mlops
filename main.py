@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from app.routers import aws_router, training_router, deployment_router
 from app.routers import inference_router
 from app.routers import fairness_router
+from app.routers import preprocessing_router
 from app.routers import evaluation_router
 from app.routers import monitoring_router
 from app.routers import monai_bundle_router
@@ -40,6 +41,7 @@ app.include_router(training_router.router, prefix="/api/training", tags=["Traini
 app.include_router(deployment_router.router, prefix="/api/deployment", tags=["Deployment"])
 app.include_router(inference_router.router, prefix="/api/inference", tags=["Inference"])
 app.include_router(fairness_router.router, prefix="/api/fairness", tags=["Fairness"])
+app.include_router(preprocessing_router.router, prefix="/api/preprocessing", tags=["Preprocessing"])
 app.include_router(evaluation_router.router, prefix="/api/evaluation", tags=["Evaluation"])
 app.include_router(monitoring_router.router, prefix="/api/monitoring", tags=["Monitoring"])
 app.include_router(monai_bundle_router.router, prefix="/api/monai-bundle", tags=["MONAI Bundle"])

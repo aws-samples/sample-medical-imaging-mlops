@@ -36,6 +36,9 @@ from monai.transforms import (
     EnsureTyped,
     Activations,
     AsDiscrete,
+    Activationsd,
+    AsDiscreted,
+    Invertd,
 )
 from monai.inferers import SlidingWindowInferer
 
@@ -127,10 +130,26 @@ def model_fn(model_dir: str) -> Dict[str, Any]:
         EnsureTyped(keys="image"),
     ])
 
-    # Post-processing
+    # Post-processing.
+    #
+    # The prediction comes out in the PREPROCESSED geometry (RAS, 1.5x1.5x2.0mm,
+    # resized to 128x128x64). To overlay correctly on the ORIGINAL image, we must
+    # invert the spatial preprocessing (Invertd replays Orientation/Spacing/Resize
+    # in reverse using the recorded metadata), which restores the mask to the
+    # original image's shape AND affine. Without this the saved mask does not
+    # align with the source image in the viewer.
     post_transforms = Compose([
-        Activations(sigmoid=True),
-        AsDiscrete(threshold=0.5),
+        Activationsd(keys="pred", sigmoid=True),
+        Invertd(
+            keys="pred",
+            transform=preprocessing,
+            orig_keys="image",          # invert against the image's transform chain
+            meta_keys="pred_meta_dict",
+            orig_meta_keys="image_meta_dict",
+            nearest_interp=True,        # labels: nearest-neighbour on inversion
+            to_tensor=True,
+        ),
+        AsDiscreted(keys="pred", threshold=0.5),
     ])
 
     # Sliding window inferer for large volumes
@@ -238,7 +257,7 @@ def predict_fn(input_data: Dict[str, str], model_components: Dict[str, Any]) -> 
         original_affine = original_img.affine
         original_shape = original_img.shape
 
-        # Preprocess
+        # Preprocess (dictionary transforms track metadata needed for inversion)
         data_dict = {"image": image_path}
         preprocessed = preprocessing(data_dict)
         input_tensor = preprocessed["image"].unsqueeze(0).to(device)
@@ -248,19 +267,32 @@ def predict_fn(input_data: Dict[str, str], model_components: Dict[str, Any]) -> 
         with torch.no_grad():
             prediction = inferer(input_tensor, model)
 
-        # Post-process
-        prediction = post_transforms(prediction[0])  # remove batch dim
-        seg_array = prediction.cpu().numpy().squeeze()
-        logger.info(f"Segmentation shape: {seg_array.shape}")
+        # Post-process WITH inversion back to the original image geometry.
+        # Re-attach the prediction to the preprocessed dict under 'pred' so
+        # Invertd can replay the spatial transforms in reverse using the
+        # recorded metadata. The result matches the original shape + affine.
+        preprocessed["pred"] = prediction[0]  # drop batch dim -> (C, H, W, D)
+        inverted = post_transforms(preprocessed)
+        pred = inverted["pred"]
+        seg_array = pred.detach().cpu().numpy().squeeze()
+        logger.info(f"Segmentation shape (inverted to original): {seg_array.shape} "
+                    f"vs original {original_shape}")
+
+        # Prefer the affine carried on the inverted prediction (MetaTensor); it
+        # matches seg_array exactly. Fall back to the original image affine.
+        try:
+            out_affine = np.asarray(pred.affine.detach().cpu().numpy())
+        except Exception:
+            out_affine = original_affine
 
         # Compute statistics
         voxel_count = int(np.sum(seg_array > 0))
         total_voxels = int(seg_array.size)
         seg_percentage = (voxel_count / total_voxels) * 100
 
-        # Save segmentation as NIfTI
+        # Save segmentation as NIfTI in the ORIGINAL image geometry.
         seg_nifti = nib.Nifti1Image(
-            seg_array.astype(np.float32), affine=original_affine
+            seg_array.astype(np.float32), affine=out_affine
         )
 
         # Upload NIfTI mask to S3 at output_s3_uri using the output filename pattern
