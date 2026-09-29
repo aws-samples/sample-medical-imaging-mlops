@@ -69,10 +69,15 @@ def _validate_local_path(user_path: str, allowed_roots: tuple) -> str:
     return resolved
 
 
-def _download_s3(input_ref: str, dest_dir: str) -> str:
+def _download_s3(input_ref: str, dest_dir: str, boto_session=None) -> str:
     """Download an S3 object or prefix into dest_dir. Returns local path.
 
     A single object → the local file. A prefix (or DICOM series) → the local dir.
+
+    Uses the app's authenticated boto3 session when provided so the download runs
+    with the SAME credentials the dashboard connected with. A bare boto3.client()
+    would resolve credentials independently and can pick up a DIFFERENT identity
+    (e.g. ~/.aws/credentials) that lacks access to the object → 403 Forbidden.
     """
     m = _S3_RE.match(input_ref)
     if not m:
@@ -80,7 +85,7 @@ def _download_s3(input_ref: str, dest_dir: str) -> str:
     bucket, key = m.group(1), m.group(2)
 
     import boto3  # lazy
-    s3 = boto3.client("s3")
+    s3 = boto_session.client("s3") if boto_session is not None else boto3.client("s3")
 
     keys = []
     is_prefix = key.endswith("/")
@@ -178,7 +183,7 @@ def _render_mid_axial_png(img_tensor) -> Optional[str]:
 
 # ── Public API ─────────────────────────────────────────────────────────────────
 
-def preview(spec, input_ref: str) -> Dict[str, Any]:
+def preview(spec, input_ref: str, boto_session=None) -> Dict[str, Any]:
     """Run the pipeline on one image and return stats + a mid-axial slice PNG.
 
     Args:
@@ -196,7 +201,7 @@ def preview(spec, input_ref: str) -> Dict[str, Any]:
     try:
         if input_ref.startswith("s3://"):
             tmp_dir = tempfile.mkdtemp(prefix="pp_preview_")
-            local_input = _download_s3(input_ref, tmp_dir)
+            local_input = _download_s3(input_ref, tmp_dir, boto_session=boto_session)
         else:
             local_input = _validate_local_path(input_ref, _allowed_roots())
 

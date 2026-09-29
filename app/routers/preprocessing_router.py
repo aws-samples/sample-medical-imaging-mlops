@@ -129,9 +129,18 @@ async def preview(request: PreviewRequest):
     blocking.
     """
     try:
+        # Pass the app's authenticated boto3 session so S3 preview downloads use
+        # the same credentials as the rest of the dashboard (not a bare
+        # boto3.client that could resolve a different identity → 403).
+        boto_session = None
+        if request.input_ref.startswith("s3://"):
+            from app.routers.aws_router import aws_service
+            if not getattr(aws_service, "_session", None):
+                aws_service.configure_from_environment()
+            boto_session = getattr(aws_service, "_session", None)
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(
-            None, partial(run_preview, request.spec, request.input_ref)
+            None, partial(run_preview, request.spec, request.input_ref, boto_session)
         )
         return result
     except PreviewError as e:
