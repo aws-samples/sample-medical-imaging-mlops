@@ -15,16 +15,45 @@ class AWSService:
         self._session = None
 
     def configure_from_environment(self) -> bool:
-        """Configure AWS clients using credentials from the environment
-        (env vars, ~/.aws/credentials, IAM role, etc.)"""
+        """Configure AWS clients using credentials from the environment.
+
+        If explicit access keys are present in the environment (e.g. loaded from
+        .env.local via python-dotenv in main.py), a session is built from them
+        directly. Otherwise this falls back to boto3's default credential chain
+        (~/.aws/credentials, IAM role, SSO, etc.).
+        """
         try:
-            self._session = boto3.Session()
+            access_key = os.environ.get("AWS_ACCESS_KEY_ID")
+            secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
+            session_token = os.environ.get("AWS_SESSION_TOKEN")
+            region = os.environ.get("AWS_DEFAULT_REGION") or os.environ.get("AWS_REGION")
+
+            if access_key and secret_key:
+                self._session = boto3.Session(
+                    aws_access_key_id=access_key,
+                    aws_secret_access_key=secret_key,
+                    aws_session_token=session_token,  # None is fine for long-lived keys
+                    region_name=region,
+                )
+                cred_source = "explicit environment keys (.env.local)"
+            else:
+                # No explicit keys — let boto3 resolve via its default chain.
+                self._session = boto3.Session(region_name=region)
+                cred_source = "default credential chain"
+
             self.s3_client = self._session.client('s3')
             self.sagemaker_client = self._session.client('sagemaker')
-            logger.info("AWS configured from environment credentials")
+
+            # Verify the credentials actually resolve before reporting success.
+            self._session.client('sts').get_caller_identity()
+
+            logger.info("AWS configured from %s", cred_source)
             return True
         except Exception as e:
             logger.warning(f"No valid environment AWS credentials found: {e}")
+            self._session = None
+            self.s3_client = None
+            self.sagemaker_client = None
             return False
 
     def configure_credentials(self, credentials: AWSCredentials) -> bool:
@@ -57,7 +86,24 @@ class AWSService:
         """Return a SageMaker SDK Session wrapping the current boto3 session."""
         from sagemaker.session import Session
         return Session(boto_session=self._get_boto_session())
-    
+
+    def get_account_identity(self) -> Optional[Dict[str, str]]:
+        """Return the AWS account ID and region for the currently configured
+        credentials, resolved via STS. Returns None if not configured or the
+        call fails (e.g. expired token)."""
+        if not self._session:
+            return None
+        try:
+            identity = self._session.client("sts").get_caller_identity()
+            return {
+                "account_id": identity.get("Account", ""),
+                "arn": identity.get("Arn", ""),
+                "region": self._session.region_name or "",
+            }
+        except (ClientError, NoCredentialsError) as e:
+            logger.warning("Could not resolve caller identity: %s", e)
+            return None
+
     def list_s3_buckets(self) -> List[S3Bucket]:
         """List all S3 buckets"""
         if not self.s3_client:

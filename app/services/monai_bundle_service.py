@@ -234,7 +234,7 @@ class MonaiBundleService:
             logger.warning("Could not save monai bundle jobs: %s", e)
 
     # ── staging ──────────────────────────────────────────────────────────────
-    def stage_bundle(self, repo_id: str, s3_uri: str, region: str = "us-east-1") -> dict:
+    def stage_bundle(self, repo_id: str, s3_uri: str, region: str = "us-east-1", boto_session=None) -> dict:
         """Download a MONAI Model Zoo bundle, package it, upload to S3.
 
         Reuses the generic bundle_utils/package logic from src/monai_bundle.
@@ -413,7 +413,16 @@ class MonaiBundleService:
 
         import boto3
         bucket, key = parse_s3_uri(s3_uri)
-        boto3.client("s3", region_name=region).upload_file(tar_path, bucket, key)
+        # Use the app's authenticated boto3 session (the one the dashboard
+        # connected with) so the upload uses the SAME credentials as the rest
+        # of the app. Falling back to a bare boto3.client() would resolve
+        # credentials independently and can pick up a DIFFERENT identity
+        # (e.g. ~/.aws/credentials) that lacks write access to the target bucket.
+        if boto_session is not None:
+            s3_client = boto_session.client("s3", region_name=region)
+        else:
+            s3_client = boto3.client("s3", region_name=region)
+        s3_client.upload_file(tar_path, bucket, key)
         logger.info("Staged bundle %s -> %s", repo_id, s3_uri)
 
         # Track the staged artifact (keyed by short bundle name) so the deploy

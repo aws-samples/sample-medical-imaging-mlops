@@ -58,8 +58,15 @@ class FinetuneRequest(BaseModel):
 async def stage_bundle(request: StageBundleRequest):
     """Download a MONAI Model Zoo bundle, package, and upload to S3."""
     try:
+        if not aws_service._session:
+            raise ValueError("AWS credentials not configured")
         region = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
-        return monai_bundle_service.stage_bundle(request.repo_id, request.s3_uri, region)
+        return monai_bundle_service.stage_bundle(
+            request.repo_id,
+            request.s3_uri,
+            region,
+            boto_session=aws_service._get_boto_session(),
+        )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

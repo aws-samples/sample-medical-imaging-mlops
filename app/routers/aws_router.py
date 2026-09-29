@@ -18,7 +18,14 @@ _env_configured = aws_service.configure_from_environment()
 async def get_aws_status():
     """Check if AWS is configured"""
     configured = aws_service.s3_client is not None
-    return {"configured": configured, "source": "environment" if _env_configured else "manual"}
+    identity = aws_service.get_account_identity() if configured else None
+    return {
+        "configured": configured,
+        "source": "environment" if _env_configured else "manual",
+        "account_id": identity["account_id"] if identity else None,
+        "region": identity["region"] if identity else None,
+        "arn": identity["arn"] if identity else None,
+    }
 
 
 @router.post("/configure")

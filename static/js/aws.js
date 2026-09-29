@@ -93,6 +93,18 @@ async function checkAwsStatus() {
                 indicator.textContent = '● Connected';
                 indicator.className = 'aws-connected';
             }
+            // Show the connected AWS account ID (from STS caller identity)
+            const acctEl = document.getElementById('aws-account-id');
+            if (acctEl) {
+                if (response.account_id) {
+                    // textContent (not innerHTML) — value is external data, avoid XSS
+                    acctEl.textContent = 'Account: ' + response.account_id
+                        + (response.region ? ' (' + response.region + ')' : '');
+                    acctEl.style.display = 'block';
+                } else {
+                    acctEl.style.display = 'none';
+                }
+            }
             showStatus('aws-status', `Connected to AWS (${response.source} credentials)`, 'success');
             enableSection('data-import');
             enableSection('preprocessing');
