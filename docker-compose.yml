@@ -3,10 +3,12 @@ version: '3.8'
 services:
   medml-platform:
     build: .
+    # Published on loopback only — the dashboard has no auth and holds AWS creds.
+    # Reach it from another machine via an SSH tunnel, not a wider publish.
     ports:
-      - "8000:8000"  # FastAPI application
-      - "5000:5000"  # MLflow
-      - "6006:6006"  # TensorBoard
+      - "127.0.0.1:8000:8000"  # FastAPI application
+      - "127.0.0.1:5000:5000"  # MLflow
+      - "127.0.0.1:6006:6006"  # TensorBoard
     environment:
       - DEBUG=True
       - LOG_LEVEL=INFO

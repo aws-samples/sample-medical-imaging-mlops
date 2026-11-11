@@ -6,7 +6,7 @@ RESEARCH USE ONLY — outputs are AI predictions for research/development, not
 clinical diagnosis.
 """
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 import logging
 import os
@@ -176,7 +176,12 @@ class DeployRequest(BaseModel):
     model_artifacts: str              # trained bundle model.tar.gz (from a completed job)
     output_s3_uri: str                # REQUIRED — async endpoints write results here
     image_uri: Optional[str] = None   # sm-monai-bundle-inference image; falls back to env/config
-    role_arn: Optional[str] = None
+    # Optional per-request override of SAGEMAKER_ROLE_ARN. Must be in the caller's account.
+    role_arn: Optional[str] = Field(
+        default=None,
+        max_length=2048,
+        pattern=r"^arn:aws[a-z-]*:iam::[0-9]{12}:role/[A-Za-z0-9_+=,.@/-]+$",
+    )
     instance_type: str = "ml.g5.xlarge"
     instance_count: int = 1
     max_concurrent: int = 4

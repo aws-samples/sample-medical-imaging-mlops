@@ -34,6 +34,10 @@ app.mount("/evaluation-results", StaticFiles(directory=str(EVAL_RESULTS_DIR)), n
 
 # Templates
 templates = Jinja2Templates(directory="templates")
+# Cache-buster for /static JS: changes on every restart, so browsers pick up new
+# code (code changes need a restart anyway — no --reload in start.sh).
+import time as _time
+templates.env.globals["asset_v"] = str(int(_time.time()))
 
 # Include routers
 app.include_router(aws_router.router, prefix="/api/aws", tags=["AWS"])

@@ -1704,6 +1704,11 @@
         <div class="form-group"><label>Instance count</label><input type="number" id="mb-deploy-count" min="1" value="1"></div>
         <div class="form-group"><label>Max concurrent</label><input type="number" id="mb-deploy-concurrent" min="1" value="4"></div>
       </div>
+      <div class="form-group">
+        <label for="mb-deploy-role">SageMaker execution role ARN</label>
+        <input type="text" id="mb-deploy-role" placeholder="arn:aws:iam::<account-id>:role/<role-name> (blank = SAGEMAKER_ROLE_ARN from .env.local)" autocomplete="off" spellcheck="false">
+        <small style="color:#666;">Must be in the same AWS account as the dashboard's current credentials, or CreateModel fails with "Cross-account pass role is not allowed".</small>
+      </div>
       <button class="btn btn-primary" onclick="mbDeploy()"><i class="fas fa-rocket"></i> Deploy async endpoint</button>
       <p style="font-size:0.78rem;color:#666;margin-top:0.5rem;">
         <i class="fas fa-triangle-exclamation"></i> Creates a billable SageMaker async endpoint (runs until deleted).
@@ -1909,17 +1914,17 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/js/aws.js"></script>
-<script src="/static/js/data.js"></script>
-<script src="/static/js/training.js"></script>
-<script src="/static/js/deployment.js"></script>
-<script src="/static/js/inference.js"></script>
-<script src="/static/js/fairness.js"></script>
-<script src="/static/js/preprocessing.js"></script>
-<script src="/static/js/evaluation.js"></script>
-<script src="/static/js/monitoring.js"></script>
-<script src="/static/js/monai_bundle.js"></script>
-<script src="/static/js/nvmedtech.js"></script>
+<script src="/static/js/aws.js?v={{ asset_v }}"></script>
+<script src="/static/js/data.js?v={{ asset_v }}"></script>
+<script src="/static/js/training.js?v={{ asset_v }}"></script>
+<script src="/static/js/deployment.js?v={{ asset_v }}"></script>
+<script src="/static/js/inference.js?v={{ asset_v }}"></script>
+<script src="/static/js/fairness.js?v={{ asset_v }}"></script>
+<script src="/static/js/preprocessing.js?v={{ asset_v }}"></script>
+<script src="/static/js/evaluation.js?v={{ asset_v }}"></script>
+<script src="/static/js/monitoring.js?v={{ asset_v }}"></script>
+<script src="/static/js/monai_bundle.js?v={{ asset_v }}"></script>
+<script src="/static/js/nvmedtech.js?v={{ asset_v }}"></script>
 <script>
 // Load runtime config from backend (.env.local) and populate form defaults
 (async function loadConfig() {

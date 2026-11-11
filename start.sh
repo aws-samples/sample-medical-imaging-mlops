@@ -84,7 +84,7 @@ MLFLOW_PID=""
 if [[ "${MLFLOW_TRACKING_URI:-}" != arn:* && "${MLFLOW_TRACKING_URI:-}" != http* ]]; then
     MLFLOW_TRACKING_URI="http://localhost:5000"
     echo "🧪 Starting local MLflow server..."
-    python -m mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:///mlflow.db &
+    python -m mlflow server --host 127.0.0.1 --port 5000 --backend-store-uri sqlite:///mlflow.db &
     MLFLOW_PID=$!
 elif [[ "${MLFLOW_TRACKING_URI:-}" == arn:* ]]; then
     echo "🧪 Using SageMaker-managed MLflow: $MLFLOW_TRACKING_URI"

@@ -252,6 +252,14 @@ async function mbDeploy() {
     if (!body.endpoint_name || !body.model_artifacts || !body.output_s3_uri) {
         alert('endpoint name, trained model artifact, and async output S3 location are required'); return;
     }
+    // Optional override; blank falls back to SAGEMAKER_ROLE_ARN on the server.
+    const roleArn = document.getElementById('mb-deploy-role').value.trim();
+    if (roleArn) {
+        if (!/^arn:aws[a-z-]*:iam::[0-9]{12}:role\/[A-Za-z0-9_+=,.@\/-]+$/.test(roleArn)) {
+            alert('Role ARN must look like arn:aws:iam::<12-digit-account>:role/<role-name>'); return;
+        }
+        body.role_arn = roleArn;
+    }
     out.style.display = 'block';
     out.innerHTML = 'Deploying async endpoint…';
     try {

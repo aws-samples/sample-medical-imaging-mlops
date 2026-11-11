@@ -56,7 +56,8 @@ class InferenceService:
             s3_uri    = input_data.get("s3_uri")
             file_path = input_data.get("file_path")
             if s3_uri:
-                body = json.dumps({"s3_uri": s3_uri})
+                # 'image' is the key the MONAI bundle / NV-Segment-CT handlers read.
+                body = json.dumps({"s3_uri": s3_uri, "image": s3_uri})
             else:
                 body = json.dumps({"file_path": file_path or ""})
             response = runtime.invoke_endpoint(
@@ -143,9 +144,11 @@ class InferenceService:
         s3_uri = input_data.get("s3_uri")
 
         if s3_uri:
-            # Build a JSON input file — send both keys for compatibility with
-            # BYOC images (expects s3_uri) and DLC code/ approach (expects file_path)
-            payload = {"s3_uri": s3_uri, "file_path": s3_uri}
+            # Build a JSON input file — send all keys for compatibility with
+            # BYOC images (expect s3_uri / file_path) and the MONAI bundle /
+            # NV-Segment-CT handlers (src/monai_bundle, src/nvmedtech), which
+            # read ONLY 'image' and fail instantly with a 500 without it.
+            payload = {"s3_uri": s3_uri, "file_path": s3_uri, "image": s3_uri}
             # Include output config so inference script knows where to save masks
             if input_data.get("output_s3_uri"):
                 payload["output_s3_uri"] = input_data["output_s3_uri"]

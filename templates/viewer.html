@@ -34,6 +34,15 @@
         .viewer-side h3 { margin:0; padding:0.75rem 1rem; font-size:0.85rem; color:#232f3e;
                           border-bottom:1px solid #eee; display:flex; align-items:center; justify-content:space-between; }
         #viewer-recent-list { flex:1; overflow-y:auto; }
+        .viewer-legend-item { display:flex; align-items:center; gap:0.5rem; padding:0.3rem 1rem;
+                              font-size:0.78rem; cursor:pointer; border-bottom:1px solid #f6f6f6; }
+        .viewer-legend-item:hover { background:#f5f5f5; }
+        .viewer-legend-item.off { opacity:0.4; }
+        .viewer-legend-item input[type=checkbox] { width:auto; flex:0 0 auto; margin:0; padding:0; }
+        .viewer-legend-swatch { width:14px; height:14px; border-radius:3px; flex-shrink:0;
+                                border:1px solid rgba(0,0,0,0.25); }
+        .viewer-legend-name { flex:1 1 auto; min-width:0; overflow-wrap:break-word; line-height:1.25; }
+        .viewer-legend-meta { flex:0 0 auto; font-size:0.68rem; color:#888; white-space:nowrap; }
 
         .viewer-statusbar { padding:0.35rem 1.25rem; background:#fff; border-top:1px solid #e2e6ea;
                             font-size:0.75rem; color:#666; flex-shrink:0; display:flex; gap:1.5rem; }
@@ -87,6 +96,32 @@
                 <h3><span><i class="fas fa-tags"></i> Classification result</span></h3>
                 <div id="viewer-classification-body" style="padding:0.75rem 1rem;"></div>
             </div>
+            <div id="viewer-legend" style="display:none; border-bottom:1px solid #eee; flex:1 1 55%; min-height:0; flex-direction:column;">
+                <h3>
+                    <span><i class="fas fa-list"></i> Segmentation legend</span>
+                    <span id="viewer-legend-count" style="font-size:0.72rem; color:#888; font-weight:400;"></span>
+                </h3>
+                <div style="padding:0.5rem 1rem; display:flex; flex-direction:column; gap:0.4rem; border-bottom:1px solid #f0f0f0;">
+                    <div style="display:flex; gap:0.35rem;">
+                        <input type="text" id="viewer-legend-endpoint" placeholder="Endpoint (for label names)"
+                               aria-label="Endpoint name used to look up label names" autocomplete="off" spellcheck="false"
+                               style="flex:1; min-width:0; padding:0.3rem 0.45rem; border:1px solid #ccc; border-radius:4px; font-size:0.75rem;">
+                        <button class="btn btn-secondary" onclick="viewerLoadLabelNames()"
+                                style="font-size:0.72rem; padding:0.3rem 0.6rem;" title="Look up label names">
+                            <i class="fas fa-tag"></i> Names
+                        </button>
+                    </div>
+                    <div style="display:flex; gap:0.35rem; align-items:center;">
+                        <input type="search" id="viewer-legend-filter" placeholder="Filter labels…" oninput="viewerRenderLegend()"
+                               aria-label="Filter legend labels"
+                               style="flex:1; min-width:0; padding:0.3rem 0.45rem; border:1px solid #ccc; border-radius:4px; font-size:0.75rem;">
+                        <button class="btn btn-secondary" onclick="viewerSetAllLabels(true)" style="font-size:0.7rem; padding:0.3rem 0.5rem;">All</button>
+                        <button class="btn btn-secondary" onclick="viewerSetAllLabels(false)" style="font-size:0.7rem; padding:0.3rem 0.5rem;">None</button>
+                    </div>
+                    <div id="viewer-legend-note" style="font-size:0.7rem; color:#888;"></div>
+                </div>
+                <ul id="viewer-legend-list" style="list-style:none; margin:0; padding:0; overflow-y:auto; flex:1; min-height:0;"></ul>
+            </div>
             <h3>
                 <span><i class="fas fa-clock-rotate-left"></i> Recent predictions</span>
                 <button class="btn btn-secondary" onclick="viewerLoadRecent()"
@@ -100,11 +135,12 @@
 
     <div class="viewer-statusbar">
         <span id="viewer-status"></span>
+        <span id="viewer-location" style="color:#232f3e;"></span>
         <span style="margin-left:auto;">Drag to change slices · scroll to zoom · right-drag for contrast</span>
     </div>
 </div>
 
-<script src="/static/vendor/niivue/niivue.umd.js"></script>
-<script src="/static/js/viewer.js"></script>
+<script src="/static/vendor/niivue/niivue.umd.js?v={{ asset_v }}"></script>
+<script src="/static/js/viewer.js?v={{ asset_v }}"></script>
 </body>
 </html>

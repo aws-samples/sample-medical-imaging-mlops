@@ -849,6 +849,32 @@ If `VIEWER_MASKS_BUCKET` is unset, returns `{"masks": [], "note": "..."}`.
 **Errors:** 400 (credentials not configured), 403 (access denied listing the
 bucket)
 
+### GET /api/viewer/labels
+
+Label names for a segmentation endpoint's mask values, used by the viewer's
+segmentation legend. Read from the bundle files inside the endpoint's deployed
+`model.tar.gz` (`configs/metadata.json` → `network_data_format.outputs.pred.channel_def`,
+or `configs/label_dict.json`), so no image rebuild or redeploy is needed. The
+archive is streamed and the read stops at the label file; results are cached
+per model artifact.
+
+**Query parameters:** `endpoint_name` (required)
+
+**Response:**
+```json
+{
+  "endpoint_name": "example-endpoint",
+  "labels": {"1": "spleen", "2": "kidney_right"},
+  "source": "configs/metadata.json"
+}
+```
+
+If no label file is found, `labels` is `{}` with a `note`; the legend then
+shows `Label N`.
+
+**Errors:** 400 (invalid endpoint name / credentials not configured),
+403 (access denied reading the model artifact), 404 (endpoint not found)
+
 ---
 
 ## /api/evaluation — Endpoint Evaluation via Processing Jobs

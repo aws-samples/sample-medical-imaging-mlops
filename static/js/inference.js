@@ -12,10 +12,12 @@ registerTabInit('inference', function () {
 
 // Open the standalone full-page viewer (/viewer) in a new tab, deep-linked
 // to the given volumes. Used by the "View in viewer" result buttons.
-function openInViewer(imageUri, maskUri) {
+function openInViewer(imageUri, maskUri, endpointName) {
     const params = new URLSearchParams();
     if (imageUri) params.set('image', imageUri);
     if (maskUri) params.set('mask', maskUri);
+    // Lets the viewer legend look up label names from the endpoint's bundle.
+    if (maskUri && endpointName) params.set('endpoint', endpointName);
     window.open('/viewer' + (params.toString() ? '?' + params.toString() : ''),
                 '_blank', 'noopener,noreferrer');
 }
@@ -24,12 +26,13 @@ function openInViewer(imageUri, maskUri) {
 // source-image and mask fields (localStorage is same-origin, so the viewer
 // tab sees it). Classification runs store the source image with no mask,
 // plus the result so the viewer can display it alongside the image.
-function _rememberViewerVolumes(imageUri, maskUri, classification) {
+function _rememberViewerVolumes(imageUri, maskUri, classification, endpointName) {
     const mask = (maskUri && /\.nii(\.gz)?$/i.test(maskUri)) ? maskUri : '';
     if (!imageUri && !mask) return;   // nothing viewable — keep previous entry
     try {
         localStorage.setItem('medanvil_viewer_last', JSON.stringify({
             image: imageUri || '', mask: mask,
+            endpoint: endpointName || '',
             classification: classification || null, ts: Date.now() }));
     } catch (_) { /* storage full/disabled — prefill is best-effort */ }
 }
@@ -162,6 +165,7 @@ async function runInference(e) {
     window._lastInputImage =
         (inputType === 's3_uri' && /\.(nii(\.gz)?|dcm)$/i.test((inputValue || '').trim()))
             ? inputValue.trim() : '';
+    window._lastEndpoint = fd.get('endpoint_name') || '';
     // Store it right away so the viewer shows the source image even for
     // classification runs (no mask); segmentation overwrites with the pair.
     _rememberViewerVolumes(window._lastInputImage, '');
@@ -319,9 +323,10 @@ async function pollAsyncResult(outputLocation, inferenceId) {
                     const outputUri = res.result?.mask_s3_uri || outputLocation;
                     const maskUri = res.result?.mask_s3_uri || '';
                     const srcImg = window._lastInputImage || '';
-                    _rememberViewerVolumes(srcImg, maskUri);
+                    const epName = window._lastEndpoint || '';
+                    _rememberViewerVolumes(srcImg, maskUri, null, epName);
                     const viewBtn = maskUri
-                        ? `<button class="btn btn-secondary" style="margin-bottom:0.5rem;" onclick="openInViewer('${escapeJsString(srcImg)}', '${escapeJsString(maskUri)}')">
+                        ? `<button class="btn btn-secondary" style="margin-bottom:0.5rem;" onclick="openInViewer('${escapeJsString(srcImg)}', '${escapeJsString(maskUri)}', '${escapeJsString(epName)}')">
                                <i class="fas fa-eye"></i> View in viewer
                            </button>`
                         : '';
