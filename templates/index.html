@@ -577,6 +577,23 @@
                             <input type="number" id="sm_val_interval" name="sm_val_interval" value="1" min="1">
                         </div>
                     </div>
+                    <div class="form-row" id="sm-num-classes-row" style="display:none;">
+                        <div class="form-group">
+                            <label for="sm_num_classes">Number of Classes (incl. background)</label>
+                            <input type="number" id="sm_num_classes" name="sm_num_classes" value="0" min="0">
+                            <small style="color:var(--aws-dark-gray)">Segmentation only. <strong>0</strong> = auto-derive from label volumes. <strong>1</strong> = binary (sigmoid). <strong>&gt;1</strong> = multi-class (softmax), e.g. 2 for one foreground class + background.</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="sm_roi_size">Patch Size (ROI, D,H,W)</label>
+                            <input type="text" id="sm_roi_size" name="sm_roi_size" value="96,96,96">
+                            <small style="color:var(--aws-dark-gray)">Segmentation trains on foreground-biased patches at native resolution (no whole-volume downsizing). Each dim should be divisible by 16. Larger = more VRAM; 96,96,96 fits ml.g5.xlarge.</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="sm_num_samples">Patches per Volume</label>
+                            <input type="number" id="sm_num_samples" name="sm_num_samples" value="2" min="1" max="8">
+                            <small style="color:var(--aws-dark-gray)">Foreground/background patches sampled per volume each step.</small>
+                        </div>
+                    </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label for="sm_entry_point">Entry Point</label>

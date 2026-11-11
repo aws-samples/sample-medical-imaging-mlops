@@ -210,7 +210,7 @@ class AWSService:
                 response = self.sagemaker_client.create_presigned_domain_url(
                     DomainId=domain_id,
                     UserProfileName=user_profile,
-                    ExpiresInSeconds=43200,  # 12 hours
+                    ExpiresInSeconds=300,  # API max (CreatePresigned* caps at 300s)
                 )
                 url = response.get("AuthorizedUrl")
                 if not url:
@@ -239,7 +239,7 @@ class AWSService:
         try:
             response = self.sagemaker_client.create_presigned_mlflow_tracking_server_url(
                 TrackingServerName=server_name,
-                ExpiresInSeconds=43200,  # 12 hours
+                ExpiresInSeconds=300,  # API max (CreatePresigned* caps at 300s)
             )
             url = response.get("AuthorizedUrl")
         except ClientError as e:
@@ -258,7 +258,7 @@ class AWSService:
                     if match:
                         response = self.sagemaker_client.create_presigned_mlflow_tracking_server_url(
                             TrackingServerName=match["TrackingServerName"],
-                            ExpiresInSeconds=43200,  # 12 hours
+                            ExpiresInSeconds=300,  # API max (CreatePresigned* caps at 300s)
                         )
                         url = response.get("AuthorizedUrl")
                     else:

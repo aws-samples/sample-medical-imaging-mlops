@@ -13,6 +13,9 @@ registerTabInit('training', function() {
 
     document.querySelectorAll('input[name="sm_task_type"]')
         .forEach(r => r.addEventListener('change', onTaskTypeChange));
+    // Run once on load so task-dependent fields (e.g. the segmentation-only
+    // "Number of Classes" row) reflect the initially-checked task type.
+    onTaskTypeChange();
 
     // Refresh jobs every 15s for active ones
     setInterval(async () => {
@@ -585,7 +588,9 @@ async function validateSageMakerConfig() {
         epochs: parseInt(fd.get('sm_epochs') || '1'),
         batch_size: parseInt(fd.get('sm_batch_size') || '16'),
         learning_rate: parseFloat(fd.get('sm_learning_rate') || '0.001'),
-        num_classes: parseInt(fd.get('sm_num_classes') || '8'),
+        num_classes: parseInt(fd.get('sm_num_classes') || '0'),
+        roi_size: fd.get('sm_roi_size') || null,
+        num_samples: parseInt(fd.get('sm_num_samples') || '2'),
         val_interval: 1,
         instance_type: fd.get('sm_instance_type') || 'ml.g5.xlarge',
         instance_count: 1,
@@ -1317,6 +1322,10 @@ function onTaskTypeChange() {
     // Update default epochs
     const epochInput = document.getElementById('sm_epochs');
     if (epochInput) epochInput.value = task === 'segmentation' ? '10' : '1';
+
+    // Number of classes is segmentation-only (multi-class support).
+    const ncRow = document.getElementById('sm-num-classes-row');
+    if (ncRow) ncRow.style.display = task === 'segmentation' ? '' : 'none';
 }
 
 // ── Fine-tune Modal ───────────────────────────────────────────────────────────

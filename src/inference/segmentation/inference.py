@@ -24,7 +24,7 @@ from typing import Any, Dict, Union
 import torch
 import numpy as np
 import nibabel as nib
-from monai.networks.nets import SegResNet, SwinUNETR
+from monai.networks.nets import SegResNet, SwinUNETR, UNet
 from monai.transforms import (
     Compose,
     LoadImaged,
@@ -56,32 +56,52 @@ def model_fn(model_dir: str) -> Dict[str, Any]:
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     logger.info(f"Using device: {device}")
 
-    # Read model config if available
-    config_path = os.path.join(model_dir, "config.json")
+    # Read model config written by train.py (result.json). Fall back to a legacy
+    # config.json, then to binary SegResNet defaults, for older artifacts.
     model_name = "SegResNet"
-    if os.path.exists(config_path):
-        with open(config_path, "r") as f:
-            config = json.load(f)
-            model_name = config.get("model_name", "SegResNet")
+    num_classes = 1
+    meta = {}
+    for cfg_name in ("result.json", "config.json"):
+        cfg_path = os.path.join(model_dir, cfg_name)
+        if os.path.exists(cfg_path):
+            with open(cfg_path, "r") as f:
+                meta = json.load(f)
+            model_name = meta.get("model_name", model_name)
+            num_classes = int(meta.get("num_classes", 1) or 1)
+            break
 
-    logger.info(f"Loading model: {model_name}")
+    multiclass = num_classes > 1
+    out_channels = num_classes if multiclass else 1
+    roi_size = tuple(int(x) for x in (meta.get("roi_size") or [96, 96, 96]))
+    logger.info("Loading model: %s  num_classes=%d  mode=%s  roi_size=%s",
+                model_name, num_classes, "multiclass" if multiclass else "binary", roi_size)
 
-    # Initialize model
-    if model_name.lower() == "swinunetr":
+    # Initialize model — architecture + out_channels MUST match training.
+    name = model_name.lower()
+    if name == "swinunetr":
         model = SwinUNETR(
             img_size=(128, 128, 64),
             in_channels=1,
-            out_channels=1,
+            out_channels=out_channels,
             feature_size=24,
             drop_rate=0.0,
             attn_drop_rate=0.0,
             dropout_path_rate=0.0,
         )
+    elif name == "unet":
+        model = UNet(
+            spatial_dims=3,
+            in_channels=1,
+            out_channels=out_channels,
+            channels=(16, 32, 64, 128, 256),
+            strides=(2, 2, 2, 2),
+            num_res_units=2,
+        )
     else:
         model = SegResNet(
             spatial_dims=3,
             in_channels=1,
-            out_channels=1,
+            out_channels=out_channels,
             init_filters=16,
             dropout_prob=0.2,
         )
@@ -117,44 +137,45 @@ def model_fn(model_dir: str) -> Dict[str, Any]:
     model = model.to(device)
     model.eval()
 
-    # Preprocessing transforms (must match training transforms)
+    # Preprocessing — MUST mirror training (src/segmentation/utils.py).
+    # Training applies only: channel-first, CT HU window -> [0,1], ensure-type —
+    # and crops foreground patches at NATIVE resolution (no orientation/spacing/
+    # resize). Inference therefore also keeps native geometry and lets the
+    # SlidingWindowInferer tile the ROI over the full volume. The mask is already
+    # in the input's geometry, so no Invertd is needed.
     preprocessing = Compose([
         LoadImaged(keys="image"),
         EnsureChannelFirstd(keys="image"),
-        Orientationd(keys="image", axcodes="RAS"),
-        Spacingd(keys="image", pixdim=[1.5, 1.5, 2.0], mode="bilinear"),
         ScaleIntensityRanged(
             keys="image", a_min=-100, a_max=500, b_min=0, b_max=1, clip=True
         ),
-        Resized(keys="image", spatial_size=(128, 128, 64)),
         EnsureTyped(keys="image"),
     ])
 
     # Post-processing.
     #
-    # The prediction comes out in the PREPROCESSED geometry (RAS, 1.5x1.5x2.0mm,
-    # resized to 128x128x64). To overlay correctly on the ORIGINAL image, we must
-    # invert the spatial preprocessing (Invertd replays Orientation/Spacing/Resize
-    # in reverse using the recorded metadata), which restores the mask to the
-    # original image's shape AND affine. Without this the saved mask does not
-    # align with the source image in the viewer.
-    post_transforms = Compose([
-        Activationsd(keys="pred", sigmoid=True),
-        Invertd(
-            keys="pred",
-            transform=preprocessing,
-            orig_keys="image",          # invert against the image's transform chain
-            meta_keys="pred_meta_dict",
-            orig_meta_keys="image_meta_dict",
-            nearest_interp=True,        # labels: nearest-neighbour on inversion
-            to_tensor=True,
-        ),
-        AsDiscreted(keys="pred", threshold=0.5),
-    ])
+    # Preprocessing applies NO spatial transforms (no orientation/spacing/resize)
+    # — patches were cropped at native resolution during training and the sliding
+    # window infers over the native volume — so the prediction is ALREADY in the
+    # input image's geometry. No Invertd needed; just activate + discretize.
+    #
+    # Binary: sigmoid -> threshold 0.5 -> {0,1} mask.
+    # Multi-class: softmax -> argmax -> integer label map 0..N-1.
+    if multiclass:
+        post_transforms = Compose([
+            Activationsd(keys="pred", softmax=True),
+            AsDiscreted(keys="pred", argmax=True),
+        ])
+    else:
+        post_transforms = Compose([
+            Activationsd(keys="pred", sigmoid=True),
+            AsDiscreted(keys="pred", threshold=0.5),
+        ])
 
-    # Sliding window inferer for large volumes
+    # Sliding window inferer — roi_size MUST match the training patch size
+    # (from result.json). Tiles the ROI over the full native volume.
     inferer = SlidingWindowInferer(
-        roi_size=(128, 128, 64),
+        roi_size=roi_size,
         sw_batch_size=4,
         overlap=0.5,
     )
@@ -166,6 +187,8 @@ def model_fn(model_dir: str) -> Dict[str, Any]:
         "post_transforms": post_transforms,
         "inferer": inferer,
         "model_name": model_name,
+        "num_classes": num_classes,
+        "multiclass": multiclass,
     }
 
 
@@ -267,19 +290,18 @@ def predict_fn(input_data: Dict[str, str], model_components: Dict[str, Any]) -> 
         with torch.no_grad():
             prediction = inferer(input_tensor, model)
 
-        # Post-process WITH inversion back to the original image geometry.
-        # Re-attach the prediction to the preprocessed dict under 'pred' so
-        # Invertd can replay the spatial transforms in reverse using the
-        # recorded metadata. The result matches the original shape + affine.
+        # Post-process: activate + discretize. No geometry inversion needed —
+        # preprocessing applied no spatial transforms, so the prediction is
+        # already in the native input geometry (shape + affine match the source).
         preprocessed["pred"] = prediction[0]  # drop batch dim -> (C, H, W, D)
-        inverted = post_transforms(preprocessed)
-        pred = inverted["pred"]
+        processed = post_transforms(preprocessed)
+        pred = processed["pred"]
         seg_array = pred.detach().cpu().numpy().squeeze()
-        logger.info(f"Segmentation shape (inverted to original): {seg_array.shape} "
+        logger.info(f"Segmentation shape (native): {seg_array.shape} "
                     f"vs original {original_shape}")
 
-        # Prefer the affine carried on the inverted prediction (MetaTensor); it
-        # matches seg_array exactly. Fall back to the original image affine.
+        # Affine from the prediction MetaTensor (carries the input image's
+        # affine, since no resampling occurred). Fall back to the original.
         try:
             out_affine = np.asarray(pred.affine.detach().cpu().numpy())
         except Exception:
@@ -289,6 +311,16 @@ def predict_fn(input_data: Dict[str, str], model_components: Dict[str, Any]) -> 
         voxel_count = int(np.sum(seg_array > 0))
         total_voxels = int(seg_array.size)
         seg_percentage = (voxel_count / total_voxels) * 100
+
+        # Per-class voxel counts (multi-class: one entry per non-background label).
+        per_class_voxels = {}
+        if model_components.get("multiclass"):
+            import numpy as _np
+            vals, counts = _np.unique(seg_array.astype(_np.int64), return_counts=True)
+            for v, c in zip(vals.tolist(), counts.tolist()):
+                if v == 0:
+                    continue
+                per_class_voxels[str(int(v))] = int(c)
 
         # Save segmentation as NIfTI in the ORIGINAL image geometry.
         seg_nifti = nib.Nifti1Image(
@@ -358,6 +390,7 @@ def predict_fn(input_data: Dict[str, str], model_components: Dict[str, Any]) -> 
 
         result = {
             "model_name": model_components["model_name"],
+            "num_classes": model_components.get("num_classes", 1),
             "original_shape": list(original_shape),
             "segmentation_shape": list(seg_array.shape),
             "segmented_voxels": voxel_count,
@@ -365,6 +398,8 @@ def predict_fn(input_data: Dict[str, str], model_components: Dict[str, Any]) -> 
             "segmentation_percentage": round(seg_percentage, 2),
             "disclaimer": "Research use only. Not a clinical diagnosis. Requires review by qualified healthcare professionals.",
         }
+        if per_class_voxels:
+            result["per_class_voxels"] = per_class_voxels
         if mask_s3_uri:
             result["mask_s3_uri"] = mask_s3_uri
 

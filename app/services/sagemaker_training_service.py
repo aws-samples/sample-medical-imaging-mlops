@@ -139,6 +139,16 @@ class SageMakerTrainingService:
             "data_s3_uri":   config.data_s3_uri,
         }
 
+        # Segmentation can be multi-class. num_classes INCLUDES background.
+        # Pass it through so train.py sizes out_channels + loss accordingly;
+        # 0 tells train.py to auto-derive from the label volumes.
+        task_val = getattr(config.task_type, "value", config.task_type)
+        if task_val == "segmentation":
+            hyperparameters["num_classes"] = config.num_classes
+            if config.roi_size:
+                hyperparameters["roi_size"] = config.roi_size
+            hyperparameters["num_samples"] = config.num_samples
+
         if config.checkpoint_s3_uri:
             hyperparameters["checkpoint_s3_uri"] = config.checkpoint_s3_uri
 

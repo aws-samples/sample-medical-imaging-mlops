@@ -36,16 +36,31 @@ zip -r "$OUTPUT_FILE" . \
     -x '.venv/*' \
     -x 'venv/*' \
     -x '.git/*' \
+    -x '.github/*' \
+    -x '.kiro/*' \
     -x '*/__pycache__/*' \
+    -x '__pycache__/*' \
     -x '*.pyc' \
     -x 'docs/_build/*' \
-    -x '.DS_Store' \
+    -x '*.DS_Store' \
     -x 'data/*' \
     -x 'logs/*' \
     -x 'node_modules/*' \
+    -x '.env' \
     -x '.env.local' \
     -x '*.pem' \
     -x '*.key' \
+    -x '*.p12' \
+    -x '*.pfx' \
+    -x 'credentials*.json' \
+    -x '.pytest_cache/*' \
+    -x '.coverage' \
+    -x 'htmlcov/*' \
+    -x '*.egg-info/*' \
+    -x 'build/*' \
+    -x 'dist/*' \
+    -x 'mlflow.db' \
+    -x 'NVIDIA-MedTech/**/models/*' \
     > /dev/null
 
 echo "✅ Created: $OUTPUT_FILE"

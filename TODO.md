@@ -30,6 +30,10 @@
 
 ## Models
 
+- [ ] **Integrate Cell-DETR** — <https://github.com/ChristophReich1996/Cell-DETR/> — DETR-based (transformer) cell instance segmentation for microscopy. Not a MONAI bundle (plain PyTorch repo), so integration would follow the dedicated-stack pattern (like NVIDIA-MedTech/NV-Segment-CT): investigate repo structure/license/weights hosting first, then dedicated `src/` module + Dockerfiles if framework requirements differ from the shared images.
+
+- [ ] **Integrate CellViT** — <https://github.com/TIO-IKIM/CellViT/> — Vision-Transformer cell segmentation + classification on H&E histology (PanNuke-trained; overlaps in task with the imported HoVer-Net bundle — compare before committing to both). Also not a MONAI bundle; same investigate-first flow (structure, license, checkpoint hosting, framework tier).
+
 - [ ] **Add UNet to segmentation model_def** — UNet is listed in `MODELS` registry but not yet tested end-to-end on SageMaker.
 
 - [ ] **Custom model upload** — Allow importing a custom model architecture file and registering it in the model list.

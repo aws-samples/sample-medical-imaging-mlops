@@ -46,6 +46,8 @@ class SageMakerTrainingConfig(BaseModel):
     batch_size: int = 16
     learning_rate: float = 0.001
     num_classes: int = 1  # derived from data; kept for segmentation default only
+    roi_size: Optional[str] = None  # seg patch size "D,H,W" (e.g. "96,96,96"); None=train.py default
+    num_samples: int = 2            # seg foreground/background patches per volume
     val_interval: int = 1
     instance_type: str = "ml.g5.xlarge"
     instance_count: int = 1

@@ -9,9 +9,10 @@ import logging
 import torch
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
-from monai.losses import DiceLoss
+from monai.losses import DiceLoss, DiceCELoss
 from monai.metrics import DiceMetric
 from monai.transforms import Compose, Activations, AsDiscrete
+from monai.inferers import SlidingWindowInferer
 
 from model_def import ModelDef
 from utils import create_data_loaders
@@ -28,6 +29,17 @@ parser.add_argument("--batch_size",    type=int,   default=2)
 parser.add_argument("--epochs",        type=int,   default=10)
 parser.add_argument("--learning_rate", type=float, default=1e-4)
 parser.add_argument("--val_interval",  type=int,   default=2)
+parser.add_argument("--num_classes",   type=int,   default=0,
+                    help="Number of classes INCLUDING background. "
+                         "0 or 1 = binary (sigmoid+Dice). >1 = multi-class "
+                         "(softmax+DiceCE). If 0, derived from the label volumes.")
+parser.add_argument("--roi_size",      type=str,   default="96,96,96",
+                    help="Training patch size as comma-separated ints "
+                         "(e.g. '96,96,96'). Patches are foreground-biased crops "
+                         "at native resolution; inference slides this ROI over "
+                         "the full volume. Each dim should be divisible by 16.")
+parser.add_argument("--num_samples",   type=int,   default=2,
+                    help="Foreground/background patches sampled per volume.")
 parser.add_argument("--checkpoint_s3_uri", type=str, default="",
                     help="S3 URI of model.tar.gz to resume from (fine-tuning)")
 args, _ = parser.parse_known_args()
@@ -58,15 +70,66 @@ if not os.path.isdir(val_path):
 
 logger.info("Train: %s  |  Val: %s", train_path, val_path)
 
-train_loader = create_data_loaders(train_path, args.batch_size, training=True)
+# Parse ROI (training patch) size, e.g. "96,96,96" -> (96, 96, 96).
+try:
+    ROI_SIZE = tuple(int(x) for x in str(args.roi_size).split(",") if x.strip())
+    if len(ROI_SIZE) != 3:
+        raise ValueError
+except Exception:
+    logger.warning("Invalid --roi_size %r; falling back to 96,96,96", args.roi_size)
+    ROI_SIZE = (96, 96, 96)
+logger.info("Training ROI (patch) size: %s  |  num_samples/vol: %d", ROI_SIZE, args.num_samples)
+
+train_loader = create_data_loaders(train_path, args.batch_size, training=True,
+                                   roi_size=ROI_SIZE, num_samples=args.num_samples)
 val_loader   = create_data_loaders(val_path,   args.batch_size, training=False)
 
-# Binary segmentation — always 1 output channel
-NUM_CLASSES = 1
+
+def _derive_num_classes(folder: str) -> int:
+    """Infer class count (incl. background) as max(label value)+1 over the label
+    volumes under <folder>/<subject>/label.nii.gz. Scans up to 50 volumes — more
+    than enough to see every class in practice — and is only used when the user
+    does not pass --num_classes explicitly."""
+    import glob
+    import numpy as np
+    import nibabel as nib
+    label_paths = sorted(glob.glob(os.path.join(folder, "*", "label.nii.gz")))
+    if not label_paths:
+        return 1
+    max_label = 0
+    for p in label_paths[:50]:
+        try:
+            arr = np.asanyarray(nib.load(p).dataobj)
+            m = int(arr.max())
+            if m > max_label:
+                max_label = m
+        except Exception as e:  # unreadable file — skip, keep going
+            logger.warning("Could not read %s while deriving num_classes: %s", p, e)
+    return max_label + 1
+
+
+# Resolve number of classes (INCLUDING background).
+#   >1  -> multi-class: softmax + DiceCELoss(to_onehot_y) + argmax/one-hot metric
+#   <=1 -> binary (unchanged legacy path): sigmoid + DiceLoss + threshold
+if args.num_classes and args.num_classes > 0:
+    NUM_CLASSES = args.num_classes
+    logger.info("num_classes=%d (from --num_classes)", NUM_CLASSES)
+else:
+    NUM_CLASSES = _derive_num_classes(train_path)
+    logger.info("num_classes=%d (auto-derived from label volumes)", NUM_CLASSES)
+
+MULTICLASS = NUM_CLASSES > 1
+
 model     = ModelDef(NUM_CLASSES, args.model_name).get_model().to(device)
 optimizer = optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=1e-5)
-loss_fn   = DiceLoss(sigmoid=True)
-logger.info("Model: %s  |  Params: %s", args.model_name, sum(p.numel() for p in model.parameters()))
+if MULTICLASS:
+    # to_onehot_y: integer label map (B,1,H,W,D) -> one-hot internally.
+    loss_fn = DiceCELoss(to_onehot_y=True, softmax=True)
+else:
+    loss_fn = DiceLoss(sigmoid=True)
+logger.info("Model: %s  |  classes: %d  |  mode: %s  |  Params: %s",
+            args.model_name, NUM_CLASSES, "multiclass" if MULTICLASS else "binary",
+            sum(p.numel() for p in model.parameters()))
 
 # ── Checkpoint resume (fine-tuning) ──────────────────────────────────────────
 start_epoch = 1
@@ -99,8 +162,22 @@ if args.checkpoint_s3_uri:
     except Exception as e:
         logger.warning("Could not load checkpoint, starting from scratch: %s", e)
 
-post_trans  = Compose([Activations(sigmoid=True), AsDiscrete(threshold=0.5)])
-dice_metric = DiceMetric(include_background=True, reduction="mean")
+if MULTICLASS:
+    # pred: (C,H,W,D) logits -> softmax -> argmax -> one-hot for Dice.
+    post_pred  = Compose([Activations(softmax=True),
+                          AsDiscrete(argmax=True, to_onehot=NUM_CLASSES)])
+    post_label = Compose([AsDiscrete(to_onehot=NUM_CLASSES)])
+    # Exclude background so the dominant class doesn't inflate the score.
+    dice_metric = DiceMetric(include_background=False, reduction="mean")
+else:
+    post_pred  = Compose([Activations(sigmoid=True), AsDiscrete(threshold=0.5)])
+    post_label = None
+    dice_metric = DiceMetric(include_background=True, reduction="mean")
+
+# Validation runs on FULL native volumes via sliding window over the training ROI
+# (patch training => the net only ever saw ROI_SIZE inputs). roi_size here must
+# match the training patch size and the inference handler's SlidingWindowInferer.
+val_inferer = SlidingWindowInferer(roi_size=ROI_SIZE, sw_batch_size=1, overlap=0.25)
 
 # ── Training loop ─────────────────────────────────────────────────────────────
 best_dice = -1.0
@@ -140,12 +217,18 @@ for epoch in range(start_epoch, args.epochs + 1):
 
     if epoch % args.val_interval == 0:
         model.eval()
+        from monai.data import decollate_batch
         with torch.no_grad():
             for batch in val_loader:
                 images  = batch["image"].to(device)
                 masks   = batch["mask"].to(device)
-                outputs = post_trans(model(images))
-                dice_metric(y_pred=outputs, y=masks)
+                logits  = val_inferer(images, model)   # sliding window over full volume
+                preds   = [post_pred(p) for p in decollate_batch(logits)]
+                if MULTICLASS:
+                    labels = [post_label(m) for m in decollate_batch(masks)]
+                else:
+                    labels = decollate_batch(masks)
+                dice_metric(y_pred=preds, y=labels)
         val_dice = dice_metric.aggregate().item()
         dice_metric.reset()
         logger.info("Epoch %d/%d  val_dice=%.4f", epoch, args.epochs, val_dice)
@@ -168,6 +251,9 @@ result = {
     "model_name":       args.model_name,
     "task_type":        args.task_type,
     "dimension":        args.dimension,
+    "num_classes":      NUM_CLASSES,
+    "multiclass":       MULTICLASS,
+    "roi_size":         list(ROI_SIZE),
     "final_epoch":      args.epochs,
     "best_val_dice":    round(best_dice, 4),
     "learning_rate":    args.learning_rate,
