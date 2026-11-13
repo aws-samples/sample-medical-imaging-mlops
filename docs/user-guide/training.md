@@ -66,8 +66,18 @@ s3://your-bucket/dataset-name/
     └── subject_004/
 ```
 
-- Each subject folder contains an image volume and a binary mask
-- Output is always 1 channel (binary segmentation)
+- Each subject folder contains an image volume and a label mask
+- Binary masks (0/1) and multi-class label maps (0 = background, 1..N = classes) are both supported
+
+#### Segmentation-only training options
+
+| Field | Description | Default |
+|---|---|---|
+| **Number of Classes** | Output channels, including background. `0` derives it from the largest label value in the training masks | `0` |
+| **Patch Size (ROI, D,H,W)** | Size of the 3D patches sampled for training; inference uses the same size for sliding-window prediction | `96,96,96` |
+| **Patches per Volume** | Foreground-biased patches sampled from each volume per iteration (1–8) | `2` |
+
+Training runs at native resolution on patches. The segmentation inference image reads these settings from the model artifact, so rebuild and redeploy the inference image after upgrading.
 
 ## Launching a SageMaker Training Job
 

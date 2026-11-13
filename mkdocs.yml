@@ -53,6 +53,7 @@ nav:
       - Configuration: configuration.md
   - User Guide:
       - Overview: user-guide/index.md
+      - Preprocessing: user-guide/preprocessing.md
       - Training: user-guide/training.md
       - MONAI Bundle: user-guide/monai-bundle.md
       - Deployment: user-guide/deployment.md
@@ -67,6 +68,7 @@ nav:
       - Custom Model Workflow: custom-model-workflow.md
       - Deployment Guide: deployment-guide.md
   - Development: development.md
+  - Changelog: https://github.com/aws-samples/sample-medical-imaging-mlops/blob/main/CHANGELOG.md
 
 extra:
   social:

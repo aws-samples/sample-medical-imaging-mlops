@@ -110,6 +110,29 @@ TEST_IMAGE_S3_URI=s3://<your-bucket-name>/test/sample.dcm
 TEST_SEGMENTATION_S3_URI=s3://<your-bucket-name>/test/volume.nii.gz
 ```
 
+### Dashboard security settings
+
+| Variable | Description | Default |
+|---|---|---|
+| `HOST` | Address the dashboard listens on. Keep it on loopback: the dashboard has no login and uses your AWS credentials | `127.0.0.1` |
+| `ALLOWED_HOSTS` | Comma-separated `Host` header values the dashboard accepts. Add a name here if you reach it through an SSH tunnel or proxy under another hostname. Other hosts get `400` (blocks DNS rebinding) | `localhost,127.0.0.1,[::1]` |
+| `AWS_ACCOUNT_ID` | Also enables the S3 bucket-ownership check: before uploading job code (preprocessing and evaluation scripts, staged MONAI bundles), the dashboard verifies the bucket belongs to this account and uploads with `ExpectedBucketOwner` | unset (check skipped with a warning) |
+| `REQUIRE_BUCKET_OWNER_CHECK` | `true` refuses those uploads when `AWS_ACCOUNT_ID` is unset, instead of warning | unset |
+
+State-changing requests (`POST`, `PUT`, `PATCH`, `DELETE`) are rejected with `403` when the browser marks them as cross-site or sends a foreign `Origin` header. This blocks other websites from driving the dashboard (CSRF). Scripts and `curl`, which send neither header, are unaffected.
+
+### Inference endpoint security
+
+Set these in the SageMaker endpoint (model) environment, not in `.env.local`:
+
+| Variable | Description | Default |
+|---|---|---|
+| `LOCAL_INPUT_ROOTS` | Comma-separated directories from which a request's local `file_path` / `image` is accepted | `/opt/ml/input/data,/opt/ml/processing/input` |
+| `ALLOWED_INPUT_BUCKETS` | Comma-separated S3 buckets the endpoint may read input from | unset (any bucket the endpoint role can read) |
+| `OUTPUT_FILENAME_PATTERN` | Default output filename; only `{patient_id}`, `{filename}`, `{endpoint_name}`, `{timestamp}`, `{model_name}` placeholders are allowed | handler default |
+
+See [Inference — Input restrictions](user-guide/inference.md#input-restrictions) for how requests are validated.
+
 ---
 
 ## 4. AWS Credentials

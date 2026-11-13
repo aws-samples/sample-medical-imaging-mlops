@@ -66,7 +66,7 @@ The result is saved to `s3://<prefix>/<endpoint_name>-result.json`.
 | **DICOM** (`.dcm`) | Raw bytes with `Content-Type: application/dicom`, or S3 URI, or base64 |
 | **PNG / JPG** | Same as DICOM — raw bytes, S3 URI, or base64 |
 | **S3 URI** | JSON: `{"file_path": "s3://bucket/key.dcm"}` |
-| **Local path** | JSON: `{"file_path": "/path/to/image.dcm"}` |
+| **Local path** | JSON: `{"file_path": "/opt/ml/input/data/image.dcm"}` (must be under `LOCAL_INPUT_ROOTS`, see below) |
 | **Base64** | JSON: `{"file_path": "<base64-encoded bytes>"}` |
 
 ### Segmentation endpoints
@@ -75,10 +75,22 @@ The result is saved to `s3://<prefix>/<endpoint_name>-result.json`.
 |---|---|
 | **NIfTI** (`.nii.gz`) | Raw bytes with `Content-Type: application/octet-stream` |
 | **S3 URI** | JSON: `{"file_path": "s3://bucket/subject/img.nii.gz"}` |
-| **Local path** | JSON: `{"file_path": "/path/to/volume.nii.gz"}` |
+| **Local path** | JSON: `{"file_path": "/opt/ml/input/data/volume.nii.gz"}` (must be under `LOCAL_INPUT_ROOTS`, see below) |
 | **Base64** | JSON: `{"file_path": "<base64-encoded NIfTI bytes>"}` |
 
 > **Note:** The segmentation inference script uses the `file_path` key (same as classification). The older `s3_uri` key is no longer used — always use `file_path` for both task types.
+
+### Input restrictions
+
+The inference handlers treat every request as untrusted:
+
+- **Local paths** are accepted only if they resolve inside `LOCAL_INPUT_ROOTS` (default `/opt/ml/input/data,/opt/ml/processing/input`). Anything else, including the model directory, is rejected. Send an S3 URI or the file bytes instead.
+- **S3 buckets** can be restricted by setting `ALLOWED_INPUT_BUCKETS` (comma-separated) on the endpoint. When it is unset, any bucket the endpoint role can read is allowed.
+- **Output filename patterns** (`output_pattern`) may use only `{patient_id}`, `{filename}`, `{endpoint_name}`, `{timestamp}` and `{model_name}`, with no `..` or leading `/`. Other patterns fall back to the default.
+- **MONAI bundle requests:** `label_prompt`, `points` and `point_labels` must be numbers. `config_overrides` accepts plain literal values on non-reserved keys only; MONAI `$` expressions, `@` references and `%` macros are rejected.
+- **NV-Segment-CT `checkpoint`** must name a file in the bundle's `models/` directory.
+
+Set these variables in the endpoint's environment (see [Configuration](../configuration.md#inference-endpoint-security)).
 
 ## Response Formats
 

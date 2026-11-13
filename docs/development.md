@@ -357,17 +357,40 @@ The `.github/workflows/scrub-check.yml` GitHub Actions workflow runs on every PR
 
 The workflow excludes the `.github/` directory itself from scanning.
 
-### Frontend XSS Prevention (escapeHtml)
+### Frontend XSS Prevention (`safe_html.js`)
 
-All user-supplied or API-returned data rendered in the DOM is passed through the `escapeHtml()` function defined in `static/js/main.js`:
+All dynamic HTML is built with the escape-by-default helpers in `static/js/safe_html.js`, which `templates/base.html` and `templates/viewer.html` load before every other script. Never assign strings to `innerHTML` / `outerHTML`, call `insertAdjacentHTML`, or use `document.write`.
 
-```javascript
-function escapeHtml(str) {
-    // Escapes <, >, &, ", ' to prevent XSS
-}
-```
+| Need | Use |
+|---|---|
+| Markup with dynamic values | `` html`<td title="${v}">${v}</td>` `` — every `${}` value is HTML-escaped |
+| Insert into the page | `setHTML(el, fragment)`, `appendHTML(el, fragment)`, `insertHTML(el, position, fragment)` |
+| Lists | `` joinHtml(items.map(i => html`<li>${i}</li>`), '') `` or interpolate the array directly |
+| Inline handler argument | `` html`<button onclick="fn(${jsArg(value)})">` `` |
+| `href` / `src` URL | `` html`<a href="${safeUrl(url)}">` `` — blocks `javascript:`, `data:` and `//host` URLs |
+| Plain text | `el.textContent = value` |
+| Messages and confirmations | `notify(message, 'info' \| 'success' \| 'warning' \| 'error')` and `await confirmAction(message, { danger: true })` instead of `alert()` / `confirm()` |
 
-This is used consistently across all frontend JavaScript files (`training.js`, `deployment.js`, `evaluation.js`, `monitoring.js`, `inference.js`, `fairness.js`, `data.js`).
+Plain strings passed to `setHTML` are escaped as text, so a missed conversion shows visible markup rather than creating an injection. `setHTML` parses with `DOMParser` into an inert fragment, so scripts in the markup never run.
+
+### Request-origin protection
+
+The dashboard has no login, so `main.py` adds two checks in front of every route:
+
+- **Host allowlist** (`TrustedHostMiddleware`): only `ALLOWED_HOSTS` (default `localhost,127.0.0.1,[::1]`) are accepted, which blocks DNS-rebinding attacks.
+- **Cross-site write check**: `POST`/`PUT`/`PATCH`/`DELETE` requests whose `Sec-Fetch-Site` is not `same-origin`/`none`, or whose `Origin` differs from the `Host`, get `403`.
+
+Unit tests send requests with `TestClient(main.app, base_url="http://localhost")` so they pass the Host check.
+
+### Inference handler input validation
+
+The SageMaker inference handlers (`src/inference/*`, `src/monai_bundle/inference.py`, `src/nvmedtech/inference.py`) validate every request field before use. Local paths are confined to `LOCAL_INPUT_ROOTS`, S3 buckets can be limited with `ALLOWED_INPUT_BUCKETS`, and MONAI CLI arguments built from a request reject `$`/`@`/`%` expressions. Keep `subprocess` calls as argument lists (never `shell=True`) and validate any request value before adding it. See `tests/unit/test_security_hardening.py`.
+
+### Dependency and container hygiene
+
+- Keep dependencies on versions with no known advisories. Check with `pip-audit -r requirements.txt` before releasing.
+- Do not pin `torch`/`torchvision` in container requirement files; they come from the AWS Deep Learning Container base.
+- Base images are pinned by digest. Refresh the digest when you update a base image.
 
 ### Subresource Integrity (SRI)
 
@@ -445,6 +468,6 @@ curl -X POST http://localhost:8000/api/evaluation/sync
 ### Adding a new JS file
 
 1. Create the file in `static/js/`
-2. Include it in `templates/base.html`
-3. Use `escapeHtml()` for all dynamic content rendered into the DOM
+2. Include it in `templates/index.html` (or `base.html`) with `{{ static_script('js/<name>.js') }}`, after `safe_html.js`
+3. Build dynamic markup with `` html`...` `` and insert it with `setHTML()` — never `innerHTML`
 4. Add SRI `integrity` attributes for any new external CDN resources

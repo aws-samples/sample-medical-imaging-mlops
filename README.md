@@ -54,7 +54,11 @@ Launch SageMaker training jobs with state-of-the-art architectures. Configure hy
 | Vision Transformer (ViT) | |
 | Custom (bring your own) | |
 
-All experiments are tracked in MLflow with full hyperparameter, metric, and artifact logging.
+All experiments are tracked in MLflow with full hyperparameter, metric, and artifact logging. Segmentation supports binary and multi-class label maps with configurable patch size.
+
+### 🧹 Preprocess
+
+Build a MONAI transform pipeline (resample, window, normalise, crop, resize and more), preview it on one image, then run the identical pipeline over an S3 dataset as a CPU SageMaker Processing Job. See the [Preprocessing guide](docs/user-guide/preprocessing.md).
 
 ### 📦 MONAI Bundle
 
@@ -227,6 +231,17 @@ Comprehensive documentation is also available in the [`docs/`](docs/) directory:
 - **[User Guide](docs/user-guide/)** — Feature walkthroughs for every tab
 - **[Development](docs/development.md)** — Contributing, testing, and architecture details
 - **[Custom Model Workflow](docs/custom-model-workflow.md)** — Bring your own model architecture
+- **[Changelog](CHANGELOG.md)** — Release notes and upgrade steps
+
+## Security
+
+MedAnvil has **no built-in login** and acts with your AWS credentials, so it listens on `127.0.0.1` only. Reach it from another machine through an SSH tunnel, not by binding it to a wider address.
+
+- The dashboard rejects unexpected `Host` headers and cross-site write requests (DNS rebinding and CSRF protection). Set `ALLOWED_HOSTS` if you use a tunnel under another hostname.
+- Set `AWS_ACCOUNT_ID` in `.env.local` so job code is only uploaded to S3 buckets your account owns.
+- Inference endpoints accept local file paths only under `LOCAL_INPUT_ROOTS`; set `ALLOWED_INPUT_BUCKETS` to limit which buckets requests can read.
+
+See [Configuration](docs/configuration.md#dashboard-security-settings) and [Development → Security](docs/development.md#security). If you find a security issue, please report it through [AWS vulnerability reporting](https://aws.amazon.com/security/vulnerability-reporting/) rather than opening a public GitHub issue.
 
 ---
 
