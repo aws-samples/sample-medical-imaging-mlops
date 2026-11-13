@@ -37,7 +37,7 @@ CLS_JSON = {
 class TestParse(unittest.TestCase):
     def test_segmentation_derived(self):
         rd = dr.parse_dataset_json(json.dumps(SEG_JSON))
-        self.assertTrue(rd.is_segmentation)
+        self.assertTrue(rd.segmentation)
         self.assertEqual(rd.task_type(), "segmentation")
         self.assertEqual(rd.counts, {"training": 2, "validation": 1, "test": 1})
         self.assertEqual(rd.labels["1"], "spleen")
@@ -50,7 +50,7 @@ class TestParse(unittest.TestCase):
 
     def test_classification_derived(self):
         rd = dr.parse_dataset_json(json.dumps(CLS_JSON))
-        self.assertFalse(rd.is_segmentation)
+        self.assertFalse(rd.segmentation)
         self.assertEqual(rd.task_type(), "classification")
         self.assertEqual(rd.counts["training"], 2)
         self.assertIsNone(rd.pairs[0].label)
@@ -141,7 +141,7 @@ class TestReadFromS3(unittest.TestCase):
         stub = _StubS3(body=json.dumps(SEG_JSON))
         rd = dr.read_dataset_json_from_s3("s3://bucket/AMOS/", s3_client=stub)
         self.assertEqual(stub.calls[0], ("bucket", "AMOS/dataset.json"))
-        self.assertTrue(rd.is_segmentation)
+        self.assertTrue(rd.segmentation)
 
     def test_missing_key_maps_to_clear_error(self):
         class _Err(Exception):
@@ -161,7 +161,7 @@ class TestExample(unittest.TestCase):
         text = dr.example_dataset_json_text()
         # It must itself parse cleanly through the resolver.
         rd = dr.parse_dataset_json(text)
-        self.assertTrue(rd.is_segmentation)
+        self.assertTrue(rd.segmentation)
         self.assertIn("1", rd.labels)
 
 
@@ -200,7 +200,7 @@ class TestImageFolderDiscovery(unittest.TestCase):
             "cls/readme.txt",   # non-image at root — ignored
         ]
         rd = dr.discover_imagefolder_s3("s3://bucket/cls/", s3_client=_ImageFolderS3(keys))
-        self.assertFalse(rd.is_segmentation)
+        self.assertFalse(rd.segmentation)
         self.assertEqual(rd.task_type(), "classification")
         self.assertEqual(rd.source, "imagefolder")
         self.assertEqual(rd.classes, {"pneumonia": 3, "normal": 2})
@@ -220,7 +220,7 @@ class TestResolveEndpoint(unittest.TestCase):
     def setUpClass(cls):
         from fastapi.testclient import TestClient
         import main
-        cls.client = TestClient(main.app)
+        cls.client = TestClient(main.app, base_url="http://localhost")  # Host must pass TrustedHostMiddleware
 
     def test_resolve_without_aws_returns_400(self):
         # aws_service.s3_client is None without configured creds → 400, not 500.

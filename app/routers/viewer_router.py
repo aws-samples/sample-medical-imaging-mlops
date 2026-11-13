@@ -173,7 +173,8 @@ def fetch(s3_uri: str):
         try:
             nii_gz = _dicom_to_nifti_gz(obj["Body"].read())
         except Exception as e:
-            logger.error("DICOM→NIfTI conversion failed for %s: %s", s3_uri, e)
+            # FastAPI does not log HTTPException, so this is the only server-side record.
+            logger.error("DICOM→NIfTI conversion failed for %s: %s", s3_uri, e)  # nosemgrep: python.lang.best-practice.logging-error-without-handling.logging-error-without-handling
             raise HTTPException(
                 status_code=422,
                 detail=f"Could not decode DICOM {filename}: {e}")

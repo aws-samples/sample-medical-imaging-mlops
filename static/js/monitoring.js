@@ -1,7 +1,7 @@
 // Model Monitoring JavaScript
-// Depends on: escapeHtml() defined in main.js (loaded before this file)
+// Depends on: html``/setHTML()/escapeHtml() from safe_html.js (loaded before this file)
 if (typeof escapeHtml !== 'function') {
-    throw new Error('escapeHtml() is required but not defined. Ensure main.js is loaded before monitoring.js.');
+    throw new Error('escapeHtml() is required but not defined. Ensure safe_html.js is loaded before monitoring.js.');
 }
 
 registerTabInit('monitoring', function () {
@@ -34,7 +34,7 @@ async function loadCaptureViewer() {
     const results      = document.getElementById('cv-results');
 
     if (!endpointName) {
-        showMonitorBanner(banner, 'error', '<i class="fas fa-exclamation-circle"></i> Select an endpoint');
+        showMonitorBanner(banner, 'error', html`<i class="fas fa-exclamation-circle"></i> Select an endpoint`);
         return;
     }
 
@@ -53,11 +53,11 @@ async function loadCaptureViewer() {
     }
 
     if (!captureS3) {
-        showMonitorBanner(banner, 'error', '<i class="fas fa-exclamation-circle"></i> No capture S3 URI found for this endpoint. Enable data capture first.');
+        showMonitorBanner(banner, 'error', html`<i class="fas fa-exclamation-circle"></i> No capture S3 URI found for this endpoint. Enable data capture first.`);
         return;
     }
 
-    showMonitorBanner(banner, 'submitting', '<i class="fas fa-spinner fa-spin"></i> Reading capture files from S3...');
+    showMonitorBanner(banner, 'submitting', html`<i class="fas fa-spinner fa-spin"></i> Reading capture files from S3...`);
     if (results) results.style.display = 'none';
 
     try {
@@ -66,18 +66,17 @@ async function loadCaptureViewer() {
         );
 
         if (!data.total_records) {
-            showMonitorBanner(banner, 'error', `<i class="fas fa-info-circle"></i> ${escapeHtml(data.message || 'No capture records found')}`);
+            showMonitorBanner(banner, 'error', html`<i class="fas fa-info-circle"></i> ${data.message || 'No capture records found'}`);
             return;
         }
 
         showMonitorBanner(banner, 'success',
-            `<i class="fas fa-check-circle"></i> Analysed <strong>${data.parsed_records}</strong> records from <strong>${data.files_scanned}</strong> files`
-            + (data.errors ? ` (${data.errors} parse errors)` : ''));
+            html`${html`<i class="fas fa-check-circle"></i> Analysed <strong>${data.parsed_records}</strong> records from <strong>${data.files_scanned}</strong> files`}${data.errors ? html` (${data.errors} parse errors)` : ''})`);
 
         renderCaptureViewer(data);
         if (results) results.style.display = 'block';
     } catch (err) {
-        showMonitorBanner(banner, 'error', `<i class="fas fa-exclamation-circle"></i> ${escapeHtml(err.message)}`);
+        showMonitorBanner(banner, 'error', html`<i class="fas fa-exclamation-circle"></i> ${err.message}`);
     }
 }
 
@@ -85,12 +84,12 @@ function renderCaptureViewer(data) {
     // Summary cards
     const cards = document.getElementById('cv-summary-cards');
     if (cards) {
-        cards.innerHTML = `
+        setHTML(cards, html`
             <div class="eval-metric-card"><div class="eval-metric-value">${data.parsed_records}</div><div class="eval-metric-label">Records</div></div>
             <div class="eval-metric-card"><div class="eval-metric-value">${data.files_scanned}</div><div class="eval-metric-label">Files Scanned</div></div>
             <div class="eval-metric-card"><div class="eval-metric-value">${(data.avg_confidence * 100).toFixed(1)}%</div><div class="eval-metric-label">Avg Confidence</div></div>
             <div class="eval-metric-card"><div class="eval-metric-value">${Object.keys(data.class_distribution || {}).length}</div><div class="eval-metric-label">Classes Seen</div></div>
-        `;
+        `);
     }
 
     // Class distribution bar chart
@@ -161,13 +160,13 @@ function renderCaptureViewer(data) {
     // Recent records table
     const table = document.getElementById('cv-records-table');
     if (table && data.recent_records?.length) {
-        const rows = data.recent_records.map(r => `
+        const rows = joinHtml(data.recent_records.map(r => html`
             <tr style="border-bottom:1px solid #f0f0f0;">
-                <td style="padding:0.4rem 0.75rem; font-size:0.78rem; color:#888;">${r.time ? escapeHtml(new Date(r.time).toLocaleString()) : '—'}</td>
-                <td style="padding:0.4rem 0.75rem; font-size:0.82rem;"><strong>${escapeHtml(String(r.predicted_class))}</strong></td>
+                <td style="padding:0.4rem 0.75rem; font-size:0.78rem; color:#888;">${r.time ? new Date(r.time).toLocaleString() : '—'}</td>
+                <td style="padding:0.4rem 0.75rem; font-size:0.82rem;"><strong>${String(r.predicted_class)}</strong></td>
                 <td style="padding:0.4rem 0.75rem; font-size:0.82rem;">${(r.confidence * 100).toFixed(1)}%</td>
-            </tr>`).join('');
-        table.innerHTML = `
+            </tr>`), '');
+        setHTML(table, html`
             <div style="overflow-x:auto; max-height:300px; overflow-y:auto;">
                 <table style="width:100%; border-collapse:collapse;">
                     <thead style="position:sticky; top:0; background:#f9f9f9;">
@@ -179,7 +178,7 @@ function renderCaptureViewer(data) {
                     </thead>
                     <tbody>${rows}</tbody>
                 </table>
-            </div>`;
+            </div>`);
     }
 }
 
@@ -191,9 +190,9 @@ async function loadMonitorEndpoints() {
     try {
         const dep    = await apiCall('/api/deployment/deployments?local_only=true');
         const active = (dep.deployments || []).filter(d => d.status === 'InService');
-        select.innerHTML = active.length
-            ? active.map(d => `<option value="${escapeHtml(d.endpoint_name)}" data-capture="${escapeHtml(d.capture_s3_uri || '')}" data-type="${escapeHtml(d.endpoint_type || 'realtime')}">${escapeHtml(d.endpoint_name)}${d.data_capture_enabled ? ' 📡' : ''}${d.endpoint_type === 'async' ? ' ⚡' : ''}</option>`).join('')
-            : '<option value="" disabled selected>No InService endpoints</option>';
+        setHTML(select, active.length
+            ? joinHtml(active.map(d => html`<option value="${d.endpoint_name}" data-capture="${d.capture_s3_uri || ''}" data-type="${d.endpoint_type || 'realtime'}">${d.endpoint_name}${d.data_capture_enabled ? ' 📡' : ''}${d.endpoint_type === 'async' ? ' ⚡' : ''}</option>`), '')
+            : html`<option value="" disabled selected>No InService endpoints</option>`);
         select.addEventListener('change', onDcEndpointChange);
         onDcEndpointChange(); // Apply async check for initially selected endpoint
 
@@ -209,7 +208,7 @@ async function loadMonitorEndpoints() {
         // Also populate the capture viewer dropdown
         loadCvEndpoints(active);
     } catch (_) {
-        select.innerHTML = '<option value="" disabled selected>Could not load endpoints</option>';
+        setHTML(select, html`<option value="" disabled selected>Could not load endpoints</option>`);
     }
 }
 
@@ -221,15 +220,13 @@ async function loadCvEndpoints(preloaded) {
         // Only show endpoints that have data capture enabled
         const withCapture = deployments.filter(d => d.data_capture_enabled && d.capture_s3_uri);
         if (!withCapture.length) {
-            select.innerHTML = '<option value="" disabled selected>No endpoints with data capture enabled</option>';
+            setHTML(select, html`<option value="" disabled selected>No endpoints with data capture enabled</option>`);
             return;
         }
-        select.innerHTML = '<option value="" disabled selected>Select an endpoint…</option>'
-            + withCapture.map(d => {
+        setHTML(select, html`<option value="" disabled selected>Select an endpoint…</option>${joinHtml(withCapture.map(d => {
                 const captureUri  = d.capture_s3_uri || '';
-                return `<option value="${escapeHtml(d.endpoint_name)}" data-capture="${escapeHtml(captureUri)}" data-status="${escapeHtml(d.status)}">`
-                    + `${escapeHtml(d.endpoint_name)} 📡 (${escapeHtml(d.status)})</option>`;
-            }).join('');
+                return html`${html`<option value="${d.endpoint_name}" data-capture="${captureUri}" data-status="${d.status}">`}${html`${d.endpoint_name} 📡 (${d.status})</option>`}`;
+            }), '')}`);
 
         // Auto-select first endpoint
         if (withCapture.length === 1) {
@@ -237,7 +234,7 @@ async function loadCvEndpoints(preloaded) {
             onCvEndpointSelect();
         }
     } catch (_) {
-        select.innerHTML = '<option value="" disabled selected>Could not load endpoints</option>';
+        setHTML(select, html`<option value="" disabled selected>Could not load endpoints</option>`);
     }
 }
 
@@ -264,7 +261,7 @@ function onDcEndpointChange() {
     if (isAsync) {
         if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; btn.style.cursor = 'not-allowed'; }
         showMonitorBanner(banner, 'error',
-            '<i class="fas fa-exclamation-triangle"></i> Data capture is not available for async endpoints — SageMaker does not support DataCaptureConfig with AsyncInferenceConfig.');
+            html`<i class="fas fa-exclamation-triangle"></i> Data capture is not available for async endpoints — SageMaker does not support DataCaptureConfig with AsyncInferenceConfig.`);
     } else {
         if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.style.cursor = ''; }
         if (banner) banner.style.display = 'none';
@@ -279,8 +276,8 @@ async function enableDataCapture(e) {
     const btn    = e.target.querySelector('button[type="submit"]');
 
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enabling...';
-    showMonitorBanner(banner, 'submitting', '<i class="fas fa-spinner fa-spin"></i> Enabling data capture...');
+    setHTML(btn, html`<i class="fas fa-spinner fa-spin"></i> Enabling...`);
+    showMonitorBanner(banner, 'submitting', html`<i class="fas fa-spinner fa-spin"></i> Enabling data capture...`);
 
     try {
         const result = await apiCall('/api/monitoring/data-capture', {
@@ -293,12 +290,12 @@ async function enableDataCapture(e) {
             }),
         });
         showMonitorBanner(banner, 'success',
-            `<i class="fas fa-check-circle"></i> Data capture enabled on <strong>${escapeHtml(result.endpoint_name)}</strong> — endpoint updating`);
+            html`<i class="fas fa-check-circle"></i> Data capture enabled on <strong>${result.endpoint_name}</strong> — endpoint updating`);
     } catch (err) {
-        showMonitorBanner(banner, 'error', `<i class="fas fa-exclamation-circle"></i> ${escapeHtml(err.message)}`);
+        showMonitorBanner(banner, 'error', html`<i class="fas fa-exclamation-circle"></i> ${err.message}`);
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-camera"></i> Enable Data Capture';
+        setHTML(btn, html`<i class="fas fa-camera"></i> Enable Data Capture`);
     }
 }
 
@@ -310,8 +307,8 @@ async function runBaseline(e) {
     const btn    = e.target.querySelector('button[type="submit"]');
 
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
-    showMonitorBanner(banner, 'submitting', '<i class="fas fa-spinner fa-spin"></i> Submitting baseline job...');
+    setHTML(btn, html`<i class="fas fa-spinner fa-spin"></i> Submitting...`);
+    showMonitorBanner(banner, 'submitting', html`<i class="fas fa-spinner fa-spin"></i> Submitting baseline job...`);
 
     try {
         const result = await apiCall('/api/monitoring/baseline/data-quality', {
@@ -325,14 +322,14 @@ async function runBaseline(e) {
             }),
         });
         showMonitorBanner(banner, 'success',
-            `<i class="fas fa-check-circle"></i> Baseline job <strong>${escapeHtml(result.job_name)}</strong> submitted`);
+            html`<i class="fas fa-check-circle"></i> Baseline job <strong>${result.job_name}</strong> submitted`);
         loadBaselineJobs();
         refreshDQBaselinePicker();
     } catch (err) {
-        showMonitorBanner(banner, 'error', `<i class="fas fa-exclamation-circle"></i> ${escapeHtml(err.message)}`);
+        showMonitorBanner(banner, 'error', html`<i class="fas fa-exclamation-circle"></i> ${err.message}`);
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-play"></i> Run Baseline Job';
+        setHTML(btn, html`<i class="fas fa-play"></i> Run Baseline Job`);
     }
 }
 
@@ -343,8 +340,8 @@ async function createDQSchedule(e) {
     const banner = document.getElementById('dq-status-banner');
     const btn    = e.target.querySelector('button[type="submit"]');
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
-    showMonitorBanner(banner, 'submitting', '<i class="fas fa-spinner fa-spin"></i> Creating schedule...');
+    setHTML(btn, html`<i class="fas fa-spinner fa-spin"></i> Creating...`);
+    showMonitorBanner(banner, 'submitting', html`<i class="fas fa-spinner fa-spin"></i> Creating schedule...`);
 
     try {
         const result = await apiCall('/api/monitoring/schedules/data-quality', {
@@ -361,13 +358,13 @@ async function createDQSchedule(e) {
             }),
         });
         showMonitorBanner(banner, 'success',
-            `<i class="fas fa-check-circle"></i> Schedule <strong>${escapeHtml(result.schedule_name)}</strong> created`);
+            html`<i class="fas fa-check-circle"></i> Schedule <strong>${result.schedule_name}</strong> created`);
         loadMonitorSchedules();
     } catch (err) {
-        showMonitorBanner(banner, 'error', `<i class="fas fa-exclamation-circle"></i> ${escapeHtml(err.message)}`);
+        showMonitorBanner(banner, 'error', html`<i class="fas fa-exclamation-circle"></i> ${err.message}`);
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-clock"></i> Create Schedule';
+        setHTML(btn, html`<i class="fas fa-clock"></i> Create Schedule`);
     }
 }
 
@@ -376,8 +373,8 @@ async function createMQSchedule(e) {
     const banner = document.getElementById('mq-status-banner');
     const btn    = e.target.querySelector('button[type="submit"]');
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
-    showMonitorBanner(banner, 'submitting', '<i class="fas fa-spinner fa-spin"></i> Creating schedule...');
+    setHTML(btn, html`<i class="fas fa-spinner fa-spin"></i> Creating...`);
+    showMonitorBanner(banner, 'submitting', html`<i class="fas fa-spinner fa-spin"></i> Creating schedule...`);
 
     try {
         const result = await apiCall('/api/monitoring/schedules/model-quality', {
@@ -395,13 +392,13 @@ async function createMQSchedule(e) {
             }),
         });
         showMonitorBanner(banner, 'success',
-            `<i class="fas fa-check-circle"></i> Schedule <strong>${escapeHtml(result.schedule_name)}</strong> created`);
+            html`<i class="fas fa-check-circle"></i> Schedule <strong>${result.schedule_name}</strong> created`);
         loadMonitorSchedules();
     } catch (err) {
-        showMonitorBanner(banner, 'error', `<i class="fas fa-exclamation-circle"></i> ${escapeHtml(err.message)}`);
+        showMonitorBanner(banner, 'error', html`<i class="fas fa-exclamation-circle"></i> ${err.message}`);
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-clock"></i> Create Schedule';
+        setHTML(btn, html`<i class="fas fa-clock"></i> Create Schedule`);
     }
 }
 
@@ -415,7 +412,7 @@ async function loadMonitorSchedules() {
         // Only show schedules (not baselines) in this list
         renderMonitorSchedules((res.schedules || []).filter(s => s.type === 'schedule'));
     } catch (err) {
-        container.innerHTML = `<p style="color:#c62828;">Error: ${escapeHtml(err.message)}</p>`;
+        setHTML(container, html`<p style="color:#c62828;">Error: ${err.message}</p>`);
     }
 }
 
@@ -426,14 +423,14 @@ async function loadBaselineJobs() {
         const res = await apiCall('/api/monitoring/baselines');
         renderBaselineJobs(res.baselines || []);
     } catch (err) {
-        container.innerHTML = `<p style="color:#c62828;">Error: ${escapeHtml(err.message)}</p>`;
+        setHTML(container, html`<p style="color:#c62828;">Error: ${err.message}</p>`);
     }
 }
 
 function renderBaselineJobs(baselines) {
     const container = document.getElementById('monitor-baseline-list');
     if (!baselines.length) {
-        container.innerHTML = '<p style="color:#888;">No baseline jobs yet. Run a baseline job above to compute statistics and constraints.</p>';
+        setHTML(container, html`<p style="color:#888;">No baseline jobs yet. Run a baseline job above to compute statistics and constraints.</p>`);
         return;
     }
 
@@ -445,47 +442,47 @@ function renderBaselineJobs(baselines) {
         'Stopped':    'status-stopped',
     };
 
-    container.innerHTML = baselines.map(b => `
+    setHTML(container, joinHtml(baselines.map(b => html`
         <div class="job-item">
             <div class="job-header">
-                <div class="job-id">${escapeHtml(b.job_name)}</div>
-                <div class="job-status ${statusClass[b.status] || 'status-unknown'}">${escapeHtml(b.status)}</div>
+                <div class="job-id">${b.job_name}</div>
+                <div class="job-status ${statusClass[b.status] || 'status-unknown'}">${b.status}</div>
             </div>
             <div class="job-details">
                 <div><strong>Type:</strong> Data Quality Baseline</div>
-                <div><strong>Instance:</strong> ${escapeHtml(b.instance_type || 'N/A')}</div>
-                <div><strong>Baseline data:</strong> <code style="font-size:0.78rem;">${escapeHtml(b.baseline_data_s3_uri || 'N/A')}</code></div>
-                <div><strong>Output:</strong> <code style="font-size:0.78rem;">${escapeHtml(b.output_s3_uri || 'N/A')}</code></div>
-                ${b.created_at ? `<div><strong>Submitted:</strong> ${escapeHtml(new Date(b.created_at).toLocaleString())}</div>` : ''}
-                ${b.completed_at ? `<div><strong>Completed:</strong> ${escapeHtml(new Date(b.completed_at).toLocaleString())}</div>` : ''}
-                ${b.failure_reason ? `<div style="color:#c62828; font-size:0.82rem;"><strong>Failure:</strong> ${escapeHtml(b.failure_reason)}</div>` : ''}
-                ${b.status === 'Completed' ? `
+                <div><strong>Instance:</strong> ${b.instance_type || 'N/A'}</div>
+                <div><strong>Baseline data:</strong> <code style="font-size:0.78rem;">${b.baseline_data_s3_uri || 'N/A'}</code></div>
+                <div><strong>Output:</strong> <code style="font-size:0.78rem;">${b.output_s3_uri || 'N/A'}</code></div>
+                ${b.created_at ? html`<div><strong>Submitted:</strong> ${new Date(b.created_at).toLocaleString()}</div>` : ''}
+                ${b.completed_at ? html`<div><strong>Completed:</strong> ${new Date(b.completed_at).toLocaleString()}</div>` : ''}
+                ${b.failure_reason ? html`<div style="color:#c62828; font-size:0.82rem;"><strong>Failure:</strong> ${b.failure_reason}</div>` : ''}
+                ${b.status === 'Completed' ? html`
                 <div style="margin-top:0.5rem; font-size:0.82rem; color:#555;">
                     <strong>Use these URIs in your Data Quality Schedule:</strong><br>
-                    Constraints: <code style="font-size:0.75rem;">${escapeHtml((b.output_s3_uri || '').replace(/\/$/, ''))}/constraints.json</code><br>
-                    Statistics: <code style="font-size:0.75rem;">${escapeHtml((b.output_s3_uri || '').replace(/\/$/, ''))}/statistics.json</code>
+                    Constraints: <code style="font-size:0.75rem;">${(b.output_s3_uri || '').replace(/\/$/, '')}/constraints.json</code><br>
+                    Statistics: <code style="font-size:0.75rem;">${(b.output_s3_uri || '').replace(/\/$/, '')}/statistics.json</code>
                 </div>` : ''}
             </div>
             <div class="job-actions">
                 <button class="btn btn-secondary" onclick="deleteBaselineJob('${escapeJsString(b.job_name)}')">
                     <i class="fas fa-times"></i> Remove
                 </button>
-                ${b.status === 'Completed' ? `
+                ${b.status === 'Completed' ? html`
                 <button class="btn btn-secondary" onclick="fillScheduleFromBaseline('${escapeJsString(b.output_s3_uri)}')">
                     <i class="fas fa-arrow-right"></i> Use in Schedule
                 </button>` : ''}
             </div>
         </div>
-    `).join('');
+    `), ''));
 }
 
 async function deleteBaselineJob(jobName) {
-    if (!confirm(`Remove baseline job "${jobName}" from tracking?`)) return;
+    if (!(await confirmAction(`Remove baseline job "${jobName}" from tracking?`, { danger: true, confirmLabel: 'Remove' }))) return;
     try {
         await apiCall(`/api/monitoring/baselines/${jobName}`, { method: 'DELETE' });
         loadBaselineJobs();
     } catch (err) {
-        alert(`Error: ${err.message}`);
+        notify(`Error: ${err.message}`, 'error');
     }
 }
 
@@ -509,17 +506,15 @@ async function refreshDQBaselinePicker() {
         const res      = await apiCall('/api/monitoring/baselines');
         const completed = (res.baselines || []).filter(b => b.status === 'Completed');
         if (!completed.length) {
-            select.innerHTML = '<option value="" disabled selected>No completed baselines</option>';
+            setHTML(select, html`<option value="" disabled selected>No completed baselines</option>`);
             return;
         }
-        select.innerHTML = '<option value="" disabled selected>Select a baseline…</option>'
-            + completed.map(b => {
+        setHTML(select, html`<option value="" disabled selected>Select a baseline…</option>${joinHtml(completed.map(b => {
                 const base = (b.output_s3_uri || '').replace(/\/$/, '');
-                return `<option value="${escapeHtml(base)}" data-job="${escapeHtml(b.job_name)}" data-data="${escapeHtml(b.baseline_data_s3_uri || '')}">`
-                    + `${escapeHtml(b.job_name)} — ${escapeHtml(b.baseline_data_s3_uri || 'unknown data')}</option>`;
-            }).join('');
+                return html`${html`<option value="${base}" data-job="${b.job_name}" data-data="${b.baseline_data_s3_uri || ''}">`}${html`${b.job_name} — ${b.baseline_data_s3_uri || 'unknown data'}</option>`}`;
+            }), '')}`);
     } catch (_) {
-        select.innerHTML = '<option value="" disabled selected>Could not load baselines</option>';
+        setHTML(select, html`<option value="" disabled selected>Could not load baselines</option>`);
     }
 }
 
@@ -554,7 +549,7 @@ function fillDQFromBaseline() {
 function renderMonitorSchedules(schedules) {
     const container = document.getElementById('monitor-schedules-list');
     if (!schedules.length) {
-        container.innerHTML = '<p style="color:#888;">No monitoring schedules yet.</p>';
+        setHTML(container, html`<p style="color:#888;">No monitoring schedules yet.</p>`);
         return;
     }
 
@@ -568,33 +563,33 @@ function renderMonitorSchedules(schedules) {
     };
 
     const typeLabel = {
-        'data_quality':  '<span style="background:#e8f4fd; color:#1a6fa0; padding:2px 8px; border-radius:10px; font-size:0.78rem;">Data Quality</span>',
-        'model_quality': '<span style="background:#fef0e7; color:#e67e22; padding:2px 8px; border-radius:10px; font-size:0.78rem;">Model Quality</span>',
-        'baseline':      '<span style="background:#f4ecf7; color:#8e44ad; padding:2px 8px; border-radius:10px; font-size:0.78rem;">Baseline</span>',
+        'data_quality':  html`<span style="background:#e8f4fd; color:#1a6fa0; padding:2px 8px; border-radius:10px; font-size:0.78rem;">Data Quality</span>`,
+        'model_quality': html`<span style="background:#fef0e7; color:#e67e22; padding:2px 8px; border-radius:10px; font-size:0.78rem;">Model Quality</span>`,
+        'baseline':      html`<span style="background:#f4ecf7; color:#8e44ad; padding:2px 8px; border-radius:10px; font-size:0.78rem;">Baseline</span>`,
     };
 
-    container.innerHTML = schedules.map(s => {
+    setHTML(container, joinHtml(schedules.map(s => {
         const name    = s.schedule_name || s.job_name;
         const status  = s.status || 'Unknown';
         const execStatus = s.last_execution_status;
         const execTime   = s.last_execution_time ? new Date(s.last_execution_time).toLocaleString() : null;
 
-        return `
+        return html`
         <div class="job-item">
             <div class="job-header">
-                <div class="job-id">${escapeHtml(name)} ${typeLabel[s.monitor_type] || ''}</div>
-                <div class="job-status ${statusClass[status] || 'status-unknown'}">${escapeHtml(status)}</div>
+                <div class="job-id">${name} ${typeLabel[s.monitor_type] || ''}</div>
+                <div class="job-status ${statusClass[status] || 'status-unknown'}">${status}</div>
             </div>
             <div class="job-details">
-                ${s.endpoint_name ? `<div><strong>Endpoint:</strong> ${escapeHtml(s.endpoint_name)}</div>` : ''}
-                ${s.schedule_expression ? `<div><strong>Schedule:</strong> ${escapeHtml(s.schedule_expression)}</div>` : ''}
-                ${s.output_s3_uri ? `<div><strong>Output:</strong> <code style="font-size:0.78rem;">${escapeHtml(s.output_s3_uri)}</code></div>` : ''}
-                ${s.created_at ? `<div><strong>Created:</strong> ${escapeHtml(new Date(s.created_at).toLocaleString())}</div>` : ''}
-                ${execStatus ? `<div><strong>Last execution:</strong> <span class="${statusClass[execStatus] || ''}" style="font-size:0.82rem;">${escapeHtml(execStatus)}</span>${execTime ? ` at ${escapeHtml(execTime)}` : ''}</div>` : ''}
-                ${s.last_failure_reason ? `<div style="color:#c62828; font-size:0.82rem;"><strong>Failure:</strong> ${escapeHtml(s.last_failure_reason)}</div>` : ''}
+                ${s.endpoint_name ? html`<div><strong>Endpoint:</strong> ${s.endpoint_name}</div>` : ''}
+                ${s.schedule_expression ? html`<div><strong>Schedule:</strong> ${s.schedule_expression}</div>` : ''}
+                ${s.output_s3_uri ? html`<div><strong>Output:</strong> <code style="font-size:0.78rem;">${s.output_s3_uri}</code></div>` : ''}
+                ${s.created_at ? html`<div><strong>Created:</strong> ${new Date(s.created_at).toLocaleString()}</div>` : ''}
+                ${execStatus ? html`<div><strong>Last execution:</strong> <span class="${statusClass[execStatus] || ''}" style="font-size:0.82rem;">${execStatus}</span>${execTime ? html` at ${execTime}` : ''}</div>` : ''}
+                ${s.last_failure_reason ? html`<div style="color:#c62828; font-size:0.82rem;"><strong>Failure:</strong> ${s.last_failure_reason}</div>` : ''}
             </div>
             <div class="job-actions">
-                ${s.type === 'schedule' ? `
+                ${s.type === 'schedule' ? html`
                 <button class="btn btn-secondary" onclick="refreshMonitorSchedule('${escapeJsString(name)}')">
                     <i class="fas fa-sync"></i> Refresh
                 </button>
@@ -603,7 +598,7 @@ function renderMonitorSchedules(schedules) {
                 </button>` : ''}
             </div>
         </div>`;
-    }).join('');
+    }), ''));
 }
 
 async function refreshMonitorSchedule(name) {
@@ -611,26 +606,26 @@ async function refreshMonitorSchedule(name) {
         await apiCall(`/api/monitoring/schedules/${name}`);
         loadMonitorSchedules();
     } catch (err) {
-        alert(`Error: ${err.message}`);
+        notify(`Error: ${err.message}`, 'error');
     }
 }
 
 async function deleteMonitorSchedule(name) {
-    if (!confirm(`Delete monitoring schedule "${name}"?`)) return;
+    if (!(await confirmAction(`Delete monitoring schedule "${name}"?`, { danger: true, confirmLabel: 'Delete' }))) return;
     try {
         await apiCall(`/api/monitoring/schedules/${name}`, { method: 'DELETE' });
         loadMonitorSchedules();
     } catch (err) {
-        alert(`Error: ${err.message}`);
+        notify(`Error: ${err.message}`, 'error');
     }
 }
 
 // ── Helper ────────────────────────────────────────────────────────────────────
 
-function showMonitorBanner(el, type, html) {
+function showMonitorBanner(el, type, _markup) {
     if (!el) return;
     const cls = { submitting: 'sm-status-submitting', success: 'sm-status-success', error: 'sm-status-error' };
     el.className = `sm-status-banner ${cls[type] || ''}`;
-    el.innerHTML = html;
+    setHTML(el, _markup);
     el.style.display = 'flex';
 }

@@ -34,7 +34,7 @@ def parse_s3_uri(uri: str):
 def package_bundle(bundle_dir: str, tar_path: str) -> str:
     """Validate and tar a bundle directory, preserving its layout."""
     info = inspect_bundle(bundle_dir)
-    if not info.is_valid:
+    if not info.valid:
         raise ValueError(
             f"{bundle_dir} is not a valid MONAI bundle "
             f"(no configs/ with config files found)."

@@ -1,6 +1,11 @@
-monai==1.4.0
-torch==2.4.0
-torchvision==0.19.0
+# torch/torchvision come from the AWS PyTorch DLC base image — do not pin them
+# here (a pin would down/upgrade the DLC's CUDA-matched build).
+# 1.5.2 fixes the ProbeScan advisories (GHSA-p8cm, 6vm5, x6ww, 9rg3).
+# KNOWN GAP: 1.5.2 is still affected by GHSA-89gg, qxq5, rghg, wg9g, 6hp3
+# (fixed in 1.6.x), but MONAI 1.6 requires torch>=2.8 and this image runs on
+# the torch-2.6 SageMaker PyTorch inference DLC. Move to 1.6.1 together with
+# a torch>=2.8 inference base.
+monai==1.5.2
 boto3
 pydicom
 SimpleITK

@@ -80,10 +80,15 @@ class PreprocessingService:
             "dataset_resolver.py": _SRC / "dataset_resolver.py",
             "requirements.txt": _SRC / "requirements.txt",
         }
+        # The code prefix is mounted as the job's code channel: never upload it
+        # to a bucket another account could own (bucket squatting).
+        from app.services.s3_ownership import assert_bucket_owned, owner_extra_args
+        assert_bucket_owned(s3_client, out_bucket)
         for key, path in uploads.items():
-            s3_client.upload_file(str(path), out_bucket, f"{code_prefix}/{key}")
+            s3_client.upload_file(str(path), out_bucket, f"{code_prefix}/{key}",
+                                  ExtraArgs=owner_extra_args() or None)
         s3_client.put_object(Bucket=out_bucket, Key=f"{code_prefix}/spec.json",
-                             Body=json.dumps(spec).encode("utf-8"))
+                             Body=json.dumps(spec).encode("utf-8"), **owner_extra_args())
 
         code_s3_uri = f"s3://{out_bucket}/{code_prefix}"
 

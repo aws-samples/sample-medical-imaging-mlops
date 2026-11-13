@@ -1,7 +1,7 @@
 // Deployment JavaScript
-// Depends on: escapeHtml() defined in main.js (loaded before this file)
+// Depends on: html``/setHTML()/escapeHtml() from safe_html.js (loaded before this file)
 if (typeof escapeHtml !== 'function') {
-    throw new Error('escapeHtml() is required but not defined. Ensure main.js is loaded before deployment.js.');
+    throw new Error('escapeHtml() is required but not defined. Ensure safe_html.js is loaded before deployment.js.');
 }
 
 const INFERENCE_IMAGE_TEMPLATE = 'YOUR_ACCOUNT_ID.dkr.ecr.{region}.amazonaws.com/sm-inference-byoc-classification:latest';
@@ -43,9 +43,9 @@ function populateInferenceContainerDropdown() {
     const select = document.getElementById('dep-image-uri');
     if (!select) return;
     const containers = loadInferenceContainers();
-    select.innerHTML = containers.map(c =>
-        `<option value="${escapeHtml(c.uri)}">${escapeHtml(c.label)} — ${escapeHtml(c.uri)}</option>`
-    ).join('');
+    setHTML(select, joinHtml(containers.map(c =>
+        html`<option value="${c.uri}">${c.label} — ${c.uri}</option>`
+    ), ''));
 }
 
 function openAddInferenceContainerModal() {
@@ -61,7 +61,7 @@ function closeAddInferenceContainerModal() {
 function saveNewInferenceContainer() {
     const label = document.getElementById('new-inf-container-label').value.trim();
     const uri   = document.getElementById('new-inf-container-uri').value.trim();
-    if (!uri) { alert('Image URI is required.'); return; }
+    if (!uri) { notify('Image URI is required.', 'warning'); return; }
     const containers = loadInferenceContainers();
     containers.push({ label: label || uri, uri });
     saveInferenceContainers(containers);
@@ -70,10 +70,10 @@ function saveNewInferenceContainer() {
     closeAddInferenceContainerModal();
 }
 
-function removeSelectedInferenceContainer() {
+async function removeSelectedInferenceContainer() {
     const select = document.getElementById('dep-image-uri');
     if (!select || !select.value) return;
-    if (!confirm(`Remove "${select.options[select.selectedIndex].text}"?`)) return;
+    if (!(await confirmAction(`Remove "${select.options[select.selectedIndex].text}"?`, { danger: true, confirmLabel: 'Remove' }))) return;
     const containers = loadInferenceContainers().filter(c => c.uri !== select.value);
     saveInferenceContainers(containers);
     populateInferenceContainerDropdown();
@@ -172,7 +172,7 @@ async function deployModel(e) {
 
     if (isAsync) {
         if (!payload.output_s3_uri) {
-            alert('Output S3 URI is required for async endpoints');
+            notify('Output S3 URI is required for async endpoints', 'warning');
             return;
         }
         payload.max_concurrent = parseInt(fd.get('max_concurrent') || '10');
@@ -188,10 +188,10 @@ async function deployModel(e) {
     const action = importOnly ? 'Importing endpoint...' : 'Creating SageMaker endpoint...';
 
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + (importOnly ? 'Importing...' : 'Deploying...');
+    setHTML(btn, html`<i class="fas fa-spinner fa-spin"></i> ${importOnly ? 'Importing...' : 'Deploying...'})`);
     if (banner) {
         banner.className = 'sm-status-banner sm-status-submitting';
-        banner.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${action}`;
+        setHTML(banner, html`<i class="fas fa-spinner fa-spin"></i> ${action}`);
         banner.style.display = 'flex';
     }
 
@@ -203,19 +203,19 @@ async function deployModel(e) {
         });
         if (banner) {
             banner.className = 'sm-status-banner sm-status-success';
-            banner.innerHTML = importOnly
-                ? `<i class="fas fa-check-circle"></i> Endpoint <strong>${escapeHtml(result.endpoint_name)}</strong> imported (${escapeHtml(result.status)})`
-                : `<i class="fas fa-check-circle"></i> Endpoint <strong>${escapeHtml(result.endpoint_name)}</strong> is being created`;
+            setHTML(banner, importOnly
+                ? html`<i class="fas fa-check-circle"></i> Endpoint <strong>${result.endpoint_name}</strong> imported (${result.status})`
+                : html`<i class="fas fa-check-circle"></i> Endpoint <strong>${result.endpoint_name}</strong> is being created`);
         }
         loadDeployments();
     } catch (err) {
         if (banner) {
             banner.className = 'sm-status-banner sm-status-error';
-            banner.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${escapeHtml(err.message)}`;
+            setHTML(banner, html`<i class="fas fa-exclamation-circle"></i> ${err.message}`);
         }
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-rocket"></i> Deploy Model';
+        setHTML(btn, html`<i class="fas fa-rocket"></i> Deploy Model`);
     }
 }
 
@@ -230,17 +230,17 @@ async function loadDeployments() {
 
 async function syncDeploymentsFromAWS() {
     const btn = document.getElementById('btn-sync-deployments');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...'; }
+    if (btn) { btn.disabled = true; setHTML(btn, html`<i class="fas fa-spinner fa-spin"></i> Syncing...`); }
     try {
         const result = await apiCall('/api/deployment/sync', { method: 'POST' });
         const added = (result.added || []).length;
         const updated = (result.updated || []).length;
-        alert(`Synced from AWS: ${added} added, ${updated} updated`);
+        notify(`Synced from AWS: ${added} added, ${updated} updated`, 'success');
         await loadDeployments();
     } catch (error) {
-        alert('Sync failed: ' + (error.message || error));
+        notify('Sync failed: ' + (error.message || error), 'error');
     } finally {
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Sync from AWS'; }
+        if (btn) { btn.disabled = false; setHTML(btn, html`<i class="fas fa-cloud-download-alt"></i> Sync from AWS`); }
     }
 }
 
@@ -257,11 +257,11 @@ function displayDeployments(deployments) {
         const total = (deployments || []).length;
         if (active.length > 0) {
             const summary = active.map(d => `${d.endpoint_name} (×${d.instance_count != null ? d.instance_count : 1})`).join(', ');
-            let badgeText = `${active.length} active / ${total} total — <span style="font-weight:normal;">${escapeHtml(summary)}</span>`;
+            let badgeText = html`${active.length} active / ${total} total — <span style="font-weight:normal;">${summary}</span>`;
             if (scaledToZero.length > 0) {
-                badgeText += ` <span style="font-weight:normal; color:#ffd; opacity:0.85;">(${scaledToZero.length} scaled to 0)</span>`;
+                badgeText = html`${badgeText}${html` <span style="font-weight:normal; color:#ffd; opacity:0.85;">(${scaledToZero.length} scaled to 0)</span>`}`;
             }
-            badge.innerHTML = badgeText;
+            setHTML(badge, badgeText);
             badge.style.background = '#1e8449';
         } else if (scaledToZero.length > 0) {
             badge.textContent = `0 active / ${total} total — ${scaledToZero.length} scaled to 0`;
@@ -273,7 +273,7 @@ function displayDeployments(deployments) {
     }
 
     if (!deployments || deployments.length === 0) {
-        container.innerHTML = '<p>No deployments yet.</p>';
+        setHTML(container, html`<p>No deployments yet.</p>`);
         return;
     }
 
@@ -286,53 +286,53 @@ function displayDeployments(deployments) {
         'Deleted':     'status-stopped',
     };
 
-    container.innerHTML = deployments.map(d => `
+    setHTML(container, joinHtml(deployments.map(d => html`
         <div class="job-item" style="padding:1rem 1.25rem;">
             <div class="job-header" style="margin-bottom:0.75rem;">
                 <div>
-                    <div class="job-id" style="font-size:1rem;">${escapeHtml(d.endpoint_name)}</div>
-                    <span style="font-size:0.75rem; color:#666;">${d.endpoint_type === 'async' ? '⚡ Async' : '🔄 Real-time'} · ${escapeHtml(d.instance_type || 'N/A')} × ${d.instance_count != null ? d.instance_count : 1}${d.instance_count === 0 ? ' <span style="color:#e67e22; font-weight:600;">— scaled to 0</span>' : ''}</span>
+                    <div class="job-id" style="font-size:1rem;">${d.endpoint_name}</div>
+                    <span style="font-size:0.75rem; color:#666;">${d.endpoint_type === 'async' ? '⚡ Async' : '🔄 Real-time'} · ${d.instance_type || 'N/A'} × ${d.instance_count != null ? d.instance_count : 1}${d.instance_count === 0 ? html` <span style="color:#e67e22; font-weight:600;">— scaled to 0</span>` : ''}</span>
                 </div>
-                <div class="job-status ${statusClass[d.status] || 'status-unknown'}">${escapeHtml(d.status)}</div>
+                <div class="job-status ${statusClass[d.status] || 'status-unknown'}">${d.status}</div>
             </div>
             <div style="display:grid; grid-template-columns:auto 1fr; gap:0.3rem 1rem; font-size:0.82rem; margin-bottom:0.75rem;">
-                <strong>Created:</strong> <span>${d.created_at ? escapeHtml(new Date(d.created_at).toLocaleString()) : 'N/A'}</span>
-                ${d.output_s3_uri ? `<strong>Output:</strong> <span style="word-break:break-all; font-family:monospace; font-size:0.75rem;">${escapeHtml(d.output_s3_uri)}</span>` : ''}
-                ${d.data_capture_enabled ? `<strong>Capture:</strong> <span><span style="color:#1e8449;">● Enabled</span> → <span style="font-family:monospace; font-size:0.75rem;">${escapeHtml(d.capture_s3_uri)}</span></span>` : ''}
-                ${d.failure_reason ? `<strong style="color:#c62828;">Error:</strong> <span style="color:#c62828;">${escapeHtml(d.failure_reason)}</span>` : ''}
+                <strong>Created:</strong> <span>${d.created_at ? new Date(d.created_at).toLocaleString() : 'N/A'}</span>
+                ${d.output_s3_uri ? html`<strong>Output:</strong> <span style="word-break:break-all; font-family:monospace; font-size:0.75rem;">${d.output_s3_uri}</span>` : ''}
+                ${d.data_capture_enabled ? html`<strong>Capture:</strong> <span><span style="color:#1e8449;">● Enabled</span> → <span style="font-family:monospace; font-size:0.75rem;">${d.capture_s3_uri}</span></span>` : ''}
+                ${d.failure_reason ? html`<strong style="color:#c62828;">Error:</strong> <span style="color:#c62828;">${d.failure_reason}</span>` : ''}
             </div>
             <div class="job-actions">
-                ${d.status === 'InService' && d.endpoint_type === 'async' && (d.instance_count == null || d.instance_count > 0) ? `
+                ${d.status === 'InService' && d.endpoint_type === 'async' && (d.instance_count == null || d.instance_count > 0) ? html`
                 <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeJsString(d.endpoint_name)}', 0)" title="Scale to 0 instances (stop billing)">
                     <i class="fas fa-power-off"></i> Scale to 0
                 </button>
                 ` : ''}
-                ${d.status === 'InService' && d.instance_count === 0 ? `
+                ${d.status === 'InService' && d.instance_count === 0 ? html`
                 <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeJsString(d.endpoint_name)}', 1)" title="Scale up to 1 instance" style="color:#1e8449;">
                     <i class="fas fa-play"></i> Scale up
                 </button>
                 ` : ''}
-                ${d.status === 'InService' && d.instance_count != null && d.instance_count > 1 ? `
-                <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeJsString(d.endpoint_name)}', ${d.instance_count - 1})" title="Remove one instance">
+                ${d.status === 'InService' && d.instance_count != null && d.instance_count > 1 ? html`
+                <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeJsString(d.endpoint_name)}', ${jsArg((Number(d.instance_count) || 0) - 1)})" title="Remove one instance">
                     <i class="fas fa-minus"></i>
                 </button>
                 ` : ''}
-                ${d.status === 'InService' && (d.instance_count == null || d.instance_count > 0) ? `
-                <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeJsString(d.endpoint_name)}', ${(d.instance_count != null ? d.instance_count : 1) + 1})" title="Add one instance">
+                ${d.status === 'InService' && (d.instance_count == null || d.instance_count > 0) ? html`
+                <button class="btn btn-secondary" onclick="scaleEndpoint('${escapeJsString(d.endpoint_name)}', ${jsArg((d.instance_count != null ? (Number(d.instance_count) || 0) : 1) + 1)})" title="Add one instance">
                     <i class="fas fa-plus"></i>
                 </button>
                 ` : ''}
-                ${!['InService', 'Failed', 'Deleting', 'Deleted'].includes(d.status) ? `
+                ${!['InService', 'Failed', 'Deleting', 'Deleted'].includes(d.status) ? html`
                 <button class="btn btn-secondary" onclick="refreshDeployment('${escapeJsString(d.endpoint_name)}')">
                     <i class="fas fa-sync"></i> Refresh
                 </button>` : ''}
-                ${!['Deleting','Deleted'].includes(d.status) ? `
+                ${!['Deleting','Deleted'].includes(d.status) ? html`
                 <button class="btn btn-secondary" onclick="deleteDeployment('${escapeJsString(d.endpoint_name)}')" style="color:#c62828;">
                     <i class="fas fa-trash"></i> Delete
                 </button>` : ''}
             </div>
         </div>
-    `).join('');
+    `), ''));
 }
 
 async function refreshDeployment(endpointName) {
@@ -340,23 +340,23 @@ async function refreshDeployment(endpointName) {
         await apiCall(`/api/deployment/deployments/${endpointName}/status`);
         loadDeployments();
     } catch (err) {
-        alert(`Error: ${err.message}`);
+        notify(`Error: ${err.message}`, 'error');
     }
 }
 
 async function deleteDeployment(endpointName) {
-    if (!confirm(`Delete endpoint "${endpointName}"? This cannot be undone.`)) return;
+    if (!(await confirmAction(`Delete endpoint "${endpointName}"? This cannot be undone.`, { danger: true, confirmLabel: 'Delete' }))) return;
     try {
         await apiCall(`/api/deployment/deployments/${endpointName}`, { method: 'DELETE' });
         loadDeployments();
     } catch (err) {
-        alert(`Error: ${err.message}`);
+        notify(`Error: ${err.message}`, 'error');
     }
 }
 
 async function scaleEndpoint(endpointName, desiredCount) {
     const action = desiredCount === 0 ? 'scale down to 0 (stops billing)' : `scale to ${desiredCount} instance(s)`;
-    if (!confirm(`${action} for "${endpointName}"?`)) return;
+    if (!(await confirmAction(`${action} for "${endpointName}"?`))) return;
     try {
         await apiCall(`/api/deployment/deployments/${endpointName}/scale`, {
             method: 'POST',
@@ -365,7 +365,7 @@ async function scaleEndpoint(endpointName, desiredCount) {
         });
         loadDeployments();
     } catch (err) {
-        alert(`Scale failed: ${err.message}`);
+        notify(`Scale failed: ${err.message}`, 'error');
     }
 }
 
@@ -373,30 +373,30 @@ async function openFillFromJobModal() {
     const modal = document.getElementById('fill-from-job-modal');
     const list  = document.getElementById('fill-job-list');
     modal.style.display = 'flex';
-    list.innerHTML = '<p style="color:#888; padding:0.5rem;">Loading jobs...</p>';
+    setHTML(list, html`<p style="color:#888; padding:0.5rem;">Loading jobs...</p>`);
 
     try {
         const res  = await apiCall('/api/training/sagemaker/jobs');
         const jobs = (res.jobs || []).filter(j => j.status === 'Completed' && j.model_artifacts);
 
         if (!jobs.length) {
-            list.innerHTML = '<p style="color:#888; padding:0.5rem;">No completed jobs with model artifacts found.</p>';
+            setHTML(list, html`<p style="color:#888; padding:0.5rem;">No completed jobs with model artifacts found.</p>`);
             return;
         }
 
-        list.innerHTML = jobs.map(j => `
+        setHTML(list, joinHtml(jobs.map(j => html`
             <div style="padding:0.6rem 0.5rem; border-bottom:1px solid #f0f0f0; cursor:pointer; border-radius:4px;"
                  onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''"
                  onclick="fillFromJob('${escapeJsString(j.model_artifacts)}', '${escapeJsString(j.job_name)}')">
-                <div style="font-weight:600; font-size:0.9rem;">${escapeHtml(j.job_name)}</div>
-                <div style="font-size:0.78rem; color:#666; margin-top:2px;">${escapeHtml(j.model_artifacts)}</div>
+                <div style="font-weight:600; font-size:0.9rem;">${j.job_name}</div>
+                <div style="font-size:0.78rem; color:#666; margin-top:2px;">${j.model_artifacts}</div>
                 <div style="font-size:0.75rem; color:#888; margin-top:2px;">
-                    ${escapeHtml(j.config?.model_name || '')} · ${escapeHtml(j.config?.instance_type || '')} · ${j.config?.epochs || ''} epochs
+                    ${j.config?.model_name || ''} · ${j.config?.instance_type || ''} · ${j.config?.epochs || ''} epochs
                 </div>
             </div>
-        `).join('');
+        `), ''));
     } catch (err) {
-        list.innerHTML = `<p style="color:#c62828; padding:0.5rem;">Error loading jobs: ${escapeHtml(err.message)}</p>`;
+        setHTML(list, html`<p style="color:#c62828; padding:0.5rem;">Error loading jobs: ${err.message}</p>`);
     }
 }
 

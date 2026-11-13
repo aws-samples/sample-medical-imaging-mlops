@@ -31,7 +31,7 @@ import json
 import logging
 import os
 import shutil
-import subprocess
+import subprocess  # nosec B404 - argv-list invocation of `python -m monai.bundle` only (no shell)
 import sys
 import tempfile
 import uuid
@@ -41,6 +41,48 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 _DISCLAIMER = "RESEARCH USE ONLY — not for clinical diagnosis; requires qualified review."
+_CHECKPOINT_EXTS = (".pt", ".pth", ".ts")
+
+
+# ALLOWED_INPUT_BUCKETS (comma-separated) optionally restricts input buckets.
+def _s3_bucket_key(uri: str):
+    """Parse s3://bucket/key and enforce ALLOWED_INPUT_BUCKETS when set."""
+    from urllib.parse import urlparse
+    p = urlparse(str(uri))
+    key = p.path.lstrip("/")
+    if p.scheme != "s3" or not p.netloc or not key:
+        raise ValueError("Expected an s3://bucket/key URI")
+    allowed = {b.strip() for b in os.environ.get("ALLOWED_INPUT_BUCKETS", "").split(",") if b.strip()}
+    if allowed and p.netloc not in allowed:
+        raise ValueError(f"S3 bucket not allowed for inference input: {p.netloc}")
+    return p.netloc, key
+
+
+
+def _check_numeric(value: Any, name: str, depth: int = 0) -> None:
+    """Prompts are forwarded into MONAI's config (which EVALUATES "$..." strings),
+    so only (nested lists of) numbers are accepted."""
+    if depth > 4:
+        raise ValueError(f"'{name}' is nested too deeply")
+    if isinstance(value, bool):
+        raise ValueError(f"'{name}' must contain numbers only")
+    if isinstance(value, (int, float)):
+        return
+    if isinstance(value, list) and len(value) <= 1024:
+        for v in value:
+            _check_numeric(v, name, depth + 1)
+        return
+    raise ValueError(f"'{name}' must be a number or a list of numbers")
+
+
+def _resolve_checkpoint(bundle_dir: str, requested: str) -> str:
+    """Resolve a per-request checkpoint name strictly inside the bundle's models/."""
+    models_dir = os.path.realpath(os.path.join(bundle_dir, "models"))
+    cand = os.path.realpath(os.path.join(models_dir, os.path.basename(str(requested))))
+    if (os.path.dirname(cand) != models_dir or not cand.endswith(_CHECKPOINT_EXTS)
+            or not os.path.isfile(cand)):
+        raise ValueError(f"Requested checkpoint not found in bundle models/: {requested}")
+    return cand
 
 
 def _find_bundle_dir(model_dir: str) -> str:
@@ -55,11 +97,11 @@ def model_fn(model_dir: str) -> Dict[str, Any]:
     # SageMaker mounts /opt/ml/model READ-ONLY, but this bundle writes into its
     # own root at runtime (configs/logging.conf appends training.log; the HF
     # download counter touches config.json). Copy the bundle to a writable dir
-    # once at model load and run from there.
-    bundle_dir = "/tmp/nvsegct_bundle"
-    if not os.path.isdir(bundle_dir):
-        logger.info("Copying bundle to writable dir %s ...", bundle_dir)
-        shutil.copytree(src_bundle, bundle_dir)
+    # once at model load and run from there. A private mkdtemp dir (0700, random
+    # name) rather than a fixed /tmp path, so nothing else can pre-create/swap it.
+    bundle_dir = os.path.join(tempfile.mkdtemp(prefix="nvsegct_"), "bundle")
+    logger.info("Copying bundle to writable dir %s ...", bundle_dir)
+    shutil.copytree(src_bundle, bundle_dir)
     models_dir = os.path.join(bundle_dir, "models")
     # Prefer the fine-tuned checkpoint when the artifact carries one.
     checkpoint = None
@@ -85,9 +127,8 @@ def _materialize_image(payload: Dict[str, Any], dest_dir: str) -> str:
     out = os.path.join(dest_dir, "input.nii.gz")
     if isinstance(image, str) and image.startswith("s3://"):
         import boto3
-        from urllib.parse import urlparse
-        p = urlparse(image)
-        boto3.client("s3").download_file(p.netloc, p.path.lstrip("/"), out)
+        bucket, key = _s3_bucket_key(image)
+        boto3.client("s3").download_file(bucket, key, out)
     else:
         with open(out, "wb") as f:
             f.write(base64.b64decode(image))
@@ -105,15 +146,13 @@ def predict_fn(payload: Dict[str, Any], model: Dict[str, Any]) -> Dict[str, Any]
         input_dict: Dict[str, Any] = {"image": image_path}
         for key in ("label_prompt", "points", "point_labels"):
             if key in payload:
+                _check_numeric(payload[key], key)
                 input_dict[key] = payload[key]
 
-        # Allow overriding which checkpoint to serve per request.
+        # Allow overriding which checkpoint to serve per request (bundle models/ only).
         checkpoint = model["checkpoint"]
         if payload.get("checkpoint"):
-            cand = os.path.join(bundle_dir, payload["checkpoint"])
-            if not os.path.isfile(cand):
-                raise ValueError(f"Requested checkpoint not found: {payload['checkpoint']}")
-            checkpoint = cand
+            checkpoint = _resolve_checkpoint(bundle_dir, payload["checkpoint"])
 
         try:
             import torch
@@ -132,10 +171,11 @@ def predict_fn(payload: Dict[str, Any], model: Dict[str, Any]) -> Dict[str, Any]
             "--device", f"$torch.device('{device}')",
         ]
         logger.info("Running VISTA inference: %s (cwd=%s)", " ".join(cmd), bundle_dir)
-        proc = subprocess.run(cmd, cwd=bundle_dir, capture_output=True, text=True)
+        # argv list (no shell): fixed flags, server-side paths, numeric prompts.
+        proc = subprocess.run(cmd, cwd=bundle_dir, capture_output=True, text=True)  # nosec B603 - argv list, no shell  # nosemgrep: python.lang.security.audit.dangerous-subprocess-use-audit.dangerous-subprocess-use-audit
         if proc.returncode != 0:
             err = (proc.stderr or proc.stdout or "").strip()
-            logger.error("monai.bundle run failed:\n%s", err)
+            # Raised (not also logged): SageMaker's serving stack logs it once.
             raise RuntimeError("monai.bundle run failed:\n" + err[:4000])
 
         produced = None

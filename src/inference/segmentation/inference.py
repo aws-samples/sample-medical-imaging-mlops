@@ -50,6 +50,75 @@ formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(messag
 console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
+# ── Request input confinement (Slingshot 2026-11-12) ─────────────────────────
+# Requests normally send an S3 URI or raw bytes. A local path is honoured only
+# when it resolves inside LOCAL_INPUT_ROOTS (comma-separated; default: the
+# SageMaker data mounts — never the model directory). ALLOWED_INPUT_BUCKETS
+# (comma-separated) optionally restricts which buckets the endpoint role reads.
+_DEFAULT_LOCAL_INPUT_ROOTS = "/opt/ml/input/data,/opt/ml/processing/input"
+_PATTERN_FIELDS = {"patient_id", "filename", "endpoint_name", "timestamp", "model_name"}
+
+
+def _local_input_roots():
+    raw = os.environ.get("LOCAL_INPUT_ROOTS", _DEFAULT_LOCAL_INPUT_ROOTS)
+    return tuple(os.path.realpath(r.strip()) for r in raw.split(",") if r.strip())
+
+
+def _validated_local_path(path) -> str:
+    real = os.path.realpath(str(path))
+    if not any(os.path.commonpath([root, real]) == root for root in _local_input_roots()):
+        raise ValueError("Local input paths are only accepted under LOCAL_INPUT_ROOTS")
+    if not os.path.isfile(real):
+        raise FileNotFoundError("Input file not found")
+    return real
+
+
+def _s3_bucket_key(uri: str):
+    """Parse s3://bucket/key and enforce ALLOWED_INPUT_BUCKETS when set."""
+    from urllib.parse import urlparse
+    p = urlparse(str(uri))
+    key = p.path.lstrip("/")
+    if p.scheme != "s3" or not p.netloc or not key:
+        raise ValueError("Expected an s3://bucket/key URI")
+    allowed = {b.strip() for b in os.environ.get("ALLOWED_INPUT_BUCKETS", "").split(",") if b.strip()}
+    if allowed and p.netloc not in allowed:
+        raise ValueError(f"S3 bucket not allowed for inference input: {p.netloc}")
+    return p.netloc, key
+
+
+def _safe_output_pattern(pattern: str, default: str) -> str:
+    """Only allow known {placeholders} (no attribute/index access, conversions or
+    format specs) and no path traversal in a caller-supplied filename pattern."""
+    import string
+    try:
+        for _lit, field, spec, conv in string.Formatter().parse(pattern):
+            if field is None:
+                continue
+            if field not in _PATTERN_FIELDS or spec or conv:
+                raise ValueError(field)
+    except ValueError:
+        logger.warning("Rejected output filename pattern; using default")
+        return default
+    if ".." in pattern or pattern.startswith("/"):
+        logger.warning("Rejected output filename pattern with path traversal; using default")
+        return default
+    return pattern
+
+
+
+def _new_temp_path(suffix: str) -> str:
+    """Create a private (0600) temp file and return its closed path."""
+    fd, path = tempfile.mkstemp(suffix=suffix)
+    os.close(fd)
+    return path
+
+
+def _write_temp(data: bytes, suffix: str) -> str:
+    fd, path = tempfile.mkstemp(suffix=suffix)
+    with os.fdopen(fd, "wb") as f:
+        f.write(data)
+    return path
+
 
 def model_fn(model_dir: str) -> Dict[str, Any]:
     """Load the trained segmentation model and set up inference pipeline."""
@@ -64,7 +133,7 @@ def model_fn(model_dir: str) -> Dict[str, Any]:
     for cfg_name in ("result.json", "config.json"):
         cfg_path = os.path.join(model_dir, cfg_name)
         if os.path.exists(cfg_path):
-            with open(cfg_path, "r") as f:
+            with open(cfg_path, "r", encoding="utf-8") as f:
                 meta = json.load(f)
             model_name = meta.get("model_name", model_name)
             num_classes = int(meta.get("num_classes", 1) or 1)
@@ -216,30 +285,24 @@ def input_fn(request_body: Union[str, bytes], content_type: str) -> Dict[str, st
 
         if file_path.startswith("s3://"):
             import boto3
-            parts = file_path.replace("s3://", "").split("/", 1)
-            bucket_name, key = parts[0], parts[1]
+            bucket_name, key = _s3_bucket_key(file_path)
             s3_client = boto3.client("s3")
             suffix = ".nii.gz" if key.endswith(".nii.gz") else ".nii"
-            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
-                temp_path = temp_file.name
+            temp_path = _new_temp_path(suffix)
             s3_client.download_file(bucket_name, key, temp_path)
             logger.info(f"Downloaded S3 file to: {temp_path}")
-            return {"local_path": temp_path, "s3_uri": file_path, "output_s3_uri": output_s3_uri, "output_pattern": output_pattern}
+            return {"local_path": temp_path, "is_temp": True, "s3_uri": file_path, "output_s3_uri": output_s3_uri, "output_pattern": output_pattern}
 
         elif file_path.endswith((".nii.gz", ".nii")):
-            if not os.path.exists(file_path):
-                raise FileNotFoundError(f"File not found: {file_path}")
-            return {"local_path": file_path}
+            return {"local_path": _validated_local_path(file_path)}
 
         else:
             # Assume base64-encoded NIfTI
             try:
                 image_data = base64.b64decode(file_path)
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".nii.gz") as temp_file:
-                    temp_file.write(image_data)
-                    temp_path = temp_file.name
+                temp_path = _write_temp(image_data, ".nii.gz")
                 logger.info(f"Decoded base64 to: {temp_path}")
-                return {"local_path": temp_path}
+                return {"local_path": temp_path, "is_temp": True}
             except Exception as e:
                 raise ValueError(
                     f"Invalid file_path: expected S3 URI, local path, or base64. Error: {e}"
@@ -248,11 +311,9 @@ def input_fn(request_body: Union[str, bytes], content_type: str) -> Dict[str, st
     elif content_type in ("application/x-nifti", "application/octet-stream"):
         if isinstance(request_body, str):
             request_body = request_body.encode()
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".nii.gz") as temp_file:
-            temp_file.write(request_body)
-            temp_path = temp_file.name
+        temp_path = _write_temp(request_body, ".nii.gz")
         logger.info(f"Saved binary NIfTI to: {temp_path}")
-        return {"local_path": temp_path}
+        return {"local_path": temp_path, "is_temp": True}
 
     else:
         raise ValueError(f"Unsupported content type: {content_type}")
@@ -348,8 +409,10 @@ def predict_fn(input_data: Dict[str, str], model_components: Dict[str, Any]) -> 
                 #   {endpoint_name} - name of the endpoint (e.g., "segmentation")
                 #   {timestamp}     - UTC timestamp (e.g., "20260731-163000")
                 #   {model_name}    - model used (e.g., "SegResNet")
-                output_pattern = output_pattern_override or os.environ.get(
-                    "OUTPUT_FILENAME_PATTERN", "{patient_id}_segmentation.nii.gz"
+                _default_pattern = "{patient_id}_segmentation.nii.gz"
+                output_pattern = _safe_output_pattern(
+                    output_pattern_override or os.environ.get("OUTPUT_FILENAME_PATTERN", _default_pattern),
+                    _default_pattern,
                 )
                 endpoint_name = os.environ.get("SAGEMAKER_ENDPOINT_NAME", "endpoint")
                 output_filename = output_pattern.format(
@@ -371,10 +434,12 @@ def predict_fn(input_data: Dict[str, str], model_components: Dict[str, Any]) -> 
 
                 mask_key = f"{out_prefix}/{output_filename}"
 
-                with tempfile.NamedTemporaryFile(delete=False, suffix="_seg.nii.gz") as temp_out:
-                    nib.save(seg_nifti, temp_out.name)
-                    s3_client.upload_file(temp_out.name, out_bucket, mask_key)
-                    os.unlink(temp_out.name)
+                out_path = _new_temp_path("_seg.nii.gz")
+                try:
+                    nib.save(seg_nifti, out_path)
+                    s3_client.upload_file(out_path, out_bucket, mask_key)
+                finally:
+                    os.unlink(out_path)
 
                 mask_s3_uri = f"s3://{out_bucket}/{mask_key}"
                 logger.info(f"Saved segmentation mask to: {mask_s3_uri}")
@@ -382,11 +447,11 @@ def predict_fn(input_data: Dict[str, str], model_components: Dict[str, Any]) -> 
                 logger.warning(f"Failed to upload mask to S3: {e}")
 
         # Cleanup temp input
-        if "/tmp/" in image_path:
+        if input_data.get("is_temp"):
             try:
                 os.unlink(image_path)
-            except OSError:
-                pass
+            except OSError as cleanup_err:
+                logger.debug("Temp input cleanup failed: %s", cleanup_err)
 
         result = {
             "model_name": model_components["model_name"],
@@ -407,11 +472,11 @@ def predict_fn(input_data: Dict[str, str], model_components: Dict[str, Any]) -> 
 
     except Exception as e:
         logger.error(f"Inference error: {e}")
-        if "/tmp/" in image_path:
+        if input_data.get("is_temp"):
             try:
                 os.unlink(image_path)
-            except OSError:
-                pass
+            except OSError as cleanup_err:
+                logger.debug("Temp input cleanup failed: %s", cleanup_err)
         return {"error": str(e), "model_name": model_components.get("model_name", "unknown")}
 
 

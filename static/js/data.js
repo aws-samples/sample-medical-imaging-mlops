@@ -1,7 +1,7 @@
 // Data - S3 Bucket Browser
-// Depends on: escapeHtml() defined in main.js (loaded before this file)
+// Depends on: html``/setHTML()/escapeHtml() from safe_html.js (loaded before this file)
 if (typeof escapeHtml !== 'function') {
-    throw new Error('escapeHtml() is required but not defined. Ensure main.js is loaded before data.js.');
+    throw new Error('escapeHtml() is required but not defined. Ensure safe_html.js is loaded before data.js.');
 }
 
 registerTabInit('data', function() {
@@ -31,31 +31,31 @@ async function browseS3Uri() {
     const prefix = match[2] || '';
 
     const btn = document.getElementById('load-s3-uri');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span> Loading...'; }
+    if (btn) { btn.disabled = true; setHTML(btn, html`<span class="btn-spinner"></span> Loading...`); }
 
     try {
         const response = await apiCall(`/api/aws/buckets/${bucket}/objects?prefix=${encodeURIComponent(prefix)}`);
         const container = document.getElementById('buckets-list');
         if (container) {
             if (response.objects.length === 0) {
-                container.innerHTML = '<p>No objects found at that path.</p>';
+                setHTML(container, html`<p>No objects found at that path.</p>`);
             } else {
-                container.innerHTML = response.objects.map(obj => `
+                setHTML(container, joinHtml(response.objects.map(obj => html`
                     <div class="bucket-item">
-                        <div class="bucket-name">${escapeHtml(obj.key)}</div>
+                        <div class="bucket-name">${obj.key}</div>
                         <div class="bucket-info">
                             <div>Size: ${(obj.size / 1024).toFixed(1)} KB</div>
                             <div>Modified: ${formatDate(obj.last_modified)}</div>
                         </div>
                     </div>
-                `).join('');
+                `), ''));
             }
         }
         showStatus('s3-uri-status', `Found ${response.objects.length} object(s)`, 'success');
     } catch (error) {
         showStatus('s3-uri-status', `Error: ${error.message}`, 'error');
     } finally {
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-search"></i> Browse'; }
+        if (btn) { btn.disabled = false; setHTML(btn, html`<i class="fas fa-search"></i> Browse`); }
     }
 }
 
@@ -70,28 +70,28 @@ async function loadS3Buckets() {
 
     if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '<span class="btn-spinner"></span> Loading...';
+        setHTML(btn, html`<span class="btn-spinner"></span> Loading...`);
     }
 
     if (bucketsContainer) {
-        bucketsContainer.innerHTML = Array(3).fill(0).map(() => `
+        setHTML(bucketsContainer, joinHtml(Array(3).fill(0).map(() => html`
             <div class="bucket-item bucket-skeleton">
                 <div class="skeleton-line skeleton-title"></div>
                 <div class="skeleton-line skeleton-text"></div>
             </div>
-        `).join('');
+        `), ''));
     }
 
     try {
         const buckets = await apiCall('/api/aws/buckets');
         displayBuckets(buckets);
     } catch (error) {
-        if (bucketsContainer) bucketsContainer.innerHTML = '';
+        if (bucketsContainer) bucketsContainer.replaceChildren();
         showStatus('s3-uri-status', `Error loading buckets: ${error.message}`, 'error');
     } finally {
         if (btn) {
             btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-sync-alt"></i> Load S3 Buckets';
+            setHTML(btn, html`<i class="fas fa-sync-alt"></i> Load S3 Buckets`);
         }
     }
 }
@@ -100,23 +100,23 @@ function displayBuckets(buckets) {
     const bucketsContainer = document.getElementById('all-buckets-list');
     if (!bucketsContainer) return;
 
-    bucketsContainer.innerHTML = '';
+    bucketsContainer.replaceChildren();
 
     if (buckets.length === 0) {
-        bucketsContainer.innerHTML = '<p>No S3 buckets found.</p>';
+        setHTML(bucketsContainer, html`<p>No S3 buckets found.</p>`);
         return;
     }
 
     buckets.forEach(bucket => {
         const bucketElement = document.createElement('div');
         bucketElement.className = 'bucket-item';
-        bucketElement.innerHTML = `
-            <div class="bucket-name">${escapeHtml(bucket.name)}</div>
+        setHTML(bucketElement, html`
+            <div class="bucket-name">${bucket.name}</div>
             <div class="bucket-info">
-                <div>Region: ${escapeHtml(bucket.region)}</div>
+                <div>Region: ${bucket.region}</div>
                 <div>Created: ${formatDate(bucket.creation_date)}</div>
             </div>
-        `;
+        `);
         // Clicking a bucket fills the URI field
         bucketElement.addEventListener('click', () => {
             const uriInput = document.getElementById('s3-uri');

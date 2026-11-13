@@ -52,8 +52,8 @@ def _load_models_from_task(task: str) -> list:
                 if isinstance(target, ast.Name) and target.id == "MODELS":
                     try:
                         models_dict = ast.literal_eval(node.value)
-                    except Exception:
-                        pass
+                    except Exception as _exc:
+                        logger.debug("ignored, non-fatal: %s", _exc)
 
     return [
         {
@@ -104,7 +104,9 @@ async def import_model(request: ModelImportRequest):
             model_id=model_id,
             model_name=request.model_name,
             local_path=local_path,
-            s3_source=f"s3://{request.s3_bucket}/{request.s3_key}",
+            # Display/provenance label only (never requested); bucket and key are
+            # constrained by ModelImportRequest's S3 naming patterns.
+            s3_source=f"s3://{request.s3_bucket}/{request.s3_key}",  # nosemgrep: python.django.security.injection.tainted-url-host.tainted-url-host
             model_format=request.model_format,
             num_classes=request.num_classes,
         )
@@ -283,8 +285,8 @@ async def list_sagemaker_jobs(local_only: bool = False):
                         estimated_cost_usd=updated.get("estimated_cost_usd"),
                     )
                     job.update(updated)
-                except Exception:
-                    pass
+                except Exception as _exc:
+                    logger.debug("ignored, non-fatal: %s", _exc)
     return {"jobs": jobs}
 
 

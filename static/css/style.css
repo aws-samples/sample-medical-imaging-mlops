@@ -1421,3 +1421,18 @@ input:focus, select:focus, textarea:focus {
     font-size: 0.9rem;
     color: #232f3e;
 }
+
+/* ── Toast notifications + confirm dialog (static/js/safe_html.js) ── */
+.app-toast-host { position: fixed; top: 1rem; right: 1rem; z-index: 10000; display: flex; flex-direction: column; gap: 0.5rem; max-width: 420px; }
+.app-toast { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: 6px; background: #ffffff; color: #232f3e; border-left: 4px solid #0073bb; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 0.875rem; word-break: break-word; white-space: pre-line; }
+.app-toast-success { border-left-color: #1d8102; }
+.app-toast-warning { border-left-color: #ff9900; }
+.app-toast-error { border-left-color: #d13212; }
+.app-toast-text { flex: 1; }
+.app-toast-close { background: none; border: none; color: #545b64; font-size: 1.1rem; line-height: 1; cursor: pointer; padding: 0; }
+.app-confirm { border: none; border-radius: 8px; padding: 1.25rem 1.5rem; max-width: 460px; background: #ffffff; color: #232f3e; box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+.app-confirm::backdrop { background: rgba(0,0,0,0.35); }
+.app-confirm-message { margin: 0 0 1rem; white-space: pre-line; }
+.app-confirm-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+.btn-danger { background: #d13212; color: #ffffff; border: none; }
+.btn-danger:hover { background: #a82a0f; color: #ffffff; }

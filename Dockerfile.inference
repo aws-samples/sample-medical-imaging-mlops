@@ -26,5 +26,8 @@ ENV SAGEMAKER_SUBMIT_DIRECTORY /opt/program
 # NOTE: SageMaker inference containers require root for nginx, gunicorn, and the
 # multi-model server. A non-root USER is not added here.
 
-# NOTE: HEALTHCHECK is not applicable — SageMaker manages endpoint health via
-# its own /ping route and orchestration layer.
+# checkov:skip=CKV_DOCKER_3:SageMaker inference containers must run as root (the toolkit writes /opt/ml and starts nginx/gunicorn/MMS); a non-root USER breaks the job.
+# Container health: SageMaker probes GET /ping itself; this HEALTHCHECK gives the
+# same signal for local `docker run` testing (the DLC serves on :8080).
+HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3 \
+    CMD ["curl", "-fsS", "http://localhost:8080/ping"]

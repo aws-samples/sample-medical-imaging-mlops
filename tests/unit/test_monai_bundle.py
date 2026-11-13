@@ -46,7 +46,7 @@ class TestInspectBundle(unittest.TestCase):
     def test_valid_flat_bundle(self):
         _make_bundle(self.tmp)
         info = bundle_utils.inspect_bundle(self.tmp)
-        self.assertTrue(info.is_valid)
+        self.assertTrue(info.valid)
         self.assertEqual(info.task, "segmentation")
         self.assertIn("train_continual_softmax.json", info.train_configs)
         self.assertEqual(info.default_inference_config(), "inference.json")
@@ -56,13 +56,13 @@ class TestInspectBundle(unittest.TestCase):
     def test_nested_bundle(self):
         _make_bundle(self.tmp, nested=True)
         info = bundle_utils.inspect_bundle(self.tmp)
-        self.assertTrue(info.is_valid)
+        self.assertTrue(info.valid)
         self.assertTrue(info.configs_dir.endswith(os.path.join("NV-Bundle", "configs")))
 
     def test_invalid_bundle(self):
         # empty dir -> no configs
         info = bundle_utils.inspect_bundle(self.tmp)
-        self.assertFalse(info.is_valid)
+        self.assertFalse(info.valid)
 
     def test_train_config_classification(self):
         _make_bundle(self.tmp)

@@ -51,10 +51,10 @@ if [[ "$DO_BUILD" == true ]]; then
     aws ecr get-login-password --region "$AWS_REGION" \
       | docker login --username AWS --password-stdin "$DLC_REGISTRY"
 
-    CACHE_FLAG=""
-    [[ "$NO_CACHE" == true ]] && CACHE_FLAG="--no-cache"
+    CACHE_FLAG=()
+    [[ "$NO_CACHE" == true ]] && CACHE_FLAG=(--no-cache)
     echo "Building MONAI bundle inference image: $IMAGE"
-    DOCKER_BUILDKIT=0 docker build $CACHE_FLAG --platform linux/amd64 \
+    DOCKER_BUILDKIT=0 docker build "${CACHE_FLAG[@]}" --platform linux/amd64 \
       -f Dockerfile.monai-bundle-inference -t "$IMAGE" .
 fi
 

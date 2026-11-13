@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from enum import Enum
 
@@ -65,12 +65,14 @@ class SageMakerTrainingConfig(BaseModel):
     fine_tuned_from: Optional[str] = None     # source job name for lineage
 
 class ModelImportRequest(BaseModel):
-    model_name: str
-    s3_bucket: str
-    s3_key: str
+    model_name: str = Field(..., min_length=1, max_length=128)
+    # Validated so the request can only ever address an S3 object (bucket naming
+    # rules / bounded key), never an arbitrary host or path.
+    s3_bucket: str = Field(..., pattern=r"^[a-z0-9][a-z0-9.\-]{1,61}[a-z0-9]$")
+    s3_key: str = Field(..., min_length=1, max_length=1024, pattern=r"^[^/\x00-\x1f][^\x00-\x1f]*$")
     model_format: str = "pytorch"
     framework_version: str = "2.1.1"
-    num_classes: int = 2
+    num_classes: int = Field(2, ge=1, le=10000)
 
 class ImportedModel(BaseModel):
     model_id: str

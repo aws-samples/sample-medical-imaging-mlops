@@ -1,7 +1,7 @@
 // Fairness / Demographic Analysis
-// Depends on: escapeHtml() defined in main.js (loaded before this file)
+// Depends on: html``/setHTML()/escapeHtml() from safe_html.js (loaded before this file)
 if (typeof escapeHtml !== 'function') {
-    throw new Error('escapeHtml() is required but not defined. Ensure main.js is loaded before fairness.js.');
+    throw new Error('escapeHtml() is required but not defined. Ensure safe_html.js is loaded before fairness.js.');
 }
 
 const FAIRNESS_COLORS = [
@@ -28,10 +28,10 @@ async function runFairnessScan(e) {
     if (!s3Uri) return;
 
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scanning...';
+    setHTML(btn, html`<i class="fas fa-spinner fa-spin"></i> Scanning...`);
     status.style.display = 'flex';
     status.className = 'sm-status-banner sm-status-submitting';
-    status.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Scanning DICOM files in <code>${escapeHtml(s3Uri)}</code>...`;
+    setHTML(status, html`<i class="fas fa-spinner fa-spin"></i> Scanning DICOM files in <code>${s3Uri}</code>...`);
     results.style.display = 'none';
 
     // Destroy old charts
@@ -46,16 +46,16 @@ async function runFairnessScan(e) {
         });
 
         status.className = 'sm-status-banner sm-status-success';
-        status.innerHTML = `<i class="fas fa-check-circle"></i> Scanned <strong>${escapeHtml(String(data.total_scanned))}</strong> of <strong>${escapeHtml(String(data.total_found))}</strong> DICOM files${data.errors ? ` (${escapeHtml(String(data.errors))} unreadable)` : ''}`;
+        setHTML(status, html`<i class="fas fa-check-circle"></i> Scanned <strong>${String(data.total_scanned)}</strong> of <strong>${String(data.total_found)}</strong> DICOM files${data.errors ? html` (${String(data.errors)} unreadable)` : ''}`);
 
         renderFairnessResults(data);
         results.style.display = 'block';
     } catch (err) {
         status.className = 'sm-status-banner sm-status-error';
-        status.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${escapeHtml(err.message)}`;
+        setHTML(status, html`<i class="fas fa-exclamation-circle"></i> ${err.message}`);
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-search"></i> Scan Demographics';
+        setHTML(btn, html`<i class="fas fa-search"></i> Scan Demographics`);
     }
 }
 
@@ -78,7 +78,7 @@ function renderSummaryCards(data) {
     const ethCounts    = Object.entries(attrs.EthnicGroup   || {}).filter(([k]) => k !== 'Unknown');
     const ageCounts    = Object.entries(data.age_distribution || {}).filter(([k]) => k !== 'Unknown');
 
-    container.innerHTML = `
+    setHTML(container, html`
         <div class="fairness-card">
             <div class="fairness-card-value">${data.total_scanned}</div>
             <div class="fairness-card-label">Files Scanned</div>
@@ -95,7 +95,7 @@ function renderSummaryCards(data) {
             <div class="fairness-card-value">${ageCounts.length}</div>
             <div class="fairness-card-label">Age Groups</div>
         </div>
-    `;
+    `);
 }
 
 function renderAttributeChart(canvasId, counts, title, sortByKey = false) {
@@ -150,11 +150,11 @@ function renderAttributeChart(canvasId, counts, title, sortByKey = false) {
 function renderMissingRates(missingRates, total) {
     const container = document.getElementById('fairness-missing-rates');
     if (!container) return;
-    const rows = Object.entries(missingRates)
+    const rows = joinHtml(Object.entries(missingRates)
         .filter(([k]) => !['Modality','BodyPartExamined','PatientRace'].includes(k))
-        .map(([attr, pct]) => `
+        .map(([attr, pct]) => html`
             <tr>
-                <td>${escapeHtml(attr)}</td>
+                <td>${attr}</td>
                 <td>
                     <div style="display:flex; align-items:center; gap:0.5rem;">
                         <div style="flex:1; background:#eee; border-radius:4px; height:8px;">
@@ -163,16 +163,16 @@ function renderMissingRates(missingRates, total) {
                         <span style="font-size:0.82rem; min-width:40px;">${pct}%</span>
                     </div>
                 </td>
-            </tr>`).join('');
+            </tr>`), '');
 
-    container.innerHTML = `
+    setHTML(container, html`
         <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
             <thead><tr style="border-bottom:1px solid #eee;">
                 <th style="text-align:left; padding:4px 8px;">Attribute</th>
                 <th style="text-align:left; padding:4px 8px;">Missing Rate</th>
             </tr></thead>
             <tbody>${rows}</tbody>
-        </table>`;
+        </table>`);
 }
 
 function renderSampleTable(sample) {
@@ -180,18 +180,18 @@ function renderSampleTable(sample) {
     if (!container || !sample?.length) return;
 
     const cols = ['key', 'PatientSex', 'AgeBucket', 'EthnicGroup', 'Modality'];
-    const headers = cols.map(c => `<th style="padding:4px 8px; text-align:left; font-size:0.8rem;">${escapeHtml(c)}</th>`).join('');
-    const rows = sample.map(row =>
-        `<tr style="border-bottom:1px solid #f5f5f5;">${
-            cols.map(c => `<td style="padding:4px 8px; font-size:0.78rem; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(row[c] || '')}">${escapeHtml(row[c] || '—')}</td>`).join('')
+    const headers = joinHtml(cols.map(c => html`<th style="padding:4px 8px; text-align:left; font-size:0.8rem;">${c}</th>`), '');
+    const rows = joinHtml(sample.map(row =>
+        html`<tr style="border-bottom:1px solid #f5f5f5;">${
+            joinHtml(cols.map(c => html`<td style="padding:4px 8px; font-size:0.78rem; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${row[c] || ''}">${row[c] || '—'}</td>`), '')
         }</tr>`
-    ).join('');
+    ), '');
 
-    container.innerHTML = `
+    setHTML(container, html`
         <div style="overflow-x:auto; max-height:300px; overflow-y:auto;">
             <table style="width:100%; border-collapse:collapse;">
                 <thead style="position:sticky; top:0; background:#f9f9f9;"><tr>${headers}</tr></thead>
                 <tbody>${rows}</tbody>
             </table>
-        </div>`;
+        </div>`);
 }

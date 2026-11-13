@@ -30,8 +30,8 @@ def _ensure_aws():
     if not getattr(aws_service, "s3_client", None) or not getattr(aws_service, "sagemaker_client", None):
         try:
             aws_service.configure_from_environment()
-        except Exception:
-            pass
+        except Exception as _exc:
+            logger.debug("ignored, non-fatal: %s", _exc)
     if not getattr(aws_service, "s3_client", None) or not getattr(aws_service, "sagemaker_client", None):
         raise HTTPException(
             status_code=400,
@@ -188,8 +188,8 @@ def _sagemaker_client_or_none():
     if not getattr(aws_service, "sagemaker_client", None):
         try:
             aws_service.configure_from_environment()
-        except Exception:
-            pass
+        except Exception as _exc:
+            logger.debug("ignored, non-fatal: %s", _exc)
     return getattr(aws_service, "sagemaker_client", None)
 
 

@@ -140,7 +140,8 @@
     </div>
 </div>
 
-<script src="/static/vendor/niivue/niivue.umd.js?v={{ asset_v }}"></script>
-<script src="/static/js/viewer.js?v={{ asset_v }}"></script>
+{{ static_script('vendor/niivue/niivue.umd.js') }}
+{{ static_script('js/safe_html.js') }}
+{{ static_script('js/viewer.js') }}
 </body>
 </html>

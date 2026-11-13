@@ -2,10 +2,12 @@
 #
 # DEDICATED image for the NVIDIA-Medtech NV-Segment-CT bundle
 # (https://github.com/NVIDIA-Medtech/NV-Segment-CTMR/tree/main/NV-Segment-CT).
-# The bundle requires MONAI 1.4 on PyTorch 2.4 — a materially different
-# framework stack than the shared sm-monai-bundle image (MONAI 1.3 / torch 2.9),
-# so per the MONAI-bundle skill's dedicated-image rule it gets its own base:
-# the PyTorch 2.4 (cu124) TRAINING DLC, with the bundle's dependencies baked in.
+# The bundle was validated on MONAI 1.4 / PyTorch 2.4. MONAI is now raised to
+# 1.5.2 (security fixes: unsafe pickle/torch.load, path traversal, zip slip),
+# which requires torch>=2.4.1, so this image uses the PyTorch 2.9 (cu130)
+# TRAINING DLC with the bundle's dependencies baked in. It stays a DEDICATED
+# image (own deps: einops, scikit-image, pinned nibabel/ignite) per the
+# MONAI-bundle skill's dedicated-image rule. Re-validate fine-tuning after a rebuild.
 #
 # One image covers BOTH training and fine-tuning: they are the same process
 # (train.py composes the bundle's own recipe
@@ -20,9 +22,9 @@
 # OCI manifests).
 
 # NOTE: platform pinned to linux/amd64 — DLC base and SageMaker hosts are x86_64.
-FROM --platform=linux/amd64 763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-training:2.4.0-gpu-py311-cu124-ubuntu22.04-sagemaker
+FROM --platform=linux/amd64 763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-training:2.9.0-gpu-py312-cu130-ubuntu22.04-sagemaker
 
-# ── VISTA-3D runtime dependencies (MONAI 1.4 stack; cucim intentionally
+# ── VISTA-3D runtime dependencies (MONAI 1.5.2 stack; cucim intentionally
 #    excluded — no installable wheel in this container, optional GPU accel) ───
 COPY src/nvmedtech/requirements.txt /tmp/requirements-nvmedtech.txt
 RUN pip install --no-cache-dir -r /tmp/requirements-nvmedtech.txt
@@ -36,4 +38,9 @@ ENV PYTHONPATH=/opt/program:${PYTHONPATH}
 
 # NOTE: SageMaker training containers run as root to write /opt/ml and drive the
 # training toolkit; a non-root USER is intentionally not added (matches the
-# other training Dockerfiles). HEALTHCHECK is managed by SageMaker orchestration.
+# other training Dockerfiles). (HEALTHCHECK: see below.)
+
+# checkov:skip=CKV_DOCKER_3:SageMaker training containers must run as root (the toolkit writes /opt/ml and drives the training toolkit); a non-root USER breaks the job.
+# Batch job (SageMaker Training/Processing): no long-running service to probe —
+# SageMaker tracks the process exit code. Declared explicitly.
+HEALTHCHECK NONE

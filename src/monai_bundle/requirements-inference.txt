@@ -1,7 +1,12 @@
 # MONAI Bundle inference (serving) dependencies.
 # Same MONAI runtime as training; the serving stack (nginx/gunicorn/MMS) comes
 # from the PyTorch inference DLC base image.
-monai==1.3.*
+# 1.5.2 fixes the ProbeScan advisories (GHSA-p8cm, 6vm5, x6ww, 9rg3).
+# KNOWN GAP: 1.5.2 is still affected by GHSA-89gg, qxq5, rghg, wg9g, 6hp3
+# (fixed in 1.6.x), but MONAI 1.6 requires torch>=2.8 and this image runs on
+# the torch-2.6 SageMaker PyTorch inference DLC. Move to 1.6.1 together with
+# a torch>=2.8 inference base.
+monai==1.5.2
 numpy<2
 nibabel>=5.1.0
 fire>=0.5.0

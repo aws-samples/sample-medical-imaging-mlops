@@ -1,5 +1,5 @@
 // NVIDIA MedTech (NV-Segment-CT / VISTA-3D) tab — mirrors the MONAI Bundle tab.
-// Uses shared escapeHtml()/escapeJsString() from main.js. Research use only.
+// Uses shared html``/setHTML()/escapeJsString() from safe_html.js. Research use only.
 
 let _nvArtifacts = { base: [], finetuned: [] };
 
@@ -9,42 +9,20 @@ async function nvLoadBundleCard() {
     if (!el) return;
     try {
         const b = await (await fetch('/api/nvmedtech/bundle')).json();
-        const papers = (b.papers || []).map(function (p) {
-            const t = escapeHtml(p.title || p.url || '');
+        const papers = joinHtml((b.papers || []).map(function (p) {
+            const t = p.title || p.url || '';
             return p.url
-                ? '<li style="margin-bottom:0.2rem;"><a href="' + escapeHtml(p.url) + '" target="_blank" rel="noopener noreferrer">' + t + '</a></li>'
-                : '<li style="margin-bottom:0.2rem;">' + t + '</li>';
-        }).join('');
+                ? html`<li style="margin-bottom:0.2rem;"><a href="${safeUrl(p.url)}" target="_blank" rel="noopener noreferrer">${t}</a></li>`
+                : html`<li style="margin-bottom:0.2rem;">${t}</li>`;
+        }), '');
         const d = b.data_org || {};
-        const tree = (d.layout || []).map(escapeHtml).join('\n');
+        const tree = joinHtml(d.layout || [], '\n');
         const rowStyle = 'font-size:0.75rem; color:#555; overflow-wrap:anywhere; word-break:break-word;';
-        el.innerHTML =
-            '<div class="model-item model-item-segmentation" style="min-width:0; overflow:hidden; display:flex; flex-wrap:wrap; gap:1rem; align-items:flex-start;">' +
-                '<div style="flex:1 1 220px; min-width:0;">' +
-                    '<div style="display:flex; align-items:center; gap:6px; margin-bottom:0.35rem;">' +
-                        '<span class="model-name" style="overflow-wrap:anywhere;">' + escapeHtml(b.name) + '</span>' +
-                        '<span class="model-tag model-tag-segmentation">Segmentation</span>' +
-                    '</div>' +
-                    '<div style="font-size:0.78rem; color:#555; overflow-wrap:anywhere; margin-bottom:0.4rem;">' + escapeHtml(b.description || '') + '</div>' +
-                    (b.monai_version ? '<div style="font-size:0.72rem; color:#888;">MONAI ' + escapeHtml(b.monai_version) + ' · PyTorch ' + escapeHtml(b.pytorch_version || '?') + ' (dedicated images)</div>' : '') +
-                    '<div style="font-size:0.72rem; margin-top:0.4rem;"><i class="fab fa-github"></i> <a href="' + escapeHtml(b.source_url) + '" target="_blank" rel="noopener noreferrer">NV-Segment-CT on GitHub</a></div>' +
-                '</div>' +
-                '<div style="flex:2 1 420px; min-width:0; display:flex; flex-wrap:wrap; gap:1rem; padding-left:1rem; border-left:1px solid #eee;">' +
-                    (papers ? '<div style="flex:1 1 260px; min-width:0;"><div style="font-weight:600; font-size:0.8rem; margin-bottom:0.25rem;"><i class="fas fa-book"></i> Key papers</div><ul style="font-size:0.75rem; margin:0; padding-left:1.1rem; overflow-wrap:anywhere; word-break:break-word;">' + papers + '</ul></div>' : '') +
-                    ((d.modality || tree)
-                        ? '<div style="flex:1 1 260px; min-width:0;">' +
-                            '<div style="font-weight:600; font-size:0.8rem; margin-bottom:0.25rem;"><i class="fas fa-folder-tree"></i> Training data layout' + (d.layout_source ? ' <span style="font-weight:normal; color:#888;">(from ' + escapeHtml(d.layout_source) + ')</span>' : '') + '</div>' +
-                            (d.modality ? '<div style="' + rowStyle + '"><strong>Modality:</strong> ' + escapeHtml(d.modality) + '</div>' : '') +
-                            (d.labels ? '<div style="' + rowStyle + '"><strong>Classes:</strong> ' + escapeHtml(d.labels) + '</div>' : '') +
-                            (d.data_source ? '<div style="' + rowStyle + '"><strong>Source:</strong> ' + escapeHtml(d.data_source) + '</div>' : '') +
-                            (tree ? '<pre style="background:#f6f8fa; border:1px solid #eee; border-radius:6px; padding:0.5rem; font-size:0.72rem; white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; margin:0.3rem 0 0;">' + tree + '</pre>' : '') +
-                            (d.training_data_note ? '<div style="' + rowStyle + ' margin-top:0.3rem; padding:0.35rem 0.5rem; background:#fff8e1; border:1px solid #ffe082; border-radius:6px;"><i class="fas fa-circle-info"></i> ' + escapeHtml(d.training_data_note) + '</div>' : '') +
-                          '</div>'
-                        : '') +
-                '</div>' +
-            '</div>';
+        setHTML(el, html`<div class="model-item model-item-segmentation" style="min-width:0; overflow:hidden; display:flex; flex-wrap:wrap; gap:1rem; align-items:flex-start;"><div style="flex:1 1 220px; min-width:0;"><div style="display:flex; align-items:center; gap:6px; margin-bottom:0.35rem;"><span class="model-name" style="overflow-wrap:anywhere;">${b.name}</span><span class="model-tag model-tag-segmentation">Segmentation</span></div><div style="font-size:0.78rem; color:#555; overflow-wrap:anywhere; margin-bottom:0.4rem;">${b.description || ''}</div>${b.monai_version ? html`<div style="font-size:0.72rem; color:#888;">MONAI ${b.monai_version} · PyTorch ${b.pytorch_version || '?'} (dedicated images)</div>` : ''}<div style="font-size:0.72rem; margin-top:0.4rem;"><i class="fab fa-github"></i> <a href="${safeUrl(b.source_url)}" target="_blank" rel="noopener noreferrer">NV-Segment-CT on GitHub</a></div></div><div style="flex:2 1 420px; min-width:0; display:flex; flex-wrap:wrap; gap:1rem; padding-left:1rem; border-left:1px solid #eee;">${papers ? html`<div style="flex:1 1 260px; min-width:0;"><div style="font-weight:600; font-size:0.8rem; margin-bottom:0.25rem;"><i class="fas fa-book"></i> Key papers</div><ul style="font-size:0.75rem; margin:0; padding-left:1.1rem; overflow-wrap:anywhere; word-break:break-word;">${papers}</ul></div>` : ''}${(d.modality || tree)
+                        ? html`<div style="flex:1 1 260px; min-width:0;"><div style="font-weight:600; font-size:0.8rem; margin-bottom:0.25rem;"><i class="fas fa-folder-tree"></i> Training data layout${d.layout_source ? html` <span style="font-weight:normal; color:#888;">(from ${d.layout_source})</span>` : ''}</div>${d.modality ? html`<div style="${rowStyle}"><strong>Modality:</strong> ${d.modality}</div>` : ''}${d.labels ? html`<div style="${rowStyle}"><strong>Classes:</strong> ${d.labels}</div>` : ''}${d.data_source ? html`<div style="${rowStyle}"><strong>Source:</strong> ${d.data_source}</div>` : ''}${tree ? html`<pre style="background:#f6f8fa; border:1px solid #eee; border-radius:6px; padding:0.5rem; font-size:0.72rem; white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; margin:0.3rem 0 0;">${tree}</pre>` : ''}${d.training_data_note ? html`<div style="${rowStyle} margin-top:0.3rem; padding:0.35rem 0.5rem; background:#fff8e1; border:1px solid #ffe082; border-radius:6px;"><i class="fas fa-circle-info"></i> ${d.training_data_note}</div>` : ''}</div>`
+                        : ''}</div></div>`);
     } catch (e) {
-        el.innerHTML = '<p style="color:#c62828;">Could not load bundle info: ' + escapeHtml(e.message) + '</p>';
+        setHTML(el, html`<p style="color:#c62828;">Could not load bundle info: ${e.message}</p>`);
     }
 }
 
@@ -52,9 +30,9 @@ async function nvLoadBundleCard() {
 async function nvStage() {
     const s3Uri = document.getElementById('nv-stage-s3').value.trim();
     const out = document.getElementById('nv-stage-result');
-    if (!s3Uri) { alert('destination S3 URI is required'); return; }
+    if (!s3Uri) { notify('destination S3 URI is required', 'warning'); return; }
     out.style.display = 'block';
-    out.innerHTML = 'Staging… (packages configs + 872 MB checkpoint + handler; can take several minutes)';
+    setHTML(out, 'Staging… (packages configs + 872 MB checkpoint + handler; can take several minutes)');
     try {
         const resp = await fetch('/api/nvmedtech/stage', {
             method: 'POST',
@@ -63,13 +41,11 @@ async function nvStage() {
         });
         const data = await resp.json();
         if (!resp.ok) throw new Error(data.detail || 'stage failed');
-        out.innerHTML =
-            '<div class="result-row"><span>Artifact</span> ' + escapeHtml(data.model_artifacts) + '</div>' +
-            '<div class="result-row"><span>Includes</span> configs + models/model.pt + code/inference.py (deps baked in image)</div>';
+        setHTML(out, html`<div class="result-row"><span>Artifact</span> ${data.model_artifacts}</div><div class="result-row"><span>Includes</span> configs + models/model.pt + code/inference.py (deps baked in image)</div>`);
         document.getElementById('nv-model-artifacts').value = data.model_artifacts;
         nvLoadArtifacts();
     } catch (e) {
-        out.innerHTML = '<span style="color:#c00">' + escapeHtml(e.message) + '</span>';
+        setHTML(out, html`<span style="color:#c00">${e.message}</span>`);
     }
 }
 
@@ -80,7 +56,7 @@ async function nvFinetune() {
     const raw = document.getElementById('nv-overrides').value.trim();
     if (raw) {
         try { extra = JSON.parse(raw); }
-        catch (e) { alert('Extra overrides must be valid JSON: ' + e.message); return; }
+        catch (e) { notify('Extra overrides must be valid JSON: ' + e.message, 'error'); return; }
     }
     const num = function (id) {
         const v = document.getElementById(id).value.trim();
@@ -95,10 +71,10 @@ async function nvFinetune() {
     const epochs = num('nv-epochs'); if (epochs !== null) body.epochs = epochs;
     const lr = num('nv-lr');         if (lr !== null) body.learning_rate = lr;
     if (!body.model_artifacts || !body.data_s3_uri) {
-        alert('bundle artifact and dataset S3 URI are required'); return;
+        notify('bundle artifact and dataset S3 URI are required', 'warning'); return;
     }
     out.style.display = 'block';
-    out.innerHTML = 'Launching…';
+    setHTML(out, 'Launching…');
     try {
         const resp = await fetch('/api/nvmedtech/finetune', {
             method: 'POST',
@@ -107,13 +83,10 @@ async function nvFinetune() {
         });
         const data = await resp.json();
         if (!resp.ok) throw new Error(data.detail || 'fine-tune failed');
-        out.innerHTML =
-            '<div class="result-row"><span>Job</span> ' + escapeHtml(data.job_name) + '</div>' +
-            '<div class="result-row"><span>Status</span> ' + escapeHtml(data.status) + '</div>' +
-            '<div class="result-row"><span>Config</span> ' + escapeHtml(data.config.train_config) + '</div>';
+        setHTML(out, html`<div class="result-row"><span>Job</span> ${data.job_name}</div><div class="result-row"><span>Status</span> ${data.status}</div><div class="result-row"><span>Config</span> ${data.config.train_config}</div>`);
         nvRefreshJobs();
     } catch (e) {
-        out.innerHTML = '<span style="color:#c00">' + escapeHtml(e.message) + '</span>';
+        setHTML(out, html`<span style="color:#c00">${e.message}</span>`);
     }
 }
 
@@ -143,10 +116,10 @@ function nvDisplayJobs(jobs) {
     });
     if (!visible.length) {
         const msgs = { active: 'No active jobs.', completed: 'No completed jobs.', failed: 'No failed jobs.', archived: 'No archived jobs.' };
-        container.innerHTML = '<p style="color:#888; padding:0.5rem;">' + (msgs[tab] || 'No jobs.') + '</p>';
+        setHTML(container, html`<p style="color:#888; padding:0.5rem;">${msgs[tab] || 'No jobs.'}</p>`);
         return;
     }
-    container.innerHTML = '';
+    container.replaceChildren();
     visible.forEach(function (job) {
         const statusClass = {
             'InProgress': 'status-running', 'Completed': 'status-completed',
@@ -155,17 +128,7 @@ function nvDisplayJobs(jobs) {
         const cfg = job.config || {};
         const el = document.createElement('div');
         el.className = 'job-item';
-        el.innerHTML =
-            '<div class="job-header">' +
-                '<div class="job-id">' + escapeHtml(job.job_name) + '</div>' +
-                '<div class="job-status ' + statusClass + '">' + escapeHtml(job.status || 'unknown') + '</div>' +
-            '</div>' +
-            '<div class="job-details">' +
-                (cfg.data_s3_uri ? '<div style="font-size:0.8rem;"><strong>Data:</strong> <code style="font-size:0.75rem;">' + escapeHtml(cfg.data_s3_uri) + '</code></div>' : '') +
-                (cfg.instance_type ? '<div style="font-size:0.8rem;"><strong>Instance:</strong> ' + escapeHtml(cfg.instance_type) + '</div>' : '') +
-                (job.model_artifacts ? '<div style="font-size:0.8rem;"><strong>Artifacts:</strong> <code style="font-size:0.75rem;">' + escapeHtml(job.model_artifacts) + '</code></div>' : '') +
-                (job.failure_reason ? '<div style="font-size:0.8rem; color:#c62828;"><strong>Reason:</strong> ' + escapeHtml(job.failure_reason) + '</div>' : '') +
-            '</div>';
+        setHTML(el, html`<div class="job-header"><div class="job-id">${job.job_name}</div><div class="job-status ${statusClass}">${job.status || 'unknown'}</div></div><div class="job-details">${cfg.data_s3_uri ? html`<div style="font-size:0.8rem;"><strong>Data:</strong> <code style="font-size:0.75rem;">${cfg.data_s3_uri}</code></div>` : ''}${cfg.instance_type ? html`<div style="font-size:0.8rem;"><strong>Instance:</strong> ${cfg.instance_type}</div>` : ''}${job.model_artifacts ? html`<div style="font-size:0.8rem;"><strong>Artifacts:</strong> <code style="font-size:0.75rem;">${job.model_artifacts}</code></div>` : ''}${job.failure_reason ? html`<div style="font-size:0.8rem; color:#c62828;"><strong>Reason:</strong> ${job.failure_reason}</div>` : ''}</div>`);
         container.appendChild(el);
     });
 }
@@ -173,13 +136,13 @@ function nvDisplayJobs(jobs) {
 async function nvRefreshJobs() {
     const list = document.getElementById('nv-jobs-list');
     if (!list) return;
-    list.innerHTML = 'Loading…';
+    setHTML(list, 'Loading…');
     try {
         const data = await (await fetch('/api/nvmedtech/jobs')).json();
         _nvAllJobs = data.jobs || [];
         nvDisplayJobs(_nvAllJobs);
     } catch (e) {
-        list.innerHTML = '<span style="color:#c00">' + escapeHtml(e.message) + '</span>';
+        setHTML(list, html`<span style="color:#c00">${e.message}</span>`);
     }
 }
 
@@ -209,19 +172,13 @@ function nvOnDeploySourceChange() {
         ftList.style.display = 'block';
         const items = _nvArtifacts.finetuned || [];
         if (!items.length) {
-            ftList.innerHTML = '<p style="color:#888; padding:0.6rem;">No completed fine-tune jobs with model artifacts found.</p>';
+            setHTML(ftList, html`<p style="color:#888; padding:0.6rem;">No completed fine-tune jobs with model artifacts found.</p>`);
             return;
         }
-        ftList.innerHTML = items.map(function (it) {
+        setHTML(ftList, joinHtml(items.map(function (it) {
             const art = it.model_artifacts || '';
-            return '<div style="padding:0.6rem 0.5rem; border-bottom:1px solid #f0f0f0; cursor:pointer;"' +
-                ' onmouseover="this.style.background=\'#f5f5f5\'" onmouseout="this.style.background=\'\'"' +
-                ' onclick="nvSelectFinetuned(this, \'' + escapeJsString(art) + '\', \'' + escapeJsString(it.name) + '\')">' +
-                '<div style="font-weight:600; font-size:0.9rem;">' + escapeHtml(it.name) + '</div>' +
-                '<div style="font-size:0.78rem; color:#666; margin-top:2px; word-break:break-all;">' + escapeHtml(art) + '</div>' +
-                (it.instance_type ? '<div style="font-size:0.75rem; color:#888; margin-top:2px;">' + escapeHtml(it.instance_type) + '</div>' : '') +
-                '</div>';
-        }).join('');
+            return html`<div style="padding:0.6rem 0.5rem; border-bottom:1px solid #f0f0f0; cursor:pointer;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''" onclick="nvSelectFinetuned(this, '${escapeJsString(art)}', '${escapeJsString(it.name)}')"><div style="font-weight:600; font-size:0.9rem;">${it.name}</div><div style="font-size:0.78rem; color:#666; margin-top:2px; word-break:break-all;">${art}</div>${it.instance_type ? html`<div style="font-size:0.75rem; color:#888; margin-top:2px;">${it.instance_type}</div>` : ''}</div>`;
+        }), ''));
         return;
     }
     label.textContent = 'Base bundle (staged)';
@@ -229,12 +186,12 @@ function nvOnDeploySourceChange() {
     sel.style.display = '';
     const items = (_nvArtifacts.base || []).filter(function (b) { return b.model_artifacts; });
     if (!items.length) {
-        sel.innerHTML = '<option value="" disabled selected>Not staged yet — stage the bundle first</option>';
+        setHTML(sel, html`<option value="" disabled selected>Not staged yet — stage the bundle first</option>`);
         return;
     }
-    sel.innerHTML = '<option value="" disabled selected>Select…</option>' + items.map(function (it) {
-        return '<option value="' + escapeHtml(it.model_artifacts) + '">' + escapeHtml(it.name) + '</option>';
-    }).join('');
+    setHTML(sel, html`<option value="" disabled selected>Select…</option>${joinHtml(items.map(function (it) {
+        return html`<option value="${it.model_artifacts}">${it.name}</option>`;
+    }), '')}`);
 }
 
 function nvSelectFinetuned(row, artifact, jobName) {
@@ -263,10 +220,7 @@ function nvRenderDeployStatus(out, epName, status) {
         'InService': 'status-completed', 'Failed': 'status-failed',
         'Creating': 'status-running', 'Updating': 'status-running', 'Deleting': 'status-stopping',
     }[status] || 'status-unknown';
-    out.innerHTML =
-        '<div class="result-row"><span>Endpoint</span> ' + escapeHtml(epName) + '</div>' +
-        '<div class="result-row"><span>Type</span> async</div>' +
-        '<div class="result-row"><span>Status</span> <span class="job-status ' + cls + '">' + escapeHtml(status) + '</span></div>';
+    setHTML(out, html`<div class="result-row"><span>Endpoint</span> ${epName}</div><div class="result-row"><span>Type</span> async</div><div class="result-row"><span>Status</span> <span class="job-status ${cls}">${status}</span></div>`);
 }
 
 async function nvPollDeployStatus(out, epName) {
@@ -281,7 +235,7 @@ async function nvPollDeployStatus(out, epName) {
             const status = d.status || 'Creating';
             nvRenderDeployStatus(out, epName, status);
             if (status === 'Failed' && d.failure_reason) {
-                out.insertAdjacentHTML('beforeend', '<div class="result-row" style="color:#c62828;"><span>Reason</span> ' + escapeHtml(d.failure_reason) + '</div>');
+                insertHTML(out, 'beforeend', html`<div class="result-row" style="color:#c62828;"><span>Reason</span> ${d.failure_reason}</div>`);
             }
             if (TERMINAL.has(status)) { clearInterval(timer); nvLoadDeployments(); }
         } catch (e) { /* transient */ }
@@ -300,10 +254,10 @@ async function nvDeploy() {
         max_concurrent: Number(document.getElementById('nv-deploy-concurrent').value.trim() || 4),
     };
     if (!body.endpoint_name || !body.model_artifacts || !body.output_s3_uri) {
-        alert('endpoint name, model artifact, and async output S3 location are required'); return;
+        notify('endpoint name, model artifact, and async output S3 location are required', 'warning'); return;
     }
     out.style.display = 'block';
-    out.innerHTML = 'Deploying async endpoint…';
+    setHTML(out, 'Deploying async endpoint…');
     try {
         const resp = await fetch('/api/nvmedtech/deploy', {
             method: 'POST',
@@ -317,7 +271,7 @@ async function nvDeploy() {
         nvPollDeployStatus(out, epName);
         nvLoadDeployments();
     } catch (e) {
-        out.innerHTML = '<span style="color:#c00">' + escapeHtml(e.message) + '</span>';
+        setHTML(out, html`<span style="color:#c00">${e.message}</span>`);
     }
 }
 
@@ -336,7 +290,7 @@ async function nvLoadDeployments() {
         const items = (res.deployments || []).filter(_nvIsBundleDeployment);
         nvDisplayDeployments(items);
     } catch (e) {
-        container.innerHTML = '<p style="color:#c62828; padding:0.5rem;">Error loading deployments: ' + escapeHtml(e.message) + '</p>';
+        setHTML(container, html`<p style="color:#c62828; padding:0.5rem;">Error loading deployments: ${e.message}</p>`);
     }
 }
 
@@ -344,7 +298,7 @@ function nvDisplayDeployments(deployments) {
     const container = document.getElementById('nv-deployments-list');
     if (!container) return;
     if (!deployments.length) {
-        container.innerHTML = '<p style="color:#888; padding:0.5rem;">No NV-Segment-CT endpoints deployed yet.</p>';
+        setHTML(container, html`<p style="color:#888; padding:0.5rem;">No NV-Segment-CT endpoints deployed yet.</p>`);
         return;
     }
     const statusClass = {
@@ -352,37 +306,22 @@ function nvDisplayDeployments(deployments) {
         'InService': 'status-completed', 'Failed': 'status-failed',
         'Deleting': 'status-stopping', 'Deleted': 'status-stopped',
     };
-    container.innerHTML = deployments.map(function (d) {
-        const cnt = d.instance_count != null ? d.instance_count : 1;
+    setHTML(container, joinHtml(deployments.map(function (d) {
+        const cnt = d.instance_count != null ? (Number(d.instance_count) || 0) : 1;  // numeric: used inside inline handlers
         const inService = d.status === 'InService';
         const actions = [];
-        if (inService && cnt > 0) actions.push('<button class="btn btn-secondary" onclick="nvScaleEndpoint(\'' + escapeJsString(d.endpoint_name) + '\', 0)" title="Scale to 0 (stop billing)"><i class="fas fa-power-off"></i> Scale to 0</button>');
-        if (inService && cnt === 0) actions.push('<button class="btn btn-secondary" onclick="nvScaleEndpoint(\'' + escapeJsString(d.endpoint_name) + '\', 1)" style="color:#1e8449;"><i class="fas fa-play"></i> Scale up</button>');
-        if (inService && cnt > 1) actions.push('<button class="btn btn-secondary" onclick="nvScaleEndpoint(\'' + escapeJsString(d.endpoint_name) + '\', ' + (cnt - 1) + ')"><i class="fas fa-minus"></i></button>');
-        if (inService && cnt > 0) actions.push('<button class="btn btn-secondary" onclick="nvScaleEndpoint(\'' + escapeJsString(d.endpoint_name) + '\', ' + (cnt + 1) + ')"><i class="fas fa-plus"></i></button>');
-        if (!['InService', 'Failed', 'Deleting', 'Deleted'].includes(d.status)) actions.push('<button class="btn btn-secondary" onclick="nvRefreshDeployment(\'' + escapeJsString(d.endpoint_name) + '\')"><i class="fas fa-sync"></i> Refresh</button>');
-        if (!['Deleting', 'Deleted'].includes(d.status)) actions.push('<button class="btn btn-secondary" onclick="nvDeleteDeployment(\'' + escapeJsString(d.endpoint_name) + '\')" style="color:#c62828;"><i class="fas fa-trash"></i> Delete</button>');
-        return '<div class="job-item" style="padding:1rem 1.25rem;">' +
-            '<div class="job-header" style="margin-bottom:0.75rem;">' +
-                '<div>' +
-                    '<div class="job-id" style="font-size:1rem;">' + escapeHtml(d.endpoint_name) + '</div>' +
-                    '<span style="font-size:0.75rem; color:#666;">⚡ Async · ' + escapeHtml(d.instance_type || 'N/A') + ' × ' + cnt +
-                        (cnt === 0 ? ' <span style="color:#e67e22; font-weight:600;">— scaled to 0</span>' : '') + '</span>' +
-                '</div>' +
-                '<div class="job-status ' + (statusClass[d.status] || 'status-unknown') + '">' + escapeHtml(d.status) + '</div>' +
-            '</div>' +
-            '<div style="display:grid; grid-template-columns:auto 1fr; gap:0.3rem 1rem; font-size:0.82rem; margin-bottom:0.75rem;">' +
-                '<strong>Created:</strong> <span>' + (d.created_at ? escapeHtml(new Date(d.created_at).toLocaleString()) : 'N/A') + '</span>' +
-                (d.output_s3_uri ? '<strong>Output:</strong> <span style="word-break:break-all; font-family:monospace; font-size:0.75rem;">' + escapeHtml(d.output_s3_uri) + '</span>' : '') +
-                (d.failure_reason ? '<strong style="color:#c62828;">Error:</strong> <span style="color:#c62828;">' + escapeHtml(d.failure_reason) + '</span>' : '') +
-            '</div>' +
-            '<div class="job-actions">' + actions.join('') + '</div>' +
-        '</div>';
-    }).join('');
+        if (inService && cnt > 0) actions.push(html`<button class="btn btn-secondary" onclick="nvScaleEndpoint('${escapeJsString(d.endpoint_name)}', 0)" title="Scale to 0 (stop billing)"><i class="fas fa-power-off"></i> Scale to 0</button>`);
+        if (inService && cnt === 0) actions.push(html`<button class="btn btn-secondary" onclick="nvScaleEndpoint('${escapeJsString(d.endpoint_name)}', 1)" style="color:#1e8449;"><i class="fas fa-play"></i> Scale up</button>`);
+        if (inService && cnt > 1) actions.push(html`<button class="btn btn-secondary" onclick="nvScaleEndpoint('${escapeJsString(d.endpoint_name)}', ${cnt - 1})"><i class="fas fa-minus"></i></button>`);
+        if (inService && cnt > 0) actions.push(html`<button class="btn btn-secondary" onclick="nvScaleEndpoint('${escapeJsString(d.endpoint_name)}', ${cnt + 1})"><i class="fas fa-plus"></i></button>`);
+        if (!['InService', 'Failed', 'Deleting', 'Deleted'].includes(d.status)) actions.push(html`<button class="btn btn-secondary" onclick="nvRefreshDeployment('${escapeJsString(d.endpoint_name)}')"><i class="fas fa-sync"></i> Refresh</button>`);
+        if (!['Deleting', 'Deleted'].includes(d.status)) actions.push(html`<button class="btn btn-secondary" onclick="nvDeleteDeployment('${escapeJsString(d.endpoint_name)}')" style="color:#c62828;"><i class="fas fa-trash"></i> Delete</button>`);
+        return html`<div class="job-item" style="padding:1rem 1.25rem;"><div class="job-header" style="margin-bottom:0.75rem;"><div><div class="job-id" style="font-size:1rem;">${d.endpoint_name}</div><span style="font-size:0.75rem; color:#666;">⚡ Async · ${d.instance_type || 'N/A'} × ${cnt}${cnt === 0 ? html` <span style="color:#e67e22; font-weight:600;">— scaled to 0</span>` : ''}</span></div><div class="job-status ${statusClass[d.status] || 'status-unknown'}">${d.status}</div></div><div style="display:grid; grid-template-columns:auto 1fr; gap:0.3rem 1rem; font-size:0.82rem; margin-bottom:0.75rem;"><strong>Created:</strong> <span>${d.created_at ? new Date(d.created_at).toLocaleString() : 'N/A'}</span>${d.output_s3_uri ? html`<strong>Output:</strong> <span style="word-break:break-all; font-family:monospace; font-size:0.75rem;">${d.output_s3_uri}</span>` : ''}${d.failure_reason ? html`<strong style="color:#c62828;">Error:</strong> <span style="color:#c62828;">${d.failure_reason}</span>` : ''}</div><div class="job-actions">${actions}</div></div>`;
+    }), ''));
 }
 
 async function nvScaleEndpoint(name, count) {
-    if (count === 0 && !confirm('Scale ' + name + ' to 0 instances? This stops billing but keeps the endpoint.')) return;
+    if (count === 0 && !(await confirmAction('Scale ' + name + ' to 0 instances? This stops billing but keeps the endpoint.', { danger: true, confirmLabel: 'Scale to 0' }))) return;
     try {
         const r = await fetch('/api/deployment/deployments/' + encodeURIComponent(name) + '/scale', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -391,17 +330,17 @@ async function nvScaleEndpoint(name, count) {
         const d = await r.json();
         if (!r.ok) throw new Error(d.detail || 'scale failed');
         nvLoadDeployments();
-    } catch (e) { alert('Scale failed: ' + e.message); }
+    } catch (e) { notify('Scale failed: ' + e.message, 'error'); }
 }
 
 async function nvDeleteDeployment(name) {
-    if (!confirm('Delete endpoint ' + name + '? This removes the endpoint, config, and model.')) return;
+    if (!(await confirmAction('Delete endpoint ' + name + '? This removes the endpoint, config, and model.', { danger: true, confirmLabel: 'Delete' }))) return;
     try {
         const r = await fetch('/api/deployment/deployments/' + encodeURIComponent(name), { method: 'DELETE' });
         const d = await r.json();
         if (!r.ok) throw new Error(d.detail || 'delete failed');
         nvLoadDeployments();
-    } catch (e) { alert('Delete failed: ' + e.message); }
+    } catch (e) { notify('Delete failed: ' + e.message, 'error'); }
 }
 
 async function nvRefreshDeployment(name) {

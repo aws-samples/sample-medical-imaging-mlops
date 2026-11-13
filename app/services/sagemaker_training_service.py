@@ -246,9 +246,8 @@ class SageMakerTrainingService:
         bucket = path.split("/")[0]
         key    = "/".join(path.split("/")[1:])
 
-        with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as tmp:
-            tmp.flush()
-            tmp_path = tmp.name
+        _fd, tmp_path = tempfile.mkstemp(suffix=".tar.gz")
+        os.close(_fd)
 
         result = None
         try:

@@ -1,7 +1,7 @@
 // Training JavaScript
-// Depends on: escapeHtml() defined in main.js (loaded before this file)
+// Depends on: html``/setHTML()/escapeHtml() from safe_html.js (loaded before this file)
 if (typeof escapeHtml !== 'function') {
-    throw new Error('escapeHtml() is required but not defined. Ensure main.js is loaded before training.js.');
+    throw new Error('escapeHtml() is required but not defined. Ensure safe_html.js is loaded before training.js.');
 }
 
 registerTabInit('training', function() {
@@ -53,23 +53,23 @@ function createModelCard(model, onSelect) {
     modelElement.className = `model-item model-item-${task}`;
     modelElement.dataset.modelType = model.name;
 
-    modelElement.innerHTML = `
+    setHTML(modelElement, html`
         <div class="model-item-header">
-            <div class="model-name">${escapeHtml(getDisplayName(model.name))}</div>
+            <div class="model-name">${getDisplayName(model.name)}</div>
             <div style="display:flex; gap:4px; align-items:center;">
-                ${isCustom ? '<span class="model-tag" style="background:#f3eeff; color:#7b2ff7; border:1px solid #c9b0f5;">Custom</span>' : ''}
+                ${isCustom ? html`<span class="model-tag" style="background:#f3eeff; color:#7b2ff7; border:1px solid #c9b0f5;">Custom</span>` : ''}
                 <span class="model-tag ${taskClass}">${taskLabel}</span>
-                ${isCustom ? `<button type="button" title="Remove" onclick="removeCustomModel('${escapeJsString(model.name)}', event)"
+                ${isCustom ? html`<button type="button" title="Remove" onclick="removeCustomModel('${escapeJsString(model.name)}', event)"
                     style="background:none; border:none; cursor:pointer; color:#c62828; font-size:0.75rem; padding:0 2px;">
                     <i class="fas fa-times"></i></button>` : ''}
             </div>
         </div>
-        <div class="model-description">${escapeHtml(model.description)}</div>
+        <div class="model-description">${model.description}</div>
         <div class="model-specs">
-            <span>Parameters: ${escapeHtml(model.parameters)}</span>
-            <span>Input: ${escapeHtml(model.input_size)}</span>
+            <span>Parameters: ${model.parameters}</span>
+            <span>Input: ${model.input_size}</span>
         </div>
-    `;
+    `);
 
     modelElement.addEventListener('click', () => (onSelect || selectModel)(model, modelElement));
     return modelElement;
@@ -78,13 +78,13 @@ function createModelCard(model, onSelect) {
 function displayModels(models) {
     const container = document.getElementById('models-list');
     if (!container) return;
-    container.innerHTML = '';
+    container.replaceChildren();
     models.forEach(model => container.appendChild(createModelCard(model)));
 }
 
-function removeCustomModel(name, event) {
+async function removeCustomModel(name, event) {
     event.stopPropagation();
-    if (!confirm(`Remove custom model "${name}"?`)) return;
+    if (!(await confirmAction(`Remove custom model "${name}"?`, { danger: true, confirmLabel: 'Remove' }))) return;
     const updated = loadCustomModels().filter(m => m.name !== name);
     saveCustomModels(updated);
     loadAvailableModels();
@@ -93,11 +93,11 @@ function removeCustomModel(name, event) {
 function populateSageMakerModelDropdown(models) {
     const select = document.getElementById('sm_model_name');
     if (!select) return;
-    select.innerHTML = models.map(m => {
+    setHTML(select, joinHtml(models.map(m => {
         const task = (m.task || 'classification').toLowerCase();
         const label = task === 'segmentation' ? '🔬' : '🏷️';
-        return `<option value="${escapeHtml(m.name)}" data-task="${escapeHtml(task)}">${label} ${escapeHtml(getDisplayName(m.name))} (${escapeHtml(task)})</option>`;
-    }).join('');
+        return html`<option value="${m.name}" data-task="${task}">${label} ${getDisplayName(m.name)} (${task})</option>`;
+    }), ''));
 }
 
 // Data folder structures per task type
@@ -263,29 +263,29 @@ function selectModel(model, element) {
 // Render a FOLDER_STRUCTURE node as the "Data Layout" tree HTML.
 function renderFolderTreeHtml(fs) {
     function renderTree(nodes) {
-        return nodes.map(n => {
+        return joinHtml(nodes.map(n => {
             const hasChildren = n.children && n.children.length;
             const icon = hasChildren
-                ? '<i class="fas fa-folder"></i>'
-                : '<i class="fas fa-file"></i>';
-            const note = n.note ? `<span class="folder-tree-note">${escapeHtml(n.note)}</span>` : '';
+                ? html`<i class="fas fa-folder"></i>`
+                : html`<i class="fas fa-file"></i>`;
+            const note = n.note ? html`<span class="folder-tree-note">${n.note}</span>` : '';
             const childHtml = hasChildren
-                ? `<div class="folder-tree-children">${renderTree(n.children)}</div>`
+                ? html`<div class="folder-tree-children">${renderTree(n.children)}</div>`
                 : '';
-            return `<div class="folder-tree-file">
+            return html`<div class="folder-tree-file">
                 <span class="folder-tree-icon">${icon}</span>
-                <span class="folder-tree-name">${escapeHtml(n.label)}</span>${note}
+                <span class="folder-tree-name">${n.label}</span>${note}
                 ${childHtml}
             </div>`;
-        }).join('');
+        }), '');
     }
-    const rootNote = fs.note ? `<span class="folder-tree-note">${escapeHtml(fs.note)}</span>` : '';
-    return `
+    const rootNote = fs.note ? html`<span class="folder-tree-note">${fs.note}</span>` : '';
+    return html`
         <h4 class="model-papers-heading"><i class="fas fa-folder-open"></i> Data Layout</h4>
         <div class="folder-tree">
             <div class="folder-tree-root">
                 <i class="fas fa-folder-open"></i>
-                <span>${escapeHtml(fs.label)}</span>${rootNote}
+                <span>${fs.label}</span>${rootNote}
             </div>
             <div class="folder-tree-children">${renderTree(fs.children)}</div>
         </div>`;
@@ -304,46 +304,46 @@ function showModelInfo(model) {
         // Fallback — show basic info from the model object itself
         placeholder.style.display = 'none';
         content.style.display = 'block';
-        document.getElementById('model-info-title').innerHTML = `<i class="fas fa-info-circle"></i> ${escapeHtml(getDisplayName(model.name))}`;
+        setHTML(document.getElementById('model-info-title'), html`<i class="fas fa-info-circle"></i> ${getDisplayName(model.name)}`);
         document.getElementById('model-info-blurb').textContent = model.description || 'No description available.';
         const meta = document.getElementById('model-info-meta');
-        meta.innerHTML = [
-            model.parameters ? `<span class="model-meta-tag"><strong>Parameters:</strong> ${escapeHtml(model.parameters)}</span>` : '',
-            model.input_size  ? `<span class="model-meta-tag"><strong>Input:</strong> ${escapeHtml(model.input_size)}</span>` : '',
-            model.task        ? `<span class="model-meta-tag"><strong>Task:</strong> ${escapeHtml(model.task)}</span>` : '',
-        ].join('');
+        setHTML(meta, [
+            model.parameters ? html`<span class="model-meta-tag"><strong>Parameters:</strong> ${model.parameters}</span>` : '',
+            model.input_size  ? html`<span class="model-meta-tag"><strong>Input:</strong> ${model.input_size}</span>` : '',
+            model.task        ? html`<span class="model-meta-tag"><strong>Task:</strong> ${model.task}</span>` : '',
+        ]);
 
         // Data layout — MONAI bundles use the Decathlon tree; others none.
         const fbFolder = document.getElementById('model-folder-structure');
         if (fbFolder) {
             const fs = model.monai_bundle ? FOLDER_STRUCTURE.monai_bundle : null;
             if (fs) {
-                fbFolder.innerHTML = renderFolderTreeHtml(fs);
+                setHTML(fbFolder, renderFolderTreeHtml(fs));
                 fbFolder.style.display = 'block';
             } else {
                 fbFolder.style.display = 'none';
             }
         }
 
-        document.getElementById('model-papers-list').innerHTML = '<li>No papers listed.</li>';
+        setHTML(document.getElementById('model-papers-list'), html`<li>No papers listed.</li>`);
         return;
     }
 
     placeholder.style.display = 'none';
     content.style.display = 'block';
 
-    document.getElementById('model-info-title').innerHTML = `<i class="fas fa-info-circle"></i> ${escapeHtml(getDisplayName(model.name))}`;
+    setHTML(document.getElementById('model-info-title'), html`<i class="fas fa-info-circle"></i> ${getDisplayName(model.name)}`);
     document.getElementById('model-info-blurb').textContent = info.blurb;
 
     const meta = document.getElementById('model-info-meta');
-    meta.innerHTML = Object.entries(info.specs).map(([k, v]) =>
-        `<span class="model-meta-tag"><strong>${k}:</strong> ${v}</span>`
-    ).join('');
+    setHTML(meta, joinHtml(Object.entries(info.specs).map(([k, v]) =>
+        html`<span class="model-meta-tag"><strong>${k}:</strong> ${v}</span>`
+    ), ''));
 
-    const dimBadges = (info.dimensions || []).map(d =>
-        `<span class="model-dim-badge model-dim-${d.toLowerCase()}">${d}</span>`
-    ).join('');
-    meta.innerHTML += `<div class="model-dim-row">${dimBadges}</div>`;
+    const dimBadges = joinHtml((info.dimensions || []).map(d =>
+        html`<span class="model-dim-badge model-dim-${d.toLowerCase()}">${d}</span>`
+    ), '');
+    appendHTML(meta, html`<div class="model-dim-row">${dimBadges}</div>`);
 
     // Folder structure
     const folderSection = document.getElementById('model-folder-structure');
@@ -351,24 +351,24 @@ function showModelInfo(model) {
         const fs = info.folderStructure;
 
         function renderTree(nodes, depth) {
-            return nodes.map(n => {
+            return joinHtml(nodes.map(n => {
                 const hasChildren = n.children && n.children.length;
                 const icon = hasChildren
-                    ? '<i class="fas fa-folder"></i>'
-                    : '<i class="fas fa-file"></i>';
-                const note = n.note ? `<span class="folder-tree-note">${n.note}</span>` : '';
+                    ? html`<i class="fas fa-folder"></i>`
+                    : html`<i class="fas fa-file"></i>`;
+                const note = n.note ? html`<span class="folder-tree-note">${n.note}</span>` : '';
                 const childHtml = hasChildren
-                    ? `<div class="folder-tree-children">${renderTree(n.children, depth + 1)}</div>`
+                    ? html`<div class="folder-tree-children">${renderTree(n.children, depth + 1)}</div>`
                     : '';
-                return `<div class="folder-tree-file">
+                return html`<div class="folder-tree-file">
                     <span class="folder-tree-icon">${icon}</span>
                     <span class="folder-tree-name">${n.label}</span>${note}
                     ${childHtml}
                 </div>`;
-            }).join('');
+            }), '');
         }
 
-        folderSection.innerHTML = `
+        setHTML(folderSection, html`
             <h4 class="model-papers-heading"><i class="fas fa-folder-open"></i> Data Layout</h4>
             <div class="folder-tree">
                 <div class="folder-tree-root">
@@ -376,7 +376,7 @@ function showModelInfo(model) {
                     <span>${fs.label}</span>
                 </div>
                 <div class="folder-tree-children">${renderTree(fs.children, 1)}</div>
-            </div>`;
+            </div>`);
         folderSection.style.display = 'block';
     } else if (folderSection) {
         folderSection.style.display = 'none';
@@ -384,13 +384,13 @@ function showModelInfo(model) {
 
     const papersList = document.getElementById('model-papers-list');
     if (info.papers.length === 0) {
-        papersList.innerHTML = '<li>No papers listed for custom models.</li>';
+        setHTML(papersList, html`<li>No papers listed for custom models.</li>`);
     } else {
-        papersList.innerHTML = info.papers.map(p =>
-            `<li><a href="${p.url}" target="_blank" rel="noopener">
+        setHTML(papersList, joinHtml(info.papers.map(p =>
+            html`<li><a href="${safeUrl(p.url)}" target="_blank" rel="noopener">
                 <i class="fas fa-external-link-alt"></i> ${p.title}
             </a><span class="paper-authors">${p.authors}</span></li>`
-        ).join('');
+        ), ''));
     }
 }
 
@@ -408,37 +408,37 @@ function displayTrainingJobs(jobs) {
     if (!container) return;
     
     if (jobs.length === 0) {
-        container.innerHTML = '<p>No training jobs found.</p>';
+        setHTML(container, html`<p>No training jobs found.</p>`);
         return;
     }
     
-    container.innerHTML = '';
+    container.replaceChildren();
     
     jobs.forEach(job => {
         const jobElement = document.createElement('div');
         jobElement.className = 'job-item';
         
-        jobElement.innerHTML = `
+        setHTML(jobElement, html`
             <div class="job-header">
-                <div class="job-id">Job: ${escapeHtml(job.job_id.substring(0, 8))}...</div>
-                <div class="job-status ${job.status}">${escapeHtml(job.status.toUpperCase())}</div>
+                <div class="job-id">Job: ${job.job_id.substring(0, 8)}...</div>
+                <div class="job-status ${job.status}">${job.status.toUpperCase()}</div>
             </div>
             <div class="job-details">
-                <div><strong>Model:</strong> ${escapeHtml(job.model_type)}</div>
-                <div><strong>Created:</strong> ${escapeHtml(formatDate(job.created_at))}</div>
-                ${job.completed_at ? `<div><strong>Completed:</strong> ${escapeHtml(formatDate(job.completed_at))}</div>` : ''}
+                <div><strong>Model:</strong> ${job.model_type}</div>
+                <div><strong>Created:</strong> ${formatDate(job.created_at)}</div>
+                ${job.completed_at ? html`<div><strong>Completed:</strong> ${formatDate(job.completed_at)}</div>` : ''}
             </div>
             <div class="job-actions">
                 <button onclick="viewJobMetrics('${escapeJsString(job.job_id)}')" class="btn btn-secondary">
                     <i class="fas fa-chart-line"></i> View Metrics
                 </button>
                 ${job.status === 'running' ? 
-                    `<button onclick="stopTrainingJob('${escapeJsString(job.job_id)}')" class="btn btn-secondary">
+                    html`<button onclick="stopTrainingJob('${escapeJsString(job.job_id)}')" class="btn btn-secondary">
                         <i class="fas fa-stop"></i> Stop
                     </button>` : ''
                 }
             </div>
-        `;
+        `);
         
         container.appendChild(jobElement);
     });
@@ -449,42 +449,41 @@ async function viewJobMetrics(jobId) {
         const metrics = await apiCall(`/api/training/jobs/${jobId}/metrics`);
         
         const metricsWindow = window.open('', '_blank', 'width=800,height=600');
-        metricsWindow.document.write(`
-            <html>
-                <head>
-                    <title>Training Metrics - ${escapeHtml(jobId)}</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; padding: 20px; }
-                        .metric { margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 4px; }
-                        .links { margin-top: 20px; }
-                        .links a { display: inline-block; margin-right: 10px; padding: 10px 15px; background: #007bff; color: white; text-decoration: none; border-radius: 4px; }
-                    </style>
-                </head>
-                <body>
-                    <h1>Training Metrics</h1>
-                    <h2>Job ID: ${escapeHtml(jobId)}</h2>
-                    <div class="metric"><strong>Epoch:</strong> ${escapeHtml(String(metrics.metrics.epoch))}</div>
-                    <div class="metric"><strong>Training Loss:</strong> ${escapeHtml(String(metrics.metrics.train_loss))}</div>
-                    <div class="metric"><strong>Validation Loss:</strong> ${escapeHtml(String(metrics.metrics.val_loss))}</div>
-                    <div class="metric"><strong>Training Accuracy:</strong> ${escapeHtml(String((metrics.metrics.train_accuracy * 100).toFixed(2)))}%</div>
-                    <div class="metric"><strong>Validation Accuracy:</strong> ${escapeHtml(String((metrics.metrics.val_accuracy * 100).toFixed(2)))}%</div>
-                    <div class="metric"><strong>Learning Rate:</strong> ${escapeHtml(String(metrics.metrics.learning_rate))}</div>
-                    
-                    <div class="links">
-                        <a href="${escapeHtml(safeUrl(metrics.metrics.tensorboard_url))}" target="_blank" rel="noopener noreferrer">Open TensorBoard</a>
-                        <a href="${escapeHtml(safeUrl(metrics.metrics.mlflow_url))}" target="_blank" rel="noopener noreferrer">Open MLflow</a>
-                    </div>
-                </body>
-            </html>
+        if (!metricsWindow) { notify('Pop-up blocked: allow pop-ups to view metrics.', 'warning'); return; }
+        // Build the popup with DOM APIs (no document.write): title/style via
+        // textContent, body via setHTML with escaped interpolations.
+        const pdoc = metricsWindow.document;
+        pdoc.title = `Training Metrics - ${jobId}`;
+        const style = pdoc.createElement('style');
+        style.textContent = [
+            'body { font-family: Arial, sans-serif; padding: 20px; }',
+            '.metric { margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 4px; }',
+            '.links { margin-top: 20px; }',
+            '.links a { display: inline-block; margin-right: 10px; padding: 10px 15px; background: #007bff; color: white; text-decoration: none; border-radius: 4px; }',
+        ].join('\n');
+        pdoc.head.appendChild(style);
+        setHTML(pdoc.body, html`
+            <h1>Training Metrics</h1>
+            <h2>Job ID: ${jobId}</h2>
+            <div class="metric"><strong>Epoch:</strong> ${String(metrics.metrics.epoch)}</div>
+            <div class="metric"><strong>Training Loss:</strong> ${String(metrics.metrics.train_loss)}</div>
+            <div class="metric"><strong>Validation Loss:</strong> ${String(metrics.metrics.val_loss)}</div>
+            <div class="metric"><strong>Training Accuracy:</strong> ${String((metrics.metrics.train_accuracy * 100).toFixed(2))}%</div>
+            <div class="metric"><strong>Validation Accuracy:</strong> ${String((metrics.metrics.val_accuracy * 100).toFixed(2))}%</div>
+            <div class="metric"><strong>Learning Rate:</strong> ${String(metrics.metrics.learning_rate)}</div>
+            <div class="links">
+                <a href="${safeUrl(metrics.metrics.tensorboard_url)}" target="_blank" rel="noopener noreferrer">Open TensorBoard</a>
+                <a href="${safeUrl(metrics.metrics.mlflow_url)}" target="_blank" rel="noopener noreferrer">Open MLflow</a>
+            </div>
         `);
         
     } catch (error) {
-        alert(`Error loading metrics: ${error.message}`);
+        notify(`Error loading metrics: ${error.message}`, 'error');
     }
 }
 
 async function stopTrainingJob(jobId) {
-    if (!confirm('Are you sure you want to stop this training job?')) {
+    if (!(await confirmAction('Are you sure you want to stop this training job?', { danger: true, confirmLabel: 'Stop' }))) {
         return;
     }
     
@@ -493,11 +492,11 @@ async function stopTrainingJob(jobId) {
             method: 'POST'
         });
         
-        alert('Training job stopped successfully');
+        notify('Training job stopped successfully', 'success');
         loadTrainingJobs();
         
     } catch (error) {
-        alert(`Error stopping training job: ${error.message}`);
+        notify(`Error stopping training job: ${error.message}`, 'error');
     }
 }
 
@@ -520,11 +519,11 @@ async function importModel(e) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        alert(`Model imported successfully! ID: ${response.model_id}`);
+        notify(`Model imported successfully! ID: ${response.model_id}`, 'success');
         e.target.reset();
         loadImportedModels();
     } catch (error) {
-        alert(`Error importing model: ${error.message}`);
+        notify(`Error importing model: ${error.message}`, 'error');
     }
 }
 
@@ -542,23 +541,23 @@ function displayImportedModels(models) {
     if (!container) return;
 
     if (!models || models.length === 0) {
-        container.innerHTML = '<p>No imported models yet.</p>';
+        setHTML(container, html`<p>No imported models yet.</p>`);
         return;
     }
 
-    container.innerHTML = '';
+    container.replaceChildren();
     models.forEach(model => {
         const el = document.createElement('div');
         el.className = 'model-item';
         el.dataset.modelId = model.model_id;
-        el.innerHTML = `
-            <div class="model-name">${escapeHtml(model.model_name)}</div>
-            <div class="model-description">Format: ${escapeHtml(model.model_format)} | Classes: ${model.num_classes}</div>
+        setHTML(el, html`
+            <div class="model-name">${model.model_name}</div>
+            <div class="model-description">Format: ${model.model_format} | Classes: ${model.num_classes}</div>
             <div class="model-specs">
-                <span>Source: ${escapeHtml(model.s3_source)}</span>
-                <span>Status: ${escapeHtml(model.status)}</span>
+                <span>Source: ${model.s3_source}</span>
+                <span>Status: ${model.status}</span>
             </div>
-        `;
+        `);
         el.addEventListener('click', () => {
             document.querySelectorAll('.model-item').forEach(i => i.classList.remove('selected'));
             el.classList.add('selected');
@@ -600,9 +599,9 @@ async function validateSageMakerConfig() {
     };
 
     btn.disabled = true;
-    btn.innerHTML = '<span class="btn-spinner"></span> Validating...';
+    setHTML(btn, html`<span class="btn-spinner"></span> Validating...`);
     resultsEl.style.display = 'block';
-    resultsEl.innerHTML = `
+    setHTML(resultsEl, html`
         <div class="validation-loading">
             <div class="walker-scene">
                 <div class="walker-track">
@@ -620,7 +619,7 @@ async function validateSageMakerConfig() {
                 </div>
             </div>
             <p>Validating your configuration...</p>
-        </div>`;
+        </div>`);
 
     // Animate progress bar while waiting
     let progress = 0;
@@ -649,13 +648,13 @@ async function validateSageMakerConfig() {
     } catch (error) {
         clearInterval(progressInterval);
         resultsEl.style.display = 'block';
-        resultsEl.innerHTML = `<div class="validation-panel validation-failed">
+        setHTML(resultsEl, html`<div class="validation-panel validation-failed">
             <h4><i class="fas fa-times-circle"></i> Validation Error</h4>
-            <p>${escapeHtml(error.message)}</p>
-        </div>`;
+            <p>${error.message}</p>
+        </div>`);
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-check-circle"></i> Validate';
+        setHTML(btn, html`<i class="fas fa-check-circle"></i> Validate`);
     }
 }
 
@@ -664,22 +663,22 @@ function renderValidationResults(result, container) {
     const overallIcon = result.passed ? 'fa-check-circle' : 'fa-times-circle';
     const overallText = result.passed ? 'All checks passed — ready to train' : 'Validation failed — fix issues before training';
 
-    let checksHtml = (result.checks || []).map(c => `
+    let checksHtml = joinHtml((result.checks || []).map(c => html`
         <div class="validation-check ${c.passed ? 'check-ok' : 'check-fail'}">
             <i class="fas ${c.passed ? 'fa-check' : 'fa-times'}"></i>
             <div>
-                <strong>${escapeHtml(c.name)}</strong>
-                <span>${escapeHtml(c.message)}</span>
+                <strong>${c.name}</strong>
+                <span>${c.message}</span>
             </div>
         </div>
-    `).join('');
+    `), '');
 
     let statsHtml = '';
     const stats = result.statistics || {};
 
     if (stats.splits) {
         const chartId = 'validation-dist-chart';
-        statsHtml = `
+        statsHtml = html`
             <div class="validation-stats">
                 <h5><i class="fas fa-chart-bar"></i> Dataset Statistics</h5>
                 <div class="validation-chart-wrap">
@@ -688,12 +687,12 @@ function renderValidationResults(result, container) {
             </div>`;
 
         container.style.display = 'block';
-        container.innerHTML = `
+        setHTML(container, html`
             <div class="validation-panel ${overallClass}">
                 <h4><i class="fas ${overallIcon}"></i> ${overallText}</h4>
                 <div class="validation-checks">${checksHtml}</div>
                 ${statsHtml}
-            </div>`;
+            </div>`);
 
         // Build chart data
         const splits = Object.keys(stats.splits);
@@ -734,18 +733,18 @@ function renderValidationResults(result, container) {
         return;
 
     } else if (stats.total_files !== undefined) {
-        statsHtml = `<div class="validation-stats"><h5><i class="fas fa-chart-bar"></i> Dataset Statistics</h5>
+        statsHtml = html`<div class="validation-stats"><h5><i class="fas fa-chart-bar"></i> Dataset Statistics</h5>
             <p>${stats.total_files} files &nbsp;|&nbsp; ${stats.total_size_mb} MB</p>
         </div>`;
     }
 
     container.style.display = 'block';
-    container.innerHTML = `
+    setHTML(container, html`
         <div class="validation-panel ${overallClass}">
             <h4><i class="fas ${overallIcon}"></i> ${overallText}</h4>
             <div class="validation-checks">${checksHtml}</div>
             ${statsHtml}
-        </div>`;
+        </div>`);
 }
 
 async function startSageMakerTraining(e) {
@@ -776,10 +775,10 @@ async function startSageMakerTraining(e) {
 
     // Show submitting state
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+    setHTML(submitBtn, html`<i class="fas fa-spinner fa-spin"></i> Submitting...`);
     if (statusBanner) {
         statusBanner.className = 'sm-status-banner sm-status-submitting';
-        statusBanner.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting training job to SageMaker...';
+        setHTML(statusBanner, html`<i class="fas fa-spinner fa-spin"></i> Submitting training job to SageMaker...`);
         statusBanner.style.display = 'flex';
     }
 
@@ -792,18 +791,18 @@ async function startSageMakerTraining(e) {
 
         if (statusBanner) {
             statusBanner.className = 'sm-status-banner sm-status-success';
-            statusBanner.innerHTML = `<i class="fas fa-check-circle"></i> Job submitted: <strong>${escapeHtml(response.job_name)}</strong> — Status: <strong>${escapeHtml(response.status || 'InProgress')}</strong>`;
+            setHTML(statusBanner, html`<i class="fas fa-check-circle"></i> Job submitted: <strong>${response.job_name}</strong> — Status: <strong>${response.status || 'InProgress'}</strong>`);
         }
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Start SageMaker Training';
+        setHTML(submitBtn, html`<i class="fas fa-cloud-upload-alt"></i> Start SageMaker Training`);
         loadSageMakerJobs();
     } catch (error) {
         if (statusBanner) {
             statusBanner.className = 'sm-status-banner sm-status-error';
-            statusBanner.innerHTML = `<i class="fas fa-exclamation-circle"></i> Failed: ${escapeHtml(error.message)}`;
+            setHTML(statusBanner, html`<i class="fas fa-exclamation-circle"></i> Failed: ${error.message}`);
         }
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Start SageMaker Training';
+        setHTML(submitBtn, html`<i class="fas fa-cloud-upload-alt"></i> Start SageMaker Training`);
     }
 }
 
@@ -818,17 +817,17 @@ async function loadSageMakerJobs() {
 
 async function syncTrainingJobsFromAWS() {
     const btn = document.getElementById('btn-sync-training');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...'; }
+    if (btn) { btn.disabled = true; setHTML(btn, html`<i class="fas fa-spinner fa-spin"></i> Syncing...`); }
     try {
         const result = await apiCall('/api/training/sagemaker/sync', { method: 'POST' });
         const added = (result.added || []).length;
         const updated = (result.updated || []).length;
-        alert(`Synced from AWS: ${added} added, ${updated} updated`);
+        notify(`Synced from AWS: ${added} added, ${updated} updated`, 'success');
         await loadSageMakerJobs();
     } catch (error) {
-        alert('Sync failed: ' + (error.message || error));
+        notify('Sync failed: ' + (error.message || error), 'error');
     } finally {
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync"></i> Sync from AWS'; }
+        if (btn) { btn.disabled = false; setHTML(btn, html`<i class="fas fa-sync"></i> Sync from AWS`); }
     }
 }
 
@@ -872,11 +871,11 @@ function displaySageMakerJobs(jobs) {
 
     if (!visible.length) {
         const msgs = { active: 'No active jobs.', completed: 'No completed jobs.', failed: 'No failed jobs.', archived: 'No archived jobs.' };
-        container.innerHTML = `<p style="color:#888; padding:0.5rem;">${msgs[tab] || 'No jobs.'}</p>`;
+        setHTML(container, html`<p style="color:#888; padding:0.5rem;">${msgs[tab] || 'No jobs.'}</p>`);
         return;
     }
 
-    container.innerHTML = '';
+    container.replaceChildren();
     visible.forEach(job => {
         const statusClass = {
             'InProgress': 'status-running',
@@ -890,83 +889,83 @@ function displaySageMakerJobs(jobs) {
         const r = job.result || {};
 
         // result.json highlight block
-        const resultHtml = r.model_name ? `
+        const resultHtml = r.model_name ? html`
             <div class="result-highlight">
-                <div class="result-row"><span>Model</span><strong>${escapeHtml(r.model_name)}</strong></div>
+                <div class="result-row"><span>Model</span><strong>${r.model_name}</strong></div>
                 <div class="result-row"><span>Final epoch</span><strong>${r.final_epoch ?? '—'}</strong></div>
                 ${r.best_val_dice != null
-                    ? `<div class="result-row"><span>Best val dice</span><strong>${(r.best_val_dice * 100).toFixed(1)}%</strong></div>`
-                    : `<div class="result-row"><span>Train acc</span><strong>${r.train_accuracy != null ? (r.train_accuracy * 100).toFixed(1) + '%' : '—'}</strong></div>
-                       <div class="result-row"><span>Val acc</span><strong>${r.val_accuracy != null ? (r.val_accuracy * 100).toFixed(1) + '%' : '—'}</strong></div>
-                       <div class="result-row"><span>Best val acc</span><strong>${r.best_val_accuracy != null ? (r.best_val_accuracy * 100).toFixed(1) + '%' : '—'}</strong></div>`
+                    ? html`<div class="result-row"><span>Best val dice</span><strong>${(r.best_val_dice * 100).toFixed(1)}%</strong></div>`
+                    : html`<div class="result-row"><span>Train acc</span><strong>${r.train_accuracy != null ? html`${(r.train_accuracy * 100).toFixed(1)}%` : '—'}</strong></div>
+                       <div class="result-row"><span>Val acc</span><strong>${r.val_accuracy != null ? html`${(r.val_accuracy * 100).toFixed(1)}%` : '—'}</strong></div>
+                       <div class="result-row"><span>Best val acc</span><strong>${r.best_val_accuracy != null ? html`${(r.best_val_accuracy * 100).toFixed(1)}%` : '—'}</strong></div>`
                 }
-                <div class="result-row"><span>Data</span><code style="font-size:0.75rem;">${escapeHtml(r.data_s3_uri || '—')}</code></div>
-                ${r.fine_tuned_from ? `<div class="result-row" style="grid-column:1/-1;"><span>Fine-tuned from</span><code style="font-size:0.72rem;">${escapeHtml(r.fine_tuned_from)}</code></div>` : ''}
-                ${r.reconstructed ? `<div class="result-row" style="grid-column:1/-1; color:#888; font-size:0.75rem; font-style:italic;"><span></span>Metrics unavailable — job predates result.json</div>` : ''}
+                <div class="result-row"><span>Data</span><code style="font-size:0.75rem;">${r.data_s3_uri || '—'}</code></div>
+                ${r.fine_tuned_from ? html`<div class="result-row" style="grid-column:1/-1;"><span>Fine-tuned from</span><code style="font-size:0.72rem;">${r.fine_tuned_from}</code></div>` : ''}
+                ${r.reconstructed ? html`<div class="result-row" style="grid-column:1/-1; color:#888; font-size:0.75rem; font-style:italic;"><span></span>Metrics unavailable — job predates result.json</div>` : ''}
             </div>` : '';
 
         // Lineage badge (fine-tuned from another job)
         const lineageHtml = job.fine_tuned_from
-            ? `<div class="job-lineage"><i class="fas fa-code-branch"></i> Fine-tuned from: <code>${escapeHtml(job.fine_tuned_from)}</code></div>`
+            ? html`<div class="job-lineage"><i class="fas fa-code-branch"></i> Fine-tuned from: <code>${job.fine_tuned_from}</code></div>`
             : '';
 
         const commentHtml = job.comment
-            ? `<div class="job-comment"><i class="fas fa-comment-alt"></i> ${escapeHtml(job.comment)}</div>` : '';
+            ? html`<div class="job-comment"><i class="fas fa-comment-alt"></i> ${job.comment}</div>` : '';
 
         const artifactHtml = job.model_artifacts
             ? (job.artifacts_deleted
-                ? `<div style="color:#999; font-size:0.8rem;"><i class="fas fa-trash"></i> Artifacts deleted</div>`
-                : `<div style="font-size:0.8rem;"><strong>Artifacts:</strong> <code style="font-size:0.75rem;">${escapeHtml(job.model_artifacts)}</code></div>`)
+                ? html`<div style="color:#999; font-size:0.8rem;"><i class="fas fa-trash"></i> Artifacts deleted</div>`
+                : html`<div style="font-size:0.8rem;"><strong>Artifacts:</strong> <code style="font-size:0.75rem;">${job.model_artifacts}</code></div>`)
             : '';
 
         const el = document.createElement('div');
         el.className = `job-item${job.archived ? ' job-archived' : ''}`;
         el.id = `sm-job-${job.job_name}`;
-        el.innerHTML = `
+        setHTML(el, html`
             <div class="job-header">
-                <div class="job-id">${escapeHtml(job.job_name)}${job.archived ? ' <span style="color:#aaa;font-size:0.75rem;">[archived]</span>' : ''}</div>
-                <div class="job-status ${statusClass}">${escapeHtml(job.status)}</div>
+                <div class="job-id">${job.job_name}${job.archived ? html` <span style="color:#aaa;font-size:0.75rem;">[archived]</span>` : ''}</div>
+                <div class="job-status ${statusClass}">${job.status}</div>
             </div>
             <div class="job-details">
-                <div><strong>Model:</strong> ${escapeHtml(job.config?.model_name || 'N/A')} &nbsp;|&nbsp; <strong>Instance:</strong> ${escapeHtml(job.config?.instance_type || 'N/A')}</div>
-                ${job.creation_time ? `<div><strong>Started:</strong> ${escapeHtml(new Date(job.creation_time).toLocaleString())}</div>` : ''}
-                ${job.training_end_time ? `<div><strong>Ended:</strong> ${escapeHtml(new Date(job.training_end_time).toLocaleString())}</div>` : ''}
-                ${job.billable_seconds ? `<div><strong>Training time:</strong> ${escapeHtml(formatDuration(job.billable_seconds))}</div>` : ''}
-                ${job.estimated_cost_usd != null ? `<div><strong>Estimated cost:</strong> <span class="cost-badge">$${job.estimated_cost_usd.toFixed(4)} USD</span></div>` : ''}
+                <div><strong>Model:</strong> ${job.config?.model_name || 'N/A'} &nbsp;|&nbsp; <strong>Instance:</strong> ${job.config?.instance_type || 'N/A'}</div>
+                ${job.creation_time ? html`<div><strong>Started:</strong> ${new Date(job.creation_time).toLocaleString()}</div>` : ''}
+                ${job.training_end_time ? html`<div><strong>Ended:</strong> ${new Date(job.training_end_time).toLocaleString()}</div>` : ''}
+                ${job.billable_seconds ? html`<div><strong>Training time:</strong> ${formatDuration(job.billable_seconds)}</div>` : ''}
+                ${job.estimated_cost_usd != null ? html`<div><strong>Estimated cost:</strong> <span class="cost-badge">$${job.estimated_cost_usd.toFixed(4)} USD</span></div>` : ''}
                 ${artifactHtml}
                 ${resultHtml}
                 ${lineageHtml}
-                ${job.failure_reason ? `<div style="color:#c62828; font-size:0.82rem; margin-top:4px;"><strong>Failure:</strong> ${escapeHtml(job.failure_reason)}</div>` : ''}
+                ${job.failure_reason ? html`<div style="color:#c62828; font-size:0.82rem; margin-top:4px;"><strong>Failure:</strong> ${job.failure_reason}</div>` : ''}
             </div>
-            <div id="sm-job-status-detail-${escapeHtml(job.job_name)}" class="job-status-detail" style="display:none;"></div>
+            <div id="sm-job-status-detail-${job.job_name}" class="job-status-detail" style="display:none;"></div>
             <div class="job-actions">
-                ${!terminal ? `
-                <button onclick="checkSageMakerStatus('${escapeJsString(job.job_name)}')" class="btn btn-secondary" id="sm-status-btn-${escapeHtml(job.job_name)}">
+                ${!terminal ? html`
+                <button onclick="checkSageMakerStatus('${escapeJsString(job.job_name)}')" class="btn btn-secondary" id="sm-status-btn-${job.job_name}">
                     <i class="fas fa-sync"></i> Fetch Status
                 </button>
                 <button onclick="stopSageMakerJob('${escapeJsString(job.job_name)}')" class="btn btn-secondary">
                     <i class="fas fa-stop"></i> Stop
                 </button>` : ''}
-                ${job.mlflow_tracking_uri ? `
-                <button type="button" class="btn btn-mlflow" onclick="openMlflowDashboard(this)" data-uri="${job.mlflow_tracking_uri.replace(/"/g, '&quot;')}">
+                ${job.mlflow_tracking_uri ? html`
+                <button type="button" class="btn btn-mlflow" onclick="openMlflowDashboard(this)" data-uri="${job.mlflow_tracking_uri}">
                     <i class="fas fa-flask"></i> MLflow
                 </button>` : ''}
-                ${terminal ? `
-                <button onclick="openCommentModal('${escapeJsString(job.job_name)}', \`${(job.comment||'').replace(/`/g,"'")}\`)" class="btn btn-secondary" title="Add comment">
+                ${terminal ? html`
+                <button onclick="openCommentModal('${escapeJsString(job.job_name)}', ${jsArg(job.comment || '')})" class="btn btn-secondary" title="Add comment">
                     <i class="fas fa-comment-alt"></i> Comment
                 </button>
                 <button onclick="archiveSageMakerJob('${escapeJsString(job.job_name)}')" class="btn btn-secondary" title="Archive" ${job.archived || tab !== 'completed' ? 'style="display:none"' : ''}>
                     <i class="fas fa-archive"></i> Archive
                 </button>
-                ${job.status === 'Completed' && !job.result && job.model_artifacts && !job.artifacts_deleted ? `
+                ${job.status === 'Completed' && !job.result && job.model_artifacts && !job.artifacts_deleted ? html`
                 <button onclick="loadJobResult('${escapeJsString(job.job_name)}')" class="btn btn-secondary" title="Load result.json from model artifacts">
                     <i class="fas fa-download"></i> Load Results
                 </button>` : ''}
-                ${job.status === 'Completed' && job.model_artifacts && !job.artifacts_deleted ? `
+                ${job.status === 'Completed' && job.model_artifacts && !job.artifacts_deleted ? html`
                 <button onclick="openFineTuneModal('${escapeJsString(job.job_name)}')" class="btn btn-finetune" title="Fine-tune from this checkpoint">
                     <i class="fas fa-sliders-h"></i> Fine-tune
                 </button>` : ''}
-                ${job.model_artifacts && !job.artifacts_deleted ? `
+                ${job.model_artifacts && !job.artifacts_deleted ? html`
                 <button onclick="deleteJobArtifacts('${escapeJsString(job.job_name)}')" class="btn btn-secondary" title="Delete model.tar.gz from S3" style="color:#c62828;">
                     <i class="fas fa-trash"></i> Delete Artifacts
                 </button>` : ''}
@@ -975,7 +974,7 @@ function displaySageMakerJobs(jobs) {
                 </button>` : ''}
             </div>
             ${commentHtml}
-        `;
+        `);
         container.appendChild(el);
     });
 }
@@ -985,26 +984,26 @@ async function loadJobResult(jobName) {
     try {
         const res = await apiCall(`/api/training/sagemaker/jobs/${jobName}/result`);
         loadSageMakerJobs();
-    } catch (err) { alert(`Could not load result.json: ${err.message}`); }
+    } catch (err) { notify(`Could not load result.json: ${err.message}`, 'error'); }
 }
 
 async function removeSageMakerJob(jobName) {
-    if (!confirm(`Remove "${jobName}" from the list? This does not affect AWS.`)) return;
+    if (!(await confirmAction(`Remove "${jobName}" from the list? This does not affect AWS.`, { danger: true, confirmLabel: 'Remove' }))) return;
     try {
         await apiCall(`/api/training/sagemaker/jobs/${jobName}`, { method: 'DELETE' });
         loadSageMakerJobs();
-    } catch (err) { alert(`Error: ${err.message}`); }
+    } catch (err) { notify(`Error: ${err.message}`, 'error'); }
 }
 
 async function archiveSageMakerJob(jobName) {
     try {
         await apiCall(`/api/training/sagemaker/jobs/${jobName}/archive`, { method: 'POST' });
         loadSageMakerJobs();
-    } catch (err) { alert(`Error: ${err.message}`); }
+    } catch (err) { notify(`Error: ${err.message}`, 'error'); }
 }
 
 async function deleteJobArtifacts(jobName) {
-    if (!confirm(`Delete model.tar.gz from S3 for "${jobName}"? This cannot be undone.`)) return;
+    if (!(await confirmAction(`Delete model.tar.gz from S3 for "${jobName}"? This cannot be undone.`, { danger: true, confirmLabel: 'Delete' }))) return;
     try {
         const res = await apiCall(`/api/training/sagemaker/jobs/${jobName}/artifacts`, { method: 'DELETE' });
         // Show inline confirmation on the job card
@@ -1013,13 +1012,13 @@ async function deleteJobArtifacts(jobName) {
             const banner = document.createElement('div');
             banner.className = 'sm-status-banner sm-status-success';
             banner.style.cssText = 'margin:0.5rem 0; font-size:0.85rem;';
-            banner.innerHTML = `<i class="fas fa-check-circle"></i> Artifacts deleted: <code style="font-size:0.78rem;">${escapeHtml(res.deleted_uri)}</code>`;
+            setHTML(banner, html`<i class="fas fa-check-circle"></i> Artifacts deleted: <code style="font-size:0.78rem;">${res.deleted_uri}</code>`);
             jobEl.querySelector('.job-details').appendChild(banner);
             setTimeout(() => loadSageMakerJobs(), 2000);
         } else {
             loadSageMakerJobs();
         }
-    } catch (err) { alert(`Error: ${err.message}`); }
+    } catch (err) { notify(`Error: ${err.message}`, 'error'); }
 }
 
 function openCommentModal(jobName, currentComment) {
@@ -1044,7 +1043,7 @@ async function saveComment() {
         });
         closeCommentModal();
         loadSageMakerJobs();
-    } catch (err) { alert(`Error: ${err.message}`); }
+    } catch (err) { notify(`Error: ${err.message}`, 'error'); }
 }
 
 async function checkSageMakerStatus(jobName) {
@@ -1054,7 +1053,7 @@ async function checkSageMakerStatus(jobName) {
 
     if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Fetching...';
+        setHTML(btn, html`<i class="fas fa-spinner fa-spin"></i> Fetching...`);
     }
 
     try {
@@ -1075,36 +1074,36 @@ async function checkSageMakerStatus(jobName) {
 
         // Show detail panel
         if (detail) {
-            let html = `<div class="status-detail-row"><span>Status:</span><strong>${escapeHtml(status.status)}</strong></div>`;
-            if (status.creation_time) html += `<div class="status-detail-row"><span>Created:</span><strong>${escapeHtml(status.creation_time)}</strong></div>`;
-            if (status.training_end_time) html += `<div class="status-detail-row"><span>Ended:</span><strong>${escapeHtml(status.training_end_time)}</strong></div>`;
-            if (status.billable_seconds) html += `<div class="status-detail-row"><span>Billable seconds:</span><strong>${status.billable_seconds}s</strong></div>`;
-            if (status.model_artifacts) html += `<div class="status-detail-row"><span>Artifacts:</span><strong>${escapeHtml(status.model_artifacts)}</strong></div>`;
-            if (status.failure_reason) html += `<div class="status-detail-row status-error"><span>Failure:</span><strong>${escapeHtml(status.failure_reason)}</strong></div>`;
-            detail.innerHTML = html;
+            let _markup = html`<div class="status-detail-row"><span>Status:</span><strong>${status.status}</strong></div>`;
+            if (status.creation_time) _markup = html`${_markup}${html`<div class="status-detail-row"><span>Created:</span><strong>${status.creation_time}</strong></div>`}`;
+            if (status.training_end_time) _markup = html`${_markup}${html`<div class="status-detail-row"><span>Ended:</span><strong>${status.training_end_time}</strong></div>`}`;
+            if (status.billable_seconds) _markup = html`${_markup}${html`<div class="status-detail-row"><span>Billable seconds:</span><strong>${status.billable_seconds}s</strong></div>`}`;
+            if (status.model_artifacts) _markup = html`${_markup}${html`<div class="status-detail-row"><span>Artifacts:</span><strong>${status.model_artifacts}</strong></div>`}`;
+            if (status.failure_reason) _markup = html`${_markup}${html`<div class="status-detail-row status-error"><span>Failure:</span><strong>${status.failure_reason}</strong></div>`}`;
+            setHTML(detail, _markup);
             detail.style.display = 'block';
         }
     } catch (error) {
         if (detail) {
-            detail.innerHTML = `<div class="status-detail-row status-error"><span>Error:</span><strong>${escapeHtml(error.message)}</strong></div>`;
+            setHTML(detail, html`<div class="status-detail-row status-error"><span>Error:</span><strong>${error.message}</strong></div>`);
             detail.style.display = 'block';
         }
     } finally {
         if (btn) {
             btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-sync"></i> Fetch Status';
+            setHTML(btn, html`<i class="fas fa-sync"></i> Fetch Status`);
         }
     }
 }
 
 async function stopSageMakerJob(jobName) {
-    if (!confirm(`Stop SageMaker job ${jobName}?`)) return;
+    if (!(await confirmAction(`Stop SageMaker job ${jobName}?`, { danger: true, confirmLabel: 'Stop' }))) return;
     try {
         await apiCall(`/api/training/sagemaker/jobs/${jobName}/stop`, { method: 'POST' });
-        alert('SageMaker job stop requested');
+        notify('SageMaker job stop requested', 'info');
         loadSageMakerJobs();
     } catch (error) {
-        alert(`Error: ${error.message}`);
+        notify(`Error: ${error.message}`, 'error');
     }
 }
 
@@ -1122,7 +1121,7 @@ async function openMlflowDashboard(btnOrUri) {
 
     // Show loading state on the button
     const btn = (typeof btnOrUri === 'object') ? btnOrUri : null;
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Opening…'; }
+    if (btn) { btn.disabled = true; setHTML(btn, html`<i class="fas fa-spinner fa-spin"></i> Opening…`); }
 
     try {
         const res = await apiCall(`/api/training/sagemaker/mlflow-url?arn=${encodeURIComponent(uri)}`);
@@ -1138,9 +1137,9 @@ async function openMlflowDashboard(btnOrUri) {
         } else {
             msg = `Could not open MLflow: ${e.message}`;
         }
-        alert(msg);
+        notify(msg, 'error');
     } finally {
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-flask"></i> MLflow'; }
+        if (btn) { btn.disabled = false; setHTML(btn, html`<i class="fas fa-flask"></i> MLflow`); }
     }
 }
 
@@ -1197,9 +1196,9 @@ function populateContainerDropdown() {
     const select = document.getElementById('sm_image_uri');
     if (!select) return;
     const containers = loadContainers();
-    select.innerHTML = containers.map(c =>
-        `<option value="${escapeHtml(c.uri)}">${escapeHtml(c.label)} — ${escapeHtml(c.uri)}</option>`
-    ).join('');
+    setHTML(select, joinHtml(containers.map(c =>
+        html`<option value="${c.uri}">${c.label} — ${c.uri}</option>`
+    ), ''));
 }
 
 function openAddContainerModal() {
@@ -1216,7 +1215,7 @@ function closeAddContainerModal() {
 function saveNewContainer() {
     const label = document.getElementById('new-container-label').value.trim();
     const uri   = document.getElementById('new-container-uri').value.trim();
-    if (!uri) { alert('Image URI is required.'); return; }
+    if (!uri) { notify('Image URI is required.', 'warning'); return; }
     const containers = loadContainers();
     containers.push({ label: label || uri, uri });
     saveContainers(containers);
@@ -1227,10 +1226,10 @@ function saveNewContainer() {
     closeAddContainerModal();
 }
 
-function removeSelectedContainer() {
+async function removeSelectedContainer() {
     const select = document.getElementById('sm_image_uri');
     if (!select || !select.value) return;
-    if (!confirm(`Remove "${select.options[select.selectedIndex].text}"?`)) return;
+    if (!(await confirmAction(`Remove "${select.options[select.selectedIndex].text}"?`, { danger: true, confirmLabel: 'Remove' }))) return;
     const containers = loadContainers().filter(c => c.uri !== select.value);
     saveContainers(containers);
     populateContainerDropdown();
@@ -1266,7 +1265,7 @@ function closeAddCustomModelModal() {
 
 function saveCustomModel() {
     const name = document.getElementById('cm-name').value.trim();
-    if (!name) { alert('Model name is required.'); return; }
+    if (!name) { notify('Model name is required.', 'warning'); return; }
 
     const model = {
         name:        name.toLowerCase().replace(/\s+/g, '-'),
@@ -1334,7 +1333,7 @@ function openFineTuneModal(jobName) {
     // Fetch fresh job list to get full config
     apiCall('/api/training/sagemaker/jobs?local_only=true').then(resp => {
         const job = (resp.jobs || []).find(j => j.job_name === jobName);
-        if (!job) { alert('Job not found'); return; }
+        if (!job) { notify('Job not found', 'warning'); return; }
         const cfg     = job.config || {};
         const metrics = job.result || {};
 
@@ -1346,21 +1345,21 @@ function openFineTuneModal(jobName) {
 
         // Previous dataset + metrics panel
         const dataUri = cfg.data_s3_uri || '—';
-        const metricsHtml = metrics.model_name ? `
+        const metricsHtml = metrics.model_name ? html`
             <div class="ft-metrics-grid">
-                <div class="ft-metric"><span>Train acc</span><strong>${metrics.train_accuracy != null ? (metrics.train_accuracy*100).toFixed(1)+'%' : '—'}</strong></div>
-                <div class="ft-metric"><span>Val acc</span><strong>${metrics.val_accuracy != null ? (metrics.val_accuracy*100).toFixed(1)+'%' : '—'}</strong></div>
-                <div class="ft-metric"><span>Best val acc</span><strong>${metrics.best_val_accuracy != null ? (metrics.best_val_accuracy*100).toFixed(1)+'%' : '—'}</strong></div>
+                <div class="ft-metric"><span>Train acc</span><strong>${metrics.train_accuracy != null ? html`${(metrics.train_accuracy*100).toFixed(1)}%` : '—'}</strong></div>
+                <div class="ft-metric"><span>Val acc</span><strong>${metrics.val_accuracy != null ? html`${(metrics.val_accuracy*100).toFixed(1)}%` : '—'}</strong></div>
+                <div class="ft-metric"><span>Best val acc</span><strong>${metrics.best_val_accuracy != null ? html`${(metrics.best_val_accuracy*100).toFixed(1)}%` : '—'}</strong></div>
                 <div class="ft-metric"><span>Epochs</span><strong>${metrics.final_epoch ?? cfg.epochs ?? '—'}</strong></div>
                 <div class="ft-metric"><span>LR</span><strong>${metrics.learning_rate ?? cfg.learning_rate ?? '—'}</strong></div>
                 <div class="ft-metric"><span>Batch</span><strong>${metrics.batch_size ?? cfg.batch_size ?? '—'}</strong></div>
-            </div>` : `<p style="color:#888; font-size:0.8rem; margin:0.5rem 0 0;">No metrics loaded — use "Load Results" on the job card first.</p>`;
+            </div>` : html`<p style="color:#888; font-size:0.8rem; margin:0.5rem 0 0;">No metrics loaded — use "Load Results" on the job card first.</p>`;
 
-        document.getElementById('ft-base-info').innerHTML = `
-            <div class="ft-info-row"><i class="fas fa-database" style="color:#16a085;"></i><span>Training data</span><code>${escapeHtml(dataUri)}</code></div>
-            <div class="ft-info-row"><i class="fas fa-microchip" style="color:#8e44ad;"></i><span>Model</span><strong>${escapeHtml(cfg.model_name || '—')}</strong> &nbsp;·&nbsp; ${escapeHtml(cfg.task_type || '')} ${escapeHtml(cfg.dimension || '')}</div>
-            <div class="ft-info-row"><i class="fas fa-server" style="color:#1a6fa0;"></i><span>Instance</span><strong>${escapeHtml(cfg.instance_type || '—')}</strong></div>
-            ${metricsHtml}`;
+        setHTML(document.getElementById('ft-base-info'), html`
+            <div class="ft-info-row"><i class="fas fa-database" style="color:#16a085;"></i><span>Training data</span><code>${dataUri}</code></div>
+            <div class="ft-info-row"><i class="fas fa-microchip" style="color:#8e44ad;"></i><span>Model</span><strong>${cfg.model_name || '—'}</strong> &nbsp;·&nbsp; ${cfg.task_type || ''} ${cfg.dimension || ''}</div>
+            <div class="ft-info-row"><i class="fas fa-server" style="color:#1a6fa0;"></i><span>Instance</span><strong>${cfg.instance_type || '—'}</strong></div>
+            ${metricsHtml}`);
 
         // Pre-fill form from base job config
         document.getElementById('ft-job-name').value         = '';
@@ -1379,7 +1378,7 @@ function openFineTuneModal(jobName) {
         document.getElementById('ft-mlflow-uri').value       = cfg.mlflow_tracking_uri || '';
 
         document.getElementById('finetune-modal').style.display = 'flex';
-    }).catch(err => alert(`Could not load job: ${err.message}`));
+    }).catch(err => notify(`Could not load job: ${err.message}`, 'error'));
 }
 
 function closeFineTuneModal() {
@@ -1418,12 +1417,12 @@ async function submitFineTuneJob() {
         entry_point:         'train.py',
     };
 
-    if (!payload.data_s3_uri)  { alert('Data S3 URI is required.'); return; }
-    if (!payload.image_uri)    { alert('Container image URI is required.'); return; }
-    if (!payload.role_arn)     { alert('IAM Role ARN is required.'); return; }
+    if (!payload.data_s3_uri)  { notify('Data S3 URI is required.', 'warning'); return; }
+    if (!payload.image_uri)    { notify('Container image URI is required.', 'warning'); return; }
+    if (!payload.role_arn)     { notify('IAM Role ARN is required.', 'warning'); return; }
 
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting…';
+    setHTML(btn, html`<i class="fas fa-spinner fa-spin"></i> Submitting…`);
     statusEl.style.display = 'none';
 
     try {
@@ -1433,7 +1432,7 @@ async function submitFineTuneJob() {
             body: JSON.stringify(payload),
         });
         statusEl.className = 'sm-status-banner sm-status-success';
-        statusEl.innerHTML = `<i class="fas fa-check-circle"></i> Fine-tune job submitted: <strong>${escapeHtml(res.job_name)}</strong>`;
+        setHTML(statusEl, html`<i class="fas fa-check-circle"></i> Fine-tune job submitted: <strong>${res.job_name}</strong>`);
         statusEl.style.display = 'flex';
         setTimeout(() => {
             closeFineTuneModal();
@@ -1442,10 +1441,10 @@ async function submitFineTuneJob() {
         }, 1800);
     } catch (err) {
         statusEl.className = 'sm-status-banner sm-status-error';
-        statusEl.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${escapeHtml(err.message)}`;
+        setHTML(statusEl, html`<i class="fas fa-exclamation-circle"></i> ${err.message}`);
         statusEl.style.display = 'flex';
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-sliders-h"></i> Start Fine-tuning';
+        setHTML(btn, html`<i class="fas fa-sliders-h"></i> Start Fine-tuning`);
     }
 }

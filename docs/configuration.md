@@ -39,8 +39,8 @@ These variables control application behavior and third-party service endpoints.
 
 | Variable | Description | Default | Example |
 |---|---|---|---|
-| `AWS_ACCESS_KEY_ID` | AWS access key (optional if using `~/.aws/credentials` or IAM roles) | — | `AKIAIOSFODNN7EXAMPLE` |
-| `AWS_SECRET_ACCESS_KEY` | AWS secret key | — | `wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY` |
+| `AWS_ACCESS_KEY_ID` | AWS access key (optional if using `~/.aws/credentials` or IAM roles) | — | `<your-access-key-id>` |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret key | — | `<your-secret-access-key>` |
 | `AWS_DEFAULT_REGION` | AWS region for all boto3 clients | `us-east-1` | `us-west-2` |
 | `MLFLOW_TRACKING_URI` | MLflow server endpoint for experiment tracking | `http://localhost:5000` | `http://mlflow.internal:5000` |
 | `MLFLOW_EXPERIMENT_NAME` | Default MLflow experiment name | `medical_imaging_experiments` | `spine-classification-v2` |
@@ -121,8 +121,8 @@ The application supports three methods for providing AWS credentials, checked in
 Set `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in your `.env` file:
 
 ```bash
-AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
-AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+AWS_ACCESS_KEY_ID=<your-access-key-id>
+AWS_SECRET_ACCESS_KEY=<your-secret-access-key>
 AWS_DEFAULT_REGION=us-east-1
 ```
 
@@ -515,14 +515,14 @@ aws ecr batch-delete-image \
 # Rebuild with BuildKit disabled and no cache
 DOCKER_BUILDKIT=0 docker build --no-cache --platform linux/amd64 \
   -f Dockerfile.inference --build-arg TASK=classification \
-  -t 811260109607.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest .
+  -t 123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest .
 
 # Login to your ECR
 aws ecr get-login-password --region us-east-1 \
-  | docker login --username AWS --password-stdin 811260109607.dkr.ecr.us-east-1.amazonaws.com
+  | docker login --username AWS --password-stdin 123456789012.dkr.ecr.us-east-1.amazonaws.com
 
 # Push fresh
-docker push 811260109607.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest
+docker push 123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest
 
 # Verify — must return application/vnd.docker.distribution.manifest.v2+json
 aws ecr batch-get-image \

@@ -2,10 +2,14 @@ from fastapi import FastAPI, Request, Form, File, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 import uvicorn
 from pathlib import Path
+from urllib.parse import urlsplit
 import os
+import re
 from dotenv import load_dotenv
+from markupsafe import Markup
 
 from app.routers import aws_router, training_router, deployment_router
 from app.routers import inference_router
@@ -24,6 +28,37 @@ load_dotenv(".env.local", override=True)
 
 app = FastAPI(title="MedAnvil", version="1.0.0")
 
+# ── Request-origin hardening ──────────────────────────────────────────────────
+# The dashboard has no login and drives AWS with the operator's credentials, so
+# it binds to loopback only (see __main__ / docker-compose). Two browser-borne
+# attacks still reach a loopback service and are blocked here:
+#  * DNS rebinding — a hostile page re-points its own hostname at 127.0.0.1;
+#    the browser then sends that hostname in Host. Only loopback names pass.
+#  * Cross-site request forgery — a hostile page auto-submits a form/fetch to
+#    http://127.0.0.1:8000/api/... . State-changing methods must come from this
+#    origin (Sec-Fetch-Site / Origin checks); non-browser clients send neither.
+# ALLOWED_HOSTS (comma-separated) widens the Host allowlist when the app is
+# reached through an SSH tunnel or proxy under another name.
+_ALLOWED_HOSTS = [h.strip() for h in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,[::1]").split(",") if h.strip()]
+_UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+
+
+@app.middleware("http")
+async def reject_cross_site_writes(request: Request, call_next):
+    if request.method in _UNSAFE_METHODS:
+        fetch_site = request.headers.get("sec-fetch-site")
+        origin = request.headers.get("origin")
+        if fetch_site and fetch_site not in ("same-origin", "none"):
+            return JSONResponse({"detail": "Cross-site request blocked"}, status_code=403)
+        if origin and urlsplit(origin).netloc != request.headers.get("host", ""):
+            return JSONResponse({"detail": "Cross-origin request blocked"}, status_code=403)
+    return await call_next(request)
+
+
+# Added last so it runs first (outermost): reject unexpected Host headers before
+# any other processing.
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=_ALLOWED_HOSTS)
+
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -37,7 +72,24 @@ templates = Jinja2Templates(directory="templates")
 # Cache-buster for /static JS: changes on every restart, so browsers pick up new
 # code (code changes need a restart anyway — no --reload in start.sh).
 import time as _time
-templates.env.globals["asset_v"] = str(int(_time.time()))
+_ASSET_V = str(int(_time.time()))
+templates.env.globals["asset_v"] = _ASSET_V
+
+_STATIC_JS_RE = re.compile(r"[A-Za-z0-9_\-]+(/[A-Za-z0-9_\-.]+)*\.js")
+
+
+def static_script(path: str) -> Markup:
+    """Render a cache-busted <script src> tag for a file under /static.
+
+    Keeps template variables out of <script> tags: `path` is an author-supplied
+    literal validated against a strict pattern, and Markup.format() escapes it.
+    """
+    if not _STATIC_JS_RE.fullmatch(path) or ".." in path:
+        raise ValueError(f"invalid static script path: {path!r}")
+    return Markup('<script src="/static/{}?v={}"></script>').format(path, _ASSET_V)
+
+
+templates.env.globals["static_script"] = static_script
 
 # Include routers
 app.include_router(aws_router.router, prefix="/api/aws", tags=["AWS"])

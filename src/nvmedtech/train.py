@@ -36,8 +36,9 @@ import argparse
 import json
 import logging
 import os
+import re
 import shutil
-import subprocess
+import subprocess  # nosec B404 - argv-list invocation of `python -m monai.bundle` only (no shell)
 import sys
 import tarfile
 
@@ -45,6 +46,27 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 DEFAULT_TRAIN_CONFIGS = "train.json,train_continual.json"
+
+
+def _safe_extract(tar: tarfile.TarFile, dest: str) -> None:
+    """Extract a tarball, refusing members that escape `dest` (absolute paths,
+    `..`, links pointing outside) and device/fifo members. Uses the stdlib
+    'data' extraction filter (PEP 706) when available as a second layer."""
+    dest_real = os.path.realpath(dest)
+    for m in tar.getmembers():
+        target = os.path.realpath(os.path.join(dest_real, m.name))
+        if os.path.commonpath([dest_real, target]) != dest_real:
+            raise tarfile.TarError(f"Unsafe path in archive: {m.name}")
+        if m.issym() or m.islnk():
+            link = os.path.realpath(os.path.join(os.path.dirname(target), m.linkname))
+            if os.path.commonpath([dest_real, link]) != dest_real:
+                raise tarfile.TarError(f"Unsafe link in archive: {m.name} -> {m.linkname}")
+        if m.isdev() or m.isfifo():
+            raise tarfile.TarError(f"Unsupported member type in archive: {m.name}")
+    if hasattr(tarfile, "data_filter"):
+        tar.extractall(dest_real, filter="data")
+    else:  # Python without PEP 706: members were fully validated above
+        tar.extractall(dest_real)  # nosec B202 - every member validated above
 
 
 def _stage_bundle(model_channel: str, work_dir: str) -> str:
@@ -60,12 +82,7 @@ def _stage_bundle(model_channel: str, work_dir: str) -> str:
                 tar_path = os.path.join(root, fn)
                 try:
                     with tarfile.open(tar_path) as tar:
-                        # Validate members to prevent path traversal.
-                        for m in tar.getmembers():
-                            target = os.path.realpath(os.path.join(root, m.name))
-                            if not target.startswith(os.path.realpath(root)):
-                                raise ValueError(f"Unsafe path in archive: {m.name}")
-                        tar.extractall(root)
+                        _safe_extract(tar, root)
                     logger.info("Extracted bundle archive %s", tar_path)
                 except tarfile.TarError as e:
                     logger.warning("Could not extract %s: %s", tar_path, e)
@@ -114,6 +131,9 @@ def _resolve_train_configs(bundle_dir: str, requested: str) -> list:
     names = [n.strip() for n in requested.split(",") if n.strip()]
     configs_dir = os.path.join(bundle_dir, "configs")
     for n in names:
+        # Plain file names only: they are embedded in the --config_file argument.
+        if not re.fullmatch(r"[A-Za-z0-9_.\-]+\.(json|ya?ml)", n) or n.startswith("."):
+            raise ValueError(f"Invalid training config name: {n!r}")
         if not os.path.isfile(os.path.join(configs_dir, n)):
             available = sorted(os.listdir(configs_dir))
             raise FileNotFoundError(f"Training config '{n}' not found. Available: {available}")
@@ -200,7 +220,9 @@ def main():
         "--dataset_dir", dataset_dir,   # CLI overrides win over config values
     ]
     logger.info("Running: %s (cwd=%s)", " ".join(cmd), bundle_dir)
-    subprocess.run(cmd, cwd=bundle_dir, check=True)
+    # argv list (no shell); config names were validated against the bundle's own
+    # config files by _resolve_train_configs.
+    subprocess.run(cmd, cwd=bundle_dir, check=True)  # nosec B603 - argv list, no shell  # nosemgrep: python.lang.security.audit.dangerous-subprocess-use-audit.dangerous-subprocess-use-audit
 
     # ── Assemble the output artifact: full bundle + fine-tuned weights ───────
     os.makedirs(args.model_dir, exist_ok=True)

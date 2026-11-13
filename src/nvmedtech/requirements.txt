@@ -1,11 +1,17 @@
 # NV-Segment-CT (VISTA-3D) training/fine-tuning dependencies.
-# Torch/CUDA come from the PyTorch 2.4 training DLC base (Dockerfile.nvmedtech).
+# Torch/CUDA come from the DLC bases: PyTorch 2.9 training (Dockerfile.nvmedtech)
+# and PyTorch 2.6 inference (Dockerfile.nvmedtech-inference) — both install this file.
 #
 # Pins follow the bundle's configs/metadata.json (required_packages_version),
 # EXCEPT cucim-cu12: it has no installable wheel in the SageMaker container
 # (NVIDIA-index only) and is optional GPU acceleration — MONAI falls back to
 # CPU transforms without it.
-monai==1.4.0
+# 1.5.2 fixes the ProbeScan advisories (GHSA-p8cm, 6vm5, x6ww, 9rg3).
+# KNOWN GAP: 1.5.2 is still affected by GHSA-89gg, qxq5, rghg, wg9g, 6hp3
+# (fixed in 1.6.x), but MONAI 1.6 requires torch>=2.8 and this image runs on
+# the torch-2.6 SageMaker PyTorch inference DLC. Move to 1.6.1 together with
+# a torch>=2.8 inference base.
+monai==1.5.2
 numpy<2
 nibabel==5.2.1
 pytorch-ignite==0.4.11
@@ -13,6 +19,7 @@ einops==0.7.0
 scikit-image==0.23.2
 matplotlib==3.9.1
 tensorboard==2.17.0
-mlflow==2.17.2
+# >=3.17.2: deserialization / DNS-rebinding / path-traversal fixes (OSV-clean 2026-11-12)
+mlflow==3.17.2
 fire>=0.5.0
 huggingface_hub>=0.23.0

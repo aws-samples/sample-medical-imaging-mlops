@@ -172,7 +172,7 @@ class TestValidateEndpoint(unittest.TestCase):
     def setUpClass(cls):
         from fastapi.testclient import TestClient
         import main
-        cls.client = TestClient(main.app)
+        cls.client = TestClient(main.app, base_url="http://localhost")  # Host must pass TrustedHostMiddleware
 
     def test_catalog_endpoint(self):
         r = self.client.get("/api/preprocessing/catalog")

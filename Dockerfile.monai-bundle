@@ -31,4 +31,9 @@ ENV PYTHONPATH=/opt/program:${PYTHONPATH}
 
 # NOTE: SageMaker training containers run as root to write /opt/ml and drive the
 # training toolkit; a non-root USER is intentionally not added (matches
-# Dockerfile.sagemaker). HEALTHCHECK is managed by SageMaker orchestration.
+# Dockerfile.sagemaker). (HEALTHCHECK: see below.)
+
+# checkov:skip=CKV_DOCKER_3:SageMaker training containers must run as root (the toolkit writes /opt/ml and drives the training toolkit); a non-root USER breaks the job.
+# Batch job (SageMaker Training/Processing): no long-running service to probe —
+# SageMaker tracks the process exit code. Declared explicitly.
+HEALTHCHECK NONE

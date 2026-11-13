@@ -22,9 +22,11 @@ import argparse
 import json
 import logging
 import os
+import re
 import shutil
-import subprocess
+import subprocess  # nosec B404 - argv-list invocations of pip / `python -m monai.bundle` only (no shell)
 import sys
+import tarfile
 
 from bundle_utils import inspect_bundle, bundle_base_dir
 from datalist_gen import build_datalist
@@ -33,6 +35,33 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 _CONFIG_EXTS = (".json", ".yaml", ".yml")
+# PEP 508 requirement without URL: name[extras] <op><version>[, ...] [; markers]
+_REQ_LINE_RE = re.compile(
+    r"^[A-Za-z0-9][A-Za-z0-9._-]*(\[[A-Za-z0-9,._ -]+\])?"
+    r"(\s*(===|==|!=|~=|<=|>=|<|>)\s*[A-Za-z0-9.*+!_-]+(\s*,\s*(===|==|!=|~=|<=|>=|<|>)\s*[A-Za-z0-9.*+!_-]+)*)?"
+    r"(\s*;\s*[A-Za-z0-9_ .<>=!'\"()-]+)?$"
+)
+
+
+def _safe_extract(tar: tarfile.TarFile, dest: str) -> None:
+    """Extract a tarball, refusing members that escape `dest` (absolute paths,
+    `..`, links pointing outside) and device/fifo members. Uses the stdlib
+    'data' extraction filter (PEP 706) when available as a second layer."""
+    dest_real = os.path.realpath(dest)
+    for m in tar.getmembers():
+        target = os.path.realpath(os.path.join(dest_real, m.name))
+        if os.path.commonpath([dest_real, target]) != dest_real:
+            raise tarfile.TarError(f"Unsafe path in archive: {m.name}")
+        if m.issym() or m.islnk():
+            link = os.path.realpath(os.path.join(os.path.dirname(target), m.linkname))
+            if os.path.commonpath([dest_real, link]) != dest_real:
+                raise tarfile.TarError(f"Unsafe link in archive: {m.name} -> {m.linkname}")
+        if m.isdev() or m.isfifo():
+            raise tarfile.TarError(f"Unsupported member type in archive: {m.name}")
+    if hasattr(tarfile, "data_filter"):
+        tar.extractall(dest_real, filter="data")
+    else:  # Python without PEP 706: members were fully validated above
+        tar.extractall(dest_real)  # nosec B202 - every member validated above
 
 
 def _stage_bundle(model_channel: str, work_dir: str) -> str:
@@ -48,14 +77,13 @@ def _stage_bundle(model_channel: str, work_dir: str) -> str:
     shutil.copytree(model_channel, work_dir, dirs_exist_ok=True)
 
     # Extract any tarballs (e.g. model.tar.gz) delivered in the channel.
-    import tarfile
     for root, _, files in os.walk(work_dir):
         for fn in files:
             if fn.endswith((".tar.gz", ".tgz", ".tar")):
                 tar_path = os.path.join(root, fn)
                 try:
                     with tarfile.open(tar_path) as tar:
-                        tar.extractall(root)  # noqa: S202 - trusted pipeline artifact
+                        _safe_extract(tar, root)
                     logger.info("Extracted bundle archive %s", tar_path)
                 except tarfile.TarError as e:
                     logger.warning("Could not extract %s: %s", tar_path, e)
@@ -81,7 +109,7 @@ def _ensure_pretrained_checkpoint(bundle_dir: str):
 
 def _resolve_train_config(bundle_dir: str, requested: str | None) -> str:
     info = inspect_bundle(bundle_dir)
-    if not info.is_valid:
+    if not info.valid:
         raise ValueError(f"No valid MONAI bundle found under {bundle_dir}")
     if requested:
         if requested not in info.config_files:
@@ -122,9 +150,25 @@ def _install_bundle_requirements(bundle_dir: str):
     reqs = os.path.join(bundle_dir, "code", "requirements.txt")
     if not os.path.isfile(reqs):
         return
+    # Only plain PEP 508 "name[extras] <specifiers> ; markers" lines are honoured:
+    # pip option lines (--index-url, -e, -r, -c ...) and direct URL references
+    # in an artifact must not be able to redirect where packages come from.
+    with open(reqs, "r", encoding="utf-8") as f:
+        raw = [ln.strip() for ln in f if ln.strip() and not ln.strip().startswith("#")]
+    lines = [ln for ln in raw if _REQ_LINE_RE.match(ln)]
+    rejected = [ln for ln in raw if ln not in lines]
+    if rejected:
+        logger.warning("Ignoring non-package requirement lines: %s", rejected)
+    if not lines:
+        return
+    safe_reqs = os.path.join(bundle_dir, "code", "requirements.sanitized.txt")
+    with open(safe_reqs, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
     logger.info("Installing bundle requirements from %s", reqs)
-    result = subprocess.run(
-        [sys.executable, "-m", "pip", "install", "--no-cache-dir", "-r", reqs],
+    # argv list (no shell); file contents restricted to package specifiers above.
+    pip_argv = [sys.executable, "-m", "pip", "install", "--no-cache-dir", "-r", safe_reqs]
+    result = subprocess.run(  # nosec B603 - fixed argv list, no shell  # nosemgrep: python.lang.security.audit.dangerous-subprocess-use-audit.dangerous-subprocess-use-audit
+        pip_argv,
         capture_output=True, text=True,
     )
     if result.returncode == 0:
@@ -133,11 +177,10 @@ def _install_bundle_requirements(bundle_dir: str):
     logger.warning("Bulk install failed, retrying per package:\n%s",
                    (result.stderr or "")[-2000:])
     failed = []
-    with open(reqs, "r", encoding="utf-8") as f:
-        lines = [ln.strip() for ln in f if ln.strip() and not ln.strip().startswith("#")]
     for line in lines:
-        r = subprocess.run(
-            [sys.executable, "-m", "pip", "install", "--no-cache-dir", line],
+        pip_argv = [sys.executable, "-m", "pip", "install", "--no-cache-dir", line]
+        r = subprocess.run(  # nosec B603 - argv list; `line` matched _REQ_LINE_RE  # nosemgrep: python.lang.security.audit.dangerous-subprocess-use-audit.dangerous-subprocess-use-audit
+            pip_argv,
             capture_output=True, text=True,
         )
         if r.returncode != 0:
@@ -220,9 +263,14 @@ def main():
         sys.executable, "-m", "monai.bundle", "run",
         "--config_file", os.path.join("configs", train_config),
         "--dataset_dir", dataset_dir,
-    ] + (["--run_id", run_id] if run_id != "run" else []) + cli_overrides
+    ]
+    if run_id != "run":
+        cmd += ["--run_id", run_id]
+    cmd += cli_overrides
     logger.info("Running (run_id=%s): %s (cwd=%s)", run_id, " ".join(cmd), bundle_dir)
-    subprocess.run(cmd, cwd=bundle_dir, check=True)
+    # argv list (no shell); train_config was validated against the bundle's own
+    # config files by _resolve_train_config.
+    subprocess.run(cmd, cwd=bundle_dir, check=True)  # nosec B603 - argv list, no shell  # nosemgrep: python.lang.security.audit.dangerous-subprocess-use-audit.dangerous-subprocess-use-audit
 
     # Collect produced checkpoint(s) + result.json into SM_MODEL_DIR.
     # ── Assemble a servable bundle into SM_MODEL_DIR (Option B) ───────────────

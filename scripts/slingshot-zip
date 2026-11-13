@@ -61,6 +61,9 @@ zip -r "$OUTPUT_FILE" . \
     -x 'dist/*' \
     -x 'mlflow.db' \
     -x 'NVIDIA-MedTech/**/models/*' \
+    -x 'ProbeScanExport-*.csv' \
+    -x 'medanvil.json' \
+    -x 'preprocess.json' \
     > /dev/null
 
 echo "✅ Created: $OUTPUT_FILE"

@@ -1,7 +1,7 @@
 // Evaluation JavaScript
-// Depends on: escapeHtml() defined in main.js (loaded before this file)
+// Depends on: html``/setHTML()/escapeHtml() from safe_html.js (loaded before this file)
 if (typeof escapeHtml !== 'function') {
-    throw new Error('escapeHtml() is required but not defined. Ensure main.js is loaded before evaluation.js.');
+    throw new Error('escapeHtml() is required but not defined. Ensure safe_html.js is loaded before evaluation.js.');
 }
 
 registerTabInit('evaluation', function () {
@@ -18,11 +18,11 @@ async function loadEvalEndpoints() {
     try {
         const res = await apiCall('/api/inference/endpoints');
         const eps = res.endpoints || [];
-        select.innerHTML = eps.length
-            ? eps.map(e => `<option value="${escapeHtml(e.name)}">${escapeHtml(e.name)} (${escapeHtml(e.status)})</option>`).join('')
-            : '<option value="" disabled selected>No InService endpoints found</option>';
+        setHTML(select, eps.length
+            ? joinHtml(eps.map(e => html`<option value="${e.name}">${e.name} (${e.status})</option>`), '')
+            : html`<option value="" disabled selected>No InService endpoints found</option>`);
     } catch (_) {
-        select.innerHTML = '<option value="" disabled selected>Could not load endpoints</option>';
+        setHTML(select, html`<option value="" disabled selected>Could not load endpoints</option>`);
     }
 }
 
@@ -46,8 +46,8 @@ async function submitEvaluation(e) {
     const banner = document.getElementById('eval-submit-banner');
 
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
-    showBanner(banner, 'submitting', '<i class="fas fa-spinner fa-spin"></i> Submitting evaluation job...');
+    setHTML(btn, html`<i class="fas fa-spinner fa-spin"></i> Submitting...`);
+    showBanner(banner, 'submitting', html`<i class="fas fa-spinner fa-spin"></i> Submitting evaluation job...`);
 
     try {
         const result = await apiCall('/api/evaluation/submit', {
@@ -56,13 +56,13 @@ async function submitEvaluation(e) {
             body:    JSON.stringify(payload),
         });
         showBanner(banner, 'success',
-            `<i class="fas fa-check-circle"></i> Job <strong>${escapeHtml(result.job_name)}</strong> submitted`);
+            html`<i class="fas fa-check-circle"></i> Job <strong>${result.job_name}</strong> submitted`);
         loadEvalJobs();
     } catch (err) {
-        showBanner(banner, 'error', `<i class="fas fa-exclamation-circle"></i> ${escapeHtml(err.message)}`);
+        showBanner(banner, 'error', html`<i class="fas fa-exclamation-circle"></i> ${err.message}`);
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-play-circle"></i> Submit Evaluation Job';
+        setHTML(btn, html`<i class="fas fa-play-circle"></i> Submit Evaluation Job`);
     }
 }
 
@@ -73,14 +73,14 @@ async function loadEvalJobs() {
         const res = await apiCall('/api/evaluation/jobs');
         renderEvalJobs(res.jobs || []);
     } catch (err) {
-        container.innerHTML = `<p style="color:#c62828;">Error loading jobs: ${escapeHtml(err.message)}</p>`;
+        setHTML(container, html`<p style="color:#c62828;">Error loading jobs: ${err.message}</p>`);
     }
 }
 
 function renderEvalJobs(jobs) {
     const container = document.getElementById('eval-jobs-list');
     if (!jobs.length) {
-        container.innerHTML = '<p style="color:#888;">No evaluation jobs yet.</p>';
+        setHTML(container, html`<p style="color:#888;">No evaluation jobs yet.</p>`);
         return;
     }
 
@@ -92,99 +92,99 @@ function renderEvalJobs(jobs) {
         'Stopped':    'status-stopped',
     };
 
-    container.innerHTML = jobs.map(j => `
+    setHTML(container, joinHtml(jobs.map(j => html`
         <div class="job-item">
             <div class="job-header">
-                <div class="job-id">${escapeHtml(j.job_name)}</div>
-                <div class="job-status ${statusClass[j.status] || 'status-unknown'}">${escapeHtml(j.status)}</div>
+                <div class="job-id">${j.job_name}</div>
+                <div class="job-status ${statusClass[j.status] || 'status-unknown'}">${j.status}</div>
             </div>
             <div class="job-details">
-                <div><strong>Endpoint:</strong> ${escapeHtml(j.endpoint_name)}</div>
-                <div><strong>Task:</strong> ${escapeHtml(j.task_type || 'classification')}</div>
-                <div><strong>Instance:</strong> ${escapeHtml(j.instance_type)}</div>
-                <div><strong>Data:</strong> <code style="font-size:0.78rem;">${escapeHtml(j.data_s3_uri)}</code></div>
-                <div><strong>Output:</strong> <code style="font-size:0.78rem;">${escapeHtml(j.output_s3_uri)}</code></div>
-                <div><strong>Submitted:</strong> ${j.created_at ? escapeHtml(new Date(j.created_at).toLocaleString()) : 'N/A'}</div>
-                ${j.completed_at ? `<div><strong>Completed:</strong> ${escapeHtml(new Date(j.completed_at).toLocaleString())}</div>` : ''}
-                ${j.failure_reason ? `<div style="color:#c62828;"><strong>Failure:</strong> ${escapeHtml(j.failure_reason)}</div>` : ''}
+                <div><strong>Endpoint:</strong> ${j.endpoint_name}</div>
+                <div><strong>Task:</strong> ${j.task_type || 'classification'}</div>
+                <div><strong>Instance:</strong> ${j.instance_type}</div>
+                <div><strong>Data:</strong> <code style="font-size:0.78rem;">${j.data_s3_uri}</code></div>
+                <div><strong>Output:</strong> <code style="font-size:0.78rem;">${j.output_s3_uri}</code></div>
+                <div><strong>Submitted:</strong> ${j.created_at ? new Date(j.created_at).toLocaleString() : 'N/A'}</div>
+                ${j.completed_at ? html`<div><strong>Completed:</strong> ${new Date(j.completed_at).toLocaleString()}</div>` : ''}
+                ${j.failure_reason ? html`<div style="color:#c62828;"><strong>Failure:</strong> ${j.failure_reason}</div>` : ''}
                 ${j.metrics ? renderInlineMetrics(j.metrics, j.task_type) : ''}
             </div>
             <div class="job-actions">
-                ${j.status === 'InProgress' ? `
+                ${j.status === 'InProgress' ? html`
                 <button class="btn btn-secondary" onclick="refreshEvalJob('${escapeJsString(j.job_name)}')">
                     <i class="fas fa-sync"></i> Refresh
                 </button>` : ''}
-                ${j.status === 'Completed' ? `
+                ${j.status === 'Completed' ? html`
                 <button class="btn btn-secondary" onclick="downloadEvalResults('${escapeJsString(j.job_name)}', this)">
                     <i class="fas fa-download"></i> ${j.cached_results ? 'Re-download' : 'Download Results'}
                 </button>` : ''}
-                ${j.cached_results ? `
+                ${j.cached_results ? html`
                 <button class="btn btn-secondary" onclick="clearEvalCache('${escapeJsString(j.job_name)}', this)" style="color:#c62828;" title="Remove locally cached files">
                     <i class="fas fa-trash"></i> Clear Cache
                 </button>` : ''}
                 <button class="btn btn-secondary" onclick="deleteEvalJob('${escapeJsString(j.job_name)}', this)" style="color:#c62828;" title="Delete this job record">
                     <i class="fas fa-times-circle"></i> Delete
                 </button>
-                ${j.metrics ? `
+                ${j.metrics ? html`
                 <button class="btn btn-secondary" onclick="showEvalResults('${escapeJsString(j.job_name)}')">
                     <i class="fas fa-chart-bar"></i> View Results
                 </button>` : ''}
             </div>
         </div>
-    `).join('');
+    `), ''));
 }
 
 function renderInlineMetrics(m, taskType) {
     if (!m) return '';
     if (taskType === 'segmentation') {
-        return `
+        return html`
         <div class="result-highlight" style="margin-top:0.5rem;">
             <div class="result-row"><span>Mean Dice</span><strong>${m.mean_dice ?? 'N/A'}</strong></div>
             <div class="result-row"><span>Mean IoU</span><strong>${m.mean_iou ?? 'N/A'}</strong></div>
             <div class="result-row"><span>Subjects</span><strong>${m.num_subjects ?? 'N/A'}</strong></div>
         </div>`;
     }
-    return `
+    return html`
     <div class="result-highlight" style="margin-top:0.5rem;">
-        <div class="result-row"><span>Accuracy</span><strong>${m.accuracy != null ? (m.accuracy * 100).toFixed(1) + '%' : 'N/A'}</strong></div>
+        <div class="result-row"><span>Accuracy</span><strong>${m.accuracy != null ? html`${(m.accuracy * 100).toFixed(1)}%` : 'N/A'}</strong></div>
         <div class="result-row"><span>Macro AUC</span><strong>${m.macro_auc ?? 'N/A'}</strong></div>
         <div class="result-row"><span>Samples</span><strong>${m.num_samples ?? 'N/A'}</strong></div>
     </div>`;
 }
 
 async function deleteEvalJob(jobName, btn) {
-    if (!confirm(`Delete job "${jobName}" from tracking?\n\nThis removes the local record and cached files. S3 outputs are not affected.`)) return;
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+    if (!(await confirmAction(`Delete job "${jobName}" from tracking?\n\nThis removes the local record and cached files. S3 outputs are not affected.`, { danger: true, confirmLabel: 'Delete' }))) return;
+    if (btn) { btn.disabled = true; setHTML(btn, html`<i class="fas fa-spinner fa-spin"></i>`); }
     try {
         await apiCall(`/api/evaluation/jobs/${jobName}`, { method: 'DELETE' });
         loadEvalJobs();
     } catch (err) {
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-times-circle"></i> Delete'; }
-        alert(`Error: ${err.message}`);
+        if (btn) { btn.disabled = false; setHTML(btn, html`<i class="fas fa-times-circle"></i> Delete`); }
+        notify(`Error: ${err.message}`, 'error');
     }
 }
 
 async function clearEvalCache(jobName, btn) {
-    if (!confirm(`Remove locally cached files for "${jobName}"? The results remain in S3.`)) return;
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Clearing...'; }
+    if (!(await confirmAction(`Remove locally cached files for "${jobName}"? The results remain in S3.`, { danger: true, confirmLabel: 'Remove' }))) return;
+    if (btn) { btn.disabled = true; setHTML(btn, html`<i class="fas fa-spinner fa-spin"></i> Clearing...`); }
     try {
         await apiCall(`/api/evaluation/jobs/${jobName}/cache`, { method: 'DELETE' });
         loadEvalJobs();
     } catch (err) {
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash"></i> Clear Cache'; }
-        alert(`Error: ${err.message}`);
+        if (btn) { btn.disabled = false; setHTML(btn, html`<i class="fas fa-trash"></i> Clear Cache`); }
+        notify(`Error: ${err.message}`, 'error');
     }
 }
 
 async function downloadEvalResults(jobName, btn) {
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...'; }
+    if (btn) { btn.disabled = true; setHTML(btn, html`<i class="fas fa-spinner fa-spin"></i> Downloading...`); }
     try {
         await apiCall(`/api/evaluation/jobs/${jobName}/download-results`, { method: 'POST' });
-        if (btn) { btn.innerHTML = '<i class="fas fa-check"></i> Downloaded'; }
+        if (btn) { setHTML(btn, html`<i class="fas fa-check"></i> Downloaded`); }
         loadEvalJobs();
     } catch (err) {
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-download"></i> Download Results'; }
-        alert(`Download failed: ${err.message}`);
+        if (btn) { btn.disabled = false; setHTML(btn, html`<i class="fas fa-download"></i> Download Results`); }
+        notify(`Download failed: ${err.message}`, 'error');
     }
 }
 
@@ -193,7 +193,7 @@ async function refreshEvalJob(jobName) {
         await apiCall(`/api/evaluation/jobs/${jobName}`);
         loadEvalJobs();
     } catch (err) {
-        alert(`Error: ${err.message}`);
+        notify(`Error: ${err.message}`, 'error');
     }
 }
 
@@ -222,18 +222,18 @@ function showEvalResults(jobName) {
         const grid = document.getElementById('eval-plots-grid');
         const wrap = document.getElementById('eval-plots-wrap');
         if (wrap) wrap.style.display = 'block';
-        if (grid) grid.innerHTML = '<p style="color:#888;"><i class="fas fa-spinner fa-spin"></i> Fetching plots...</p>';
+        if (grid) setHTML(grid, html`<p style="color:#888;"><i class="fas fa-spinner fa-spin"></i> Fetching plots...</p>`);
 
         apiCall(`/api/evaluation/jobs/${jobName}/download-results?plots_only=true`, { method: 'POST' })
             .then(res => {
                 const hasPlots = res.cached && Object.keys(res.cached).some(f => f.endsWith('.png'));
                 if (!hasPlots) {
-                    if (grid) grid.innerHTML = `
+                    if (grid) setHTML(grid, html`
                         <p style="color:#888;">
                             <i class="fas fa-exclamation-circle"></i>
-                            No plot files found at <code>${escapeHtml(job.output_s3_uri)}</code>.<br>
+                            No plot files found at <code>${job.output_s3_uri}</code>.<br>
                             The output S3 bucket must be writable by the Processing Job.
-                        </p>`;
+                        </p>`);
                     return;
                 }
                 loadEvalPlots(jobName);
@@ -243,10 +243,10 @@ function showEvalResults(jobName) {
                     .catch(() => {});
             })
             .catch(err => {
-                if (grid) grid.innerHTML = `<p style="color:#c62828;">Download failed: ${escapeHtml(err.message)}</p>`;
+                if (grid) setHTML(grid, html`<p style="color:#c62828;">Download failed: ${err.message}</p>`);
             });
 
-    }).catch(err => alert(`Error: ${err.message}`));
+    }).catch(err => notify(`Error: ${err.message}`, 'error'));
 }
 
 function renderMetricCards(m, taskType) {
@@ -271,12 +271,12 @@ function renderMetricCards(m, taskType) {
         ];
     }
 
-    container.innerHTML = cards.map(c => `
+    setHTML(container, joinHtml(cards.map(c => html`
         <div class="eval-metric-card">
-            <div class="eval-metric-value">${escapeHtml(String(c.value))}</div>
-            <div class="eval-metric-label">${escapeHtml(c.label)}</div>
+            <div class="eval-metric-value">${String(c.value)}</div>
+            <div class="eval-metric-label">${c.label}</div>
         </div>
-    `).join('');
+    `), ''));
 }
 
 function renderPerClassTable(m) {
@@ -285,15 +285,15 @@ function renderPerClassTable(m) {
     if (!wrap || !body || !m.per_class) { if (wrap) wrap.style.display = 'none'; return; }
 
     wrap.style.display = 'block';
-    body.innerHTML = Object.entries(m.per_class).map(([cls, v]) => `
+    setHTML(body, joinHtml(Object.entries(m.per_class).map(([cls, v]) => html`
         <tr style="border-bottom:1px solid #f0f0f0;">
-            <td style="padding:0.45rem 0.75rem;">${escapeHtml(cls)}</td>
+            <td style="padding:0.45rem 0.75rem;">${cls}</td>
             <td style="padding:0.45rem 0.75rem;">${v.precision?.toFixed(3) ?? 'N/A'}</td>
             <td style="padding:0.45rem 0.75rem;">${v.recall?.toFixed(3) ?? 'N/A'}</td>
             <td style="padding:0.45rem 0.75rem;">${v.f1?.toFixed(3) ?? 'N/A'}</td>
             <td style="padding:0.45rem 0.75rem;">${v.support ?? 'N/A'}</td>
         </tr>
-    `).join('');
+    `), ''));
 }
 
 async function loadSubgroupMetrics(jobName) {
@@ -316,20 +316,20 @@ async function loadSubgroupMetrics(jobName) {
         if (!attrs.length) return;
 
         wrap.style.display = 'block';
-        tables.innerHTML = attrs.map(attr => {
+        setHTML(tables, joinHtml(attrs.map(attr => {
             const groups = subgroups[attr];
-            const rows   = Object.entries(groups)
+            const rows   = joinHtml(Object.entries(groups)
                 .sort((a, b) => b[1].accuracy - a[1].accuracy)
-                .map(([grp, v]) => `
+                .map(([grp, v]) => html`
                     <tr style="border-bottom:1px solid #f0f0f0;">
-                        <td style="padding:0.45rem 0.75rem;">${escapeHtml(grp)}</td>
+                        <td style="padding:0.45rem 0.75rem;">${grp}</td>
                         <td style="padding:0.45rem 0.75rem;">${(v.accuracy * 100).toFixed(1)}%</td>
                         <td style="padding:0.45rem 0.75rem;">${v.macro_f1.toFixed(3)}</td>
                         <td style="padding:0.45rem 0.75rem;">${v.n}</td>
-                    </tr>`).join('');
-            return `
+                    </tr>`), '');
+            return html`
                 <div style="margin-bottom:1.25rem;">
-                    <h5 style="margin:0 0 0.5rem; color:#444;">${escapeHtml(attrLabels[attr] || attr)}</h5>
+                    <h5 style="margin:0 0 0.5rem; color:#444;">${attrLabels[attr] || attr}</h5>
                     <div style="overflow-x:auto;">
                         <table style="width:100%; border-collapse:collapse; font-size:0.88rem;">
                             <thead>
@@ -344,7 +344,7 @@ async function loadSubgroupMetrics(jobName) {
                         </table>
                     </div>
                 </div>`;
-        }).join('');
+        }), ''));
     } catch (_) {
         // Subgroup data is optional — fail silently
     }
@@ -359,12 +359,12 @@ function renderOutputLinks(outputS3Uri, taskType) {
         ? ['metrics.json', 'predictions.csv', 'dice_distribution.png']
         : ['metrics.json', 'subgroup_metrics.json', 'predictions.csv', 'confusion_matrix.png', 'roc_auc.png', 'subgroup_accuracy.png'];
 
-    el.innerHTML = `
-        <strong>Output files at:</strong> <code>${escapeHtml(prefix)}/</code>
+    setHTML(el, html`
+        <strong>Output files at:</strong> <code>${prefix}/</code>
         <ul style="margin:0.5rem 0 0; padding-left:1.25rem;">
-            ${files.map(f => `<li><code>${escapeHtml(f)}</code></li>`).join('')}
+            ${joinHtml(files.map(f => html`<li><code>${f}</code></li>`), '')}
         </ul>
-    `;
+    `);
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -374,7 +374,7 @@ async function loadEvalPlots(jobName) {
     const grid = document.getElementById('eval-plots-grid');
     if (!wrap || !grid) return;
 
-    grid.innerHTML = '<p style="color:#888;"><i class="fas fa-spinner fa-spin"></i> Loading plots...</p>';
+    setHTML(grid, html`<p style="color:#888;"><i class="fas fa-spinner fa-spin"></i> Loading plots...</p>`);
     wrap.style.display = 'block';
 
     try {
@@ -382,7 +382,7 @@ async function loadEvalPlots(jobName) {
         const plots = res.plots || {};
 
         if (!Object.keys(plots).length) {
-            grid.innerHTML = `<p style="color:#888;">No plots in cache yet — click "Download Results" to fetch from S3.</p>`;
+            setHTML(grid, html`<p style="color:#888;">No plots in cache yet — click "Download Results" to fetch from S3.</p>`);
             return;
         }
 
@@ -393,29 +393,29 @@ async function loadEvalPlots(jobName) {
             'dice_distribution.png':  'Dice Score Distribution',
         };
 
-        grid.innerHTML = Object.entries(plots).map(([fname, url]) => {
+        setHTML(grid, joinHtml(Object.entries(plots).map(([fname, url]) => {
             // Validate URL scheme to prevent javascript: URI injection
-            const safeUrl = (url && (url.startsWith('/') || url.startsWith('http://') || url.startsWith('https://'))) ? url : '';
-            return `
+            const plotUrl = safeUrl(url);
+            return html`
             <div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; overflow:hidden;">
                 <div style="padding:0.6rem 1rem; background:#f9f9f9; border-bottom:1px solid #e0e0e0; font-weight:600; font-size:0.9rem;">
-                    ${escapeHtml(labels[fname] || fname)}
+                    ${labels[fname] || fname}
                 </div>
                 <div style="padding:1rem; text-align:center;">
-                    <img src="${escapeHtml(safeUrl)}" alt="${escapeHtml(fname)}"
+                    <img src="${plotUrl}" alt="${fname}"
                          style="max-width:100%; height:auto; border-radius:4px; cursor:pointer;"
-                         onclick="openPlotLightbox('${escapeJsString(safeUrl)}', '${escapeJsString(labels[fname] || fname)}')"
-                         onerror="this.parentElement.innerHTML='<p style=color:#c62828>Image file missing from local cache — try re-downloading</p>'">
+                         onclick="openPlotLightbox('${escapeJsString(plotUrl)}', '${escapeJsString(labels[fname] || fname)}')"
+                         onerror="this.parentElement.style.color='#c62828'; this.parentElement.textContent='Image file missing from local cache — try re-downloading'">
                 </div>
                 <div style="padding:0.4rem 1rem 0.75rem; text-align:right;">
-                    <a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="font-size:0.8rem; padding:0.3rem 0.75rem;">
+                    <a href="${plotUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="font-size:0.8rem; padding:0.3rem 0.75rem;">
                         <i class="fas fa-external-link-alt"></i> Open full size
                     </a>
                 </div>
             </div>
-        `}).join('');
+        `}), ''));
     } catch (err) {
-        grid.innerHTML = `<p style="color:#c62828;">Error loading plots: ${escapeHtml(err.message)}</p>`;
+        setHTML(grid, html`<p style="color:#c62828;">Error loading plots: ${err.message}</p>`);
     }
 }
 
@@ -431,18 +431,18 @@ function openPlotLightbox(url, title) {
     overlay.id = 'plot-lightbox';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:zoom-out;';
     overlay.onclick = () => overlay.remove();
-    overlay.innerHTML = `
-        <div style="color:#fff; font-size:1rem; font-weight:600; margin-bottom:0.75rem;">${escapeHtml(title)}</div>
-        <img src="${escapeHtml(validatedUrl)}" style="max-width:90vw; max-height:85vh; border-radius:6px; box-shadow:0 8px 40px rgba(0,0,0,0.6);">
+    setHTML(overlay, html`
+        <div style="color:#fff; font-size:1rem; font-weight:600; margin-bottom:0.75rem;">${title}</div>
+        <img src="${safeUrl(validatedUrl)}" style="max-width:90vw; max-height:85vh; border-radius:6px; box-shadow:0 8px 40px rgba(0,0,0,0.6);">
         <div style="color:#aaa; font-size:0.8rem; margin-top:0.6rem;">Click anywhere to close</div>
-    `;
+    `);
     document.body.appendChild(overlay);
 }
 
-function showBanner(el, type, html) {
+function showBanner(el, type, _markup) {
     if (!el) return;
     const cls = { submitting: 'sm-status-submitting', success: 'sm-status-success', error: 'sm-status-error' };
     el.className = `sm-status-banner ${cls[type] || ''}`;
-    el.innerHTML = html;
+    setHTML(el, _markup);
     el.style.display = 'flex';
 }

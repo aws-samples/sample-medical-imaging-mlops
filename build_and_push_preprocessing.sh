@@ -49,11 +49,11 @@ ECR_REPO="sm-preprocessing"
 IMAGE="${ECR_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:latest"
 
 if [[ "$DO_BUILD" == true ]]; then
-    CACHE_FLAG=""
-    if [[ "$NO_CACHE" == true ]]; then CACHE_FLAG="--no-cache"; fi
+    CACHE_FLAG=()
+    if [[ "$NO_CACHE" == true ]]; then CACHE_FLAG=(--no-cache); fi
     echo "Building preprocessing image: $IMAGE"
     # Base image (python:3.12-slim) is public — no DLC registry login needed.
-    DOCKER_BUILDKIT=0 docker build $CACHE_FLAG --platform linux/amd64 \
+    DOCKER_BUILDKIT=0 docker build "${CACHE_FLAG[@]}" --platform linux/amd64 \
       -f Dockerfile.preprocessing -t "$IMAGE" .
 fi
 

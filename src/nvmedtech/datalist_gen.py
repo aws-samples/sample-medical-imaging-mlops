@@ -48,7 +48,8 @@ def build_datalist(dataset_dir: str, val_fraction: float = 0.2, seed: int = 42) 
     if not pairs:
         raise ValueError("No valid image/label pairs found in dataset.json")
 
-    rng = random.Random(seed)
+    # Seeded PRNG for a reproducible train/val split — not a security context.
+    rng = random.Random(seed)  # nosec B311
     rng.shuffle(pairs)
     n_val = max(1, int(len(pairs) * val_fraction))
     validation = pairs[:n_val]

@@ -82,7 +82,7 @@ class ResolvedPair:
 @dataclass
 class ResolvedDataset:
     name: str
-    is_segmentation: bool
+    segmentation: bool
     labels: Dict[str, str] = field(default_factory=dict)
     counts: Dict[str, int] = field(default_factory=dict)
     pairs: List[ResolvedPair] = field(default_factory=list)
@@ -90,13 +90,13 @@ class ResolvedDataset:
     classes: Dict[str, int] = field(default_factory=dict)   # class name -> image count (ImageFolder)
 
     def task_type(self) -> str:
-        return "segmentation" if self.is_segmentation else "classification"
+        return "segmentation" if self.segmentation else "classification"
 
     def summary(self, sample_n: int = 5) -> Dict[str, Any]:
         return {
             "name": self.name,
             "task_type": self.task_type(),
-            "is_segmentation": self.is_segmentation,
+            "is_segmentation": self.segmentation,
             "source": self.source,
             "labels": self.labels,
             "classes": self.classes,
@@ -195,7 +195,7 @@ def parse_dataset_json(text: str) -> ResolvedDataset:
 
     return ResolvedDataset(
         name=str(data.get("name", "dataset")),
-        is_segmentation=is_seg,
+        segmentation=is_seg,
         labels={str(k): str(v) for k, v in labels.items()},
         counts=counts,
         pairs=pairs,
@@ -212,7 +212,7 @@ def resolve_from_dir(dataset_dir: str, *, verify_exists: bool = True) -> Resolve
     dj = os.path.join(dataset_dir, "dataset.json")
     if not os.path.isfile(dj):
         raise DatasetJsonMissingError()
-    with open(dj, "r") as f:
+    with open(dj, "r", encoding="utf-8") as f:
         resolved = parse_dataset_json(f.read())
 
     if verify_exists:
@@ -332,7 +332,7 @@ def discover_imagefolder_s3(input_s3_uri: str, s3_client=None, sample_per_class:
     name = prefix.rstrip("/").split("/")[-1] or "dataset"
     return ResolvedDataset(
         name=name,
-        is_segmentation=False,
+        segmentation=False,
         labels={},
         counts={"training": total, "validation": 0, "test": 0},
         pairs=pairs,

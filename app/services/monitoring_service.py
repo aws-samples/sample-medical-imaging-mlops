@@ -501,8 +501,8 @@ class MonitoringService:
         """Stop and delete a monitoring schedule."""
         try:
             sagemaker_client.stop_monitoring_schedule(MonitoringScheduleName=schedule_name)
-        except Exception:
-            pass
+        except Exception as _exc:
+            logger.debug("ignored, non-fatal: %s", _exc)
         sagemaker_client.delete_monitoring_schedule(MonitoringScheduleName=schedule_name)
         self.schedules.pop(schedule_name, None)
         self._save()

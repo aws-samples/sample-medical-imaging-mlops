@@ -20,5 +20,7 @@ ENV SAGEMAKER_PROGRAM train.py
 # NOTE: SageMaker training containers require root to write to /opt/ml and
 # interact with the SageMaker training toolkit. A non-root USER is not added here.
 
-# NOTE: HEALTHCHECK is not applicable — SageMaker manages container lifecycle
-# and health via its own orchestration layer.
+# checkov:skip=CKV_DOCKER_3:SageMaker training containers must run as root (the toolkit writes /opt/ml and drives the training toolkit); a non-root USER breaks the job.
+# Batch job (SageMaker Training/Processing): no long-running service to probe —
+# SageMaker tracks the process exit code. Declared explicitly.
+HEALTHCHECK NONE

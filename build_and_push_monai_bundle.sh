@@ -72,16 +72,16 @@ if [[ "$DO_BUILD" == true ]]; then
     aws ecr get-login-password --region "$AWS_REGION" \
       | docker login --username AWS --password-stdin "$DLC_REGISTRY"
 
-    CACHE_FLAG=""
+    CACHE_FLAG=()
     if [[ "$NO_CACHE" == true ]]; then
-        CACHE_FLAG="--no-cache"
+        CACHE_FLAG=(--no-cache)
         echo "Building MONAI bundle image (no cache): $IMAGE"
     else
         echo "Building MONAI bundle image (with cache): $IMAGE"
     fi
 
     # Disable BuildKit to ensure Docker V2 manifest format (SageMaker rejects OCI manifests)
-    DOCKER_BUILDKIT=0 docker build $CACHE_FLAG --platform linux/amd64 \
+    DOCKER_BUILDKIT=0 docker build "${CACHE_FLAG[@]}" --platform linux/amd64 \
       -f Dockerfile.monai-bundle -t "$IMAGE" .
 fi
 

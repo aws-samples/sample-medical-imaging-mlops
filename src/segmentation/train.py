@@ -143,9 +143,8 @@ if args.checkpoint_s3_uri:
         bucket = path.split("/")[0]
         key    = "/".join(path.split("/")[1:])
         s3     = boto3.client("s3")
-        with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as tmp:
-            tmp.flush()
-            tmp_path = tmp.name
+        _fd, tmp_path = tempfile.mkstemp(suffix=".tar.gz")
+        os.close(_fd)
         s3.download_file(bucket, key, tmp_path)
         with tarfile.open(tmp_path, "r:gz") as tar:
             ckpt_name = "best_model.pth" if "best_model.pth" in tar.getnames() else "model.pth"

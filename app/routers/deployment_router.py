@@ -73,8 +73,8 @@ async def list_deployments(local_only: bool = False):
                     d["endpoint_name"], aws_service.sagemaker_client
                 )
                 d.update(updated)
-            except Exception:
-                pass
+            except Exception as _exc:
+                logger.debug("ignored, non-fatal: %s", _exc)
         # Re-fetch after refresh — pruned deleted entries won't appear
         deployments = deployment_service.list_deployments()
     return {"deployments": [d for d in deployments if d.get("status") != "Deleted"]}
@@ -124,7 +124,8 @@ async def scale_endpoint(endpoint_name: str, request: ScaleRequest):
         )
         return result
     except Exception as e:
-        logger.error("Scale failed: %s", e)
+        # FastAPI does not log HTTPException, so this is the only server-side record.
+        logger.error("Scale failed: %s", e)  # nosemgrep: python.lang.best-practice.logging-error-without-handling.logging-error-without-handling
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -142,7 +143,8 @@ async def invoke_async(request: AsyncInvokeRequest):
         )
         return result
     except Exception as e:
-        logger.error("Async invocation failed: %s", e)
+        # FastAPI does not log HTTPException, so this is the only server-side record.
+        logger.error("Async invocation failed: %s", e)  # nosemgrep: python.lang.best-practice.logging-error-without-handling.logging-error-without-handling
         raise HTTPException(status_code=500, detail=str(e))
 
 

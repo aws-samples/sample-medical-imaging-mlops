@@ -1,12 +1,18 @@
 """Service for submitting and tracking SageMaker Processing Jobs for endpoint evaluation."""
 import json
 import logging
+import re
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Optional
 
 logger = logging.getLogger(__name__)
+
+# Allow-lists for values that become filesystem paths (Slingshot 2026-11-12).
+_TASK_TYPES = {"classification", "segmentation"}
+# SageMaker job names: alphanumerics and hyphens, max 63 chars.
+_JOB_NAME_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9-]{0,62}")
 
 EVAL_JOBS_FILE = Path("data/evaluation_jobs.json")
 
@@ -45,6 +51,8 @@ class EvaluationService:
         task_type: str = "classification",
     ) -> dict:
         """Submit a SageMaker Processing Job that evaluates a classification endpoint."""
+        if task_type not in _TASK_TYPES:
+            raise ValueError(f"Unsupported task_type: {task_type!r} (expected one of {sorted(_TASK_TYPES)})")
         job_name = f"eval-{endpoint_name[:30]}-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}"
 
         # Upload evaluate.py as the processing script
@@ -60,8 +68,11 @@ class EvaluationService:
         req_key    = f"evaluation-scripts/{job_name}/requirements.txt"
 
         s3 = boto3.client("s3", region_name=region)
-        s3.upload_file(str(script_path), out_bucket, script_key)
-        s3.upload_file(str(req_path),    out_bucket, req_key)
+        # Scripts uploaded here are executed by the Processing Job: verify bucket ownership.
+        from app.services.s3_ownership import assert_bucket_owned, owner_extra_args
+        assert_bucket_owned(s3, out_bucket)
+        s3.upload_file(str(script_path), out_bucket, script_key, ExtraArgs=owner_extra_args() or None)
+        s3.upload_file(str(req_path),    out_bucket, req_key, ExtraArgs=owner_extra_args() or None)
 
         code_s3_uri = f"s3://{out_bucket}/evaluation-scripts/{job_name}"
 
@@ -189,7 +200,7 @@ class EvaluationService:
         bucket, prefix = output_uri.replace("s3://", "").split("/", 1)
         prefix = prefix.rstrip("/")
 
-        local_dir = self.RESULTS_DIR / job_name
+        local_dir = self._job_results_dir(job_name)
         local_dir.mkdir(parents=True, exist_ok=True)
 
         # List all objects at the output prefix
@@ -200,7 +211,7 @@ class EvaluationService:
             for obj in page.get("Contents", []):
                 key      = obj["Key"]
                 filename = key.split("/")[-1]
-                if not filename:
+                if not filename or filename in (".", ".."):
                     continue
                 if plots_only and filename not in self.PLOT_FILES:
                     continue
@@ -222,18 +233,31 @@ class EvaluationService:
         self._load()
         if job_name not in self.jobs:
             raise ValueError(f"Job {job_name!r} not found")
-        local_dir = self.RESULTS_DIR / job_name
-        if local_dir.exists():
+        local_dir = self._job_results_dir(job_name)
+        if local_dir.is_dir() and not local_dir.is_symlink():
             shutil.rmtree(local_dir)
         del self.jobs[job_name]
         self._save()
         return {"deleted": job_name}
 
+    def _job_results_dir(self, job_name: str) -> Path:
+        """Resolve a job's cache dir, refusing names that escape RESULTS_DIR."""
+        if not isinstance(job_name, str) or not _JOB_NAME_RE.fullmatch(job_name):
+            raise ValueError(f"Invalid job name: {job_name!r}")
+        base = self.RESULTS_DIR.resolve()
+        local_dir = (base / job_name).resolve()
+        if local_dir.parent != base:
+            raise ValueError(f"Invalid job name: {job_name!r}")
+        return local_dir
+
     def clear_cache(self, job_name: str) -> dict:
         """Delete locally cached result files for a job."""
-        local_dir = self.RESULTS_DIR / job_name
+        self._load()
+        if job_name not in self.jobs:
+            raise ValueError(f"Job {job_name!r} not found")
+        local_dir = self._job_results_dir(job_name)
         removed = []
-        if local_dir.exists():
+        if local_dir.is_dir() and not local_dir.is_symlink():
             import shutil
             for f in local_dir.iterdir():
                 removed.append(f.name)
@@ -310,8 +334,8 @@ class EvaluationService:
                     try:
                         detail = sagemaker_client.describe_processing_job(ProcessingJobName=job_name)
                         self.jobs[job_name]["failure_reason"] = detail.get("FailureReason")
-                    except Exception:
-                        pass
+                    except Exception as _exc:
+                        logger.debug("ignored, non-fatal: %s", _exc)
                 updated.append(job_name)
             else:
                 record = {

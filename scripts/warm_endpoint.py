@@ -24,21 +24,21 @@ else:
     )
     print("Waiting for InService (this may take 8-12 min for GPU instances)...")
 
+    # SageMaker's own waiter polls describe_endpoint (30 s x 30 = 15 min) and
+    # fails fast if the endpoint goes to Failed.
+    from botocore.exceptions import WaiterError
     start = time.time()
-    while time.time() - start < 900:
+    try:
+        sm.get_waiter("endpoint_in_service").wait(
+            EndpointName=endpoint_name,
+            WaiterConfig={"Delay": 30, "MaxAttempts": 30},
+        )
         desc = sm.describe_endpoint(EndpointName=endpoint_name)
-        status = desc["EndpointStatus"]
         count = desc["ProductionVariants"][0].get("CurrentInstanceCount", 0)
-        elapsed = int(time.time() - start)
-        print(f"   [{elapsed}s] Status: {status}, Instances: {count}")
-
-        if status == "InService" and count >= 1:
-            print(f"\n✅ Endpoint is warm! ({elapsed}s)")
-            break
-        elif status == "Failed":
+        print(f"\n✅ Endpoint is warm! ({int(time.time() - start)}s, instances: {count})")
+    except WaiterError as e:
+        desc = sm.describe_endpoint(EndpointName=endpoint_name)
+        if desc["EndpointStatus"] == "Failed":
             print(f"\n❌ Endpoint failed: {desc.get('FailureReason', 'Unknown')}")
-            break
-
-        time.sleep(30)
-    else:
-        print("\n❌ Timed out waiting for endpoint to warm up.")
+        else:
+            print(f"\n❌ Timed out waiting for endpoint to warm up: {e}")

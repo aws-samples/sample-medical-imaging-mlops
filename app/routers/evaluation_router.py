@@ -127,6 +127,8 @@ async def clear_evaluation_cache(job_name: str):
     """Delete locally cached result files for a job."""
     try:
         return evaluation_service.clear_cache(job_name)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

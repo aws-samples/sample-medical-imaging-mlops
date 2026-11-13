@@ -42,7 +42,7 @@ DISCLAIMER = "RESEARCH USE ONLY — preprocessing performs no diagnosis."
 # ── spec loading (works with or without the app's Pydantic models) ─────────────
 
 def _load_spec(spec_path: str):
-    with open(spec_path, "r") as f:
+    with open(spec_path, "r", encoding="utf-8") as f:
         raw = json.load(f)
     try:
         # Prefer the validated model if the app package is importable.
@@ -97,7 +97,7 @@ def _discover_imagefolder_local(dataset_dir: str):
         raise DatasetResolveError("No dataset.json and no class subfolders with images found")
     return ResolvedDataset(
         name=os.path.basename(dataset_dir.rstrip("/")) or "dataset",
-        is_segmentation=False, labels={},
+        segmentation=False, labels={},
         counts={"training": sum(classes.values()), "validation": 0, "test": 0},
         pairs=pairs, source="imagefolder", classes=classes,
     )
@@ -114,7 +114,7 @@ def _walk_files(root):
 def _process(dataset, spec, input_dir: str, output_dir: str) -> dict:
     from src.preprocessing.pipeline_builder import build_transforms
 
-    is_seg = dataset.is_segmentation
+    is_seg = dataset.segmentation
 
     # Build TWO pipelines: one for image+label pairs (segmentation), and one for
     # image-only entries (classification, or the test split of a seg dataset,
@@ -183,7 +183,7 @@ def _process(dataset, spec, input_dir: str, output_dir: str) -> dict:
         "test": new_test,
         "disclaimer": DISCLAIMER,
     }
-    with open(os.path.join(output_dir, "dataset.json"), "w") as f:
+    with open(os.path.join(output_dir, "dataset.json"), "w", encoding="utf-8") as f:
         json.dump(out_dataset, f, indent=2)
 
     result = {
@@ -197,7 +197,7 @@ def _process(dataset, spec, input_dir: str, output_dir: str) -> dict:
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "disclaimer": DISCLAIMER,
     }
-    with open(os.path.join(output_dir, "result.json"), "w") as f:
+    with open(os.path.join(output_dir, "result.json"), "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2)
 
     print(f"[preprocess] done: processed={processed} failed={failed} "

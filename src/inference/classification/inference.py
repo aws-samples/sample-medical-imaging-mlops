@@ -34,6 +34,61 @@ _handler = logging.StreamHandler()
 _handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
 logger.addHandler(_handler)
 
+# ── Request input confinement (Slingshot 2026-11-12) ─────────────────────────
+# Requests normally send an S3 URI or raw bytes. A local path is honoured only
+# when it resolves inside LOCAL_INPUT_ROOTS (comma-separated; default: the
+# SageMaker data mounts — never the model directory). ALLOWED_INPUT_BUCKETS
+# (comma-separated) optionally restricts which buckets the endpoint role reads.
+_DEFAULT_LOCAL_INPUT_ROOTS = "/opt/ml/input/data,/opt/ml/processing/input"
+_PATTERN_FIELDS = {"patient_id", "filename", "endpoint_name", "timestamp", "model_name"}
+
+
+def _local_input_roots():
+    raw = os.environ.get("LOCAL_INPUT_ROOTS", _DEFAULT_LOCAL_INPUT_ROOTS)
+    return tuple(os.path.realpath(r.strip()) for r in raw.split(",") if r.strip())
+
+
+def _validated_local_path(path) -> str:
+    real = os.path.realpath(str(path))
+    if not any(os.path.commonpath([root, real]) == root for root in _local_input_roots()):
+        raise ValueError("Local input paths are only accepted under LOCAL_INPUT_ROOTS")
+    if not os.path.isfile(real):
+        raise FileNotFoundError("Input file not found")
+    return real
+
+
+def _s3_bucket_key(uri: str):
+    """Parse s3://bucket/key and enforce ALLOWED_INPUT_BUCKETS when set."""
+    from urllib.parse import urlparse
+    p = urlparse(str(uri))
+    key = p.path.lstrip("/")
+    if p.scheme != "s3" or not p.netloc or not key:
+        raise ValueError("Expected an s3://bucket/key URI")
+    allowed = {b.strip() for b in os.environ.get("ALLOWED_INPUT_BUCKETS", "").split(",") if b.strip()}
+    if allowed and p.netloc not in allowed:
+        raise ValueError(f"S3 bucket not allowed for inference input: {p.netloc}")
+    return p.netloc, key
+
+
+def _safe_output_pattern(pattern: str, default: str) -> str:
+    """Only allow known {placeholders} (no attribute/index access, conversions or
+    format specs) and no path traversal in a caller-supplied filename pattern."""
+    import string
+    try:
+        for _lit, field, spec, conv in string.Formatter().parse(pattern):
+            if field is None:
+                continue
+            if field not in _PATTERN_FIELDS or spec or conv:
+                raise ValueError(field)
+    except ValueError:
+        logger.warning("Rejected output filename pattern; using default")
+        return default
+    if ".." in pattern or pattern.startswith("/"):
+        logger.warning("Rejected output filename pattern with path traversal; using default")
+        return default
+    return pattern
+
+
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -43,10 +98,9 @@ def _s3_to_bucket_key(s3_uri: str):
 
 
 def _download_s3(s3_uri: str, suffix: str = ".dcm") -> str:
-    bucket, key = _s3_to_bucket_key(s3_uri)
-    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-        tmp.flush()
-        tmp_path = tmp.name
+    bucket, key = _s3_bucket_key(s3_uri)
+    _fd, tmp_path = tempfile.mkstemp(suffix=suffix)
+    os.close(_fd)
     boto3.client("s3").download_file(bucket, key, tmp_path)
     logger.info("Downloaded %s → %s", s3_uri, tmp_path)
     return tmp_path
@@ -122,10 +176,9 @@ def model_fn(model_dir: str) -> Dict[str, Any]:
 def input_fn(request_body: Union[str, bytes], content_type: str) -> Dict[str, Any]:
     """Return a dict with local file path and metadata for output saving."""
     if content_type == "application/dicom":
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".dcm") as tmp:
+        _fd, tmp_path = tempfile.mkstemp(suffix=".dcm")
+        with os.fdopen(_fd, "wb") as tmp:
             tmp.write(request_body)
-            tmp.flush()
-            tmp_path = tmp.name
         logger.info("Received raw DICOM bytes → %s", tmp_path)
         return {"local_path": tmp_path}
 
@@ -140,10 +193,10 @@ def input_fn(request_body: Union[str, bytes], content_type: str) -> Dict[str, An
             local_path = _download_s3(s3_uri)
             return {"local_path": local_path, "s3_uri": s3_uri, "output_s3_uri": output_s3_uri, "output_pattern": output_pattern}
 
-        if os.path.exists(s3_uri):
-            return {"local_path": s3_uri, "output_s3_uri": output_s3_uri, "output_pattern": output_pattern}
+        if s3_uri:
+            return {"local_path": _validated_local_path(s3_uri), "output_s3_uri": output_s3_uri, "output_pattern": output_pattern}
 
-        raise ValueError(f"Cannot resolve input: {s3_uri}")
+        raise ValueError("Request must include 's3_uri' or 'file_path'")
 
     raise ValueError(f"Unsupported content_type: {content_type}")
 
@@ -225,8 +278,10 @@ def output_fn(prediction: Dict[str, Any], accept: str) -> str:
             timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
             endpoint_name = os.environ.get("SAGEMAKER_ENDPOINT_NAME", "endpoint")
 
-            output_pattern = output_pattern_override or os.environ.get(
-                "OUTPUT_FILENAME_PATTERN", "{patient_id}_classification_{timestamp}.json"
+            _default_pattern = "{patient_id}_classification_{timestamp}.json"
+            output_pattern = _safe_output_pattern(
+                output_pattern_override or os.environ.get("OUTPUT_FILENAME_PATTERN", _default_pattern),
+                _default_pattern,
             )
             output_filename = output_pattern.format(
                 patient_id=patient_id,

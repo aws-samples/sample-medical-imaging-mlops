@@ -14,7 +14,9 @@
 # so the image uses the Docker V2 manifest format SageMaker requires (it rejects
 # OCI manifests).
 
-FROM --platform=linux/amd64 python:3.12-slim
+# Official python:3.12-slim via the public ECR mirror, pinned by digest
+# (resolved 2026-11-12). Refresh the digest when updating.
+FROM --platform=linux/amd64 public.ecr.aws/docker/library/python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
 
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
@@ -45,3 +47,8 @@ WORKDIR /opt/program
 # Processing Jobs invoke the entrypoint from AppSpecification; this default is a
 # convenience for local `docker run` testing.
 ENTRYPOINT ["python", "/opt/program/src/preprocessing/preprocess.py"]
+
+# checkov:skip=CKV_DOCKER_3:SageMaker processing containers must run as root (the toolkit writes /opt/ml and writes root-owned /opt/ml/processing mounts); a non-root USER breaks the job.
+# Batch job (SageMaker Training/Processing): no long-running service to probe —
+# SageMaker tracks the process exit code. Declared explicitly.
+HEALTHCHECK NONE

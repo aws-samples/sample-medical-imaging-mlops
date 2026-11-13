@@ -189,7 +189,9 @@
         <p>Configure your AWS credentials to access S3 and SageMaker services</p>
     </div>
     <div class="card-body">
-        <form id="aws-config-form" method="post" action="javascript:void(0)">
+        <!-- Submitted via fetch() in static/js/aws.js (JSON + same-origin check in main.py's
+             request-origin middleware); no native form POST, so no form-encoded CSRF surface. -->
+        <form id="aws-config-form">
             <div class="form-group">
                 <label for="access-key">Access Key ID</label>
                 <input type="text" id="access-key" name="access_key_id">
@@ -1931,17 +1933,17 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/js/aws.js?v={{ asset_v }}"></script>
-<script src="/static/js/data.js?v={{ asset_v }}"></script>
-<script src="/static/js/training.js?v={{ asset_v }}"></script>
-<script src="/static/js/deployment.js?v={{ asset_v }}"></script>
-<script src="/static/js/inference.js?v={{ asset_v }}"></script>
-<script src="/static/js/fairness.js?v={{ asset_v }}"></script>
-<script src="/static/js/preprocessing.js?v={{ asset_v }}"></script>
-<script src="/static/js/evaluation.js?v={{ asset_v }}"></script>
-<script src="/static/js/monitoring.js?v={{ asset_v }}"></script>
-<script src="/static/js/monai_bundle.js?v={{ asset_v }}"></script>
-<script src="/static/js/nvmedtech.js?v={{ asset_v }}"></script>
+{{ static_script('js/aws.js') }}
+{{ static_script('js/data.js') }}
+{{ static_script('js/training.js') }}
+{{ static_script('js/deployment.js') }}
+{{ static_script('js/inference.js') }}
+{{ static_script('js/fairness.js') }}
+{{ static_script('js/preprocessing.js') }}
+{{ static_script('js/evaluation.js') }}
+{{ static_script('js/monitoring.js') }}
+{{ static_script('js/monai_bundle.js') }}
+{{ static_script('js/nvmedtech.js') }}
 <script>
 // Load runtime config from backend (.env.local) and populate form defaults
 (async function loadConfig() {

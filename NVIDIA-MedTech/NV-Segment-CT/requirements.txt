@@ -1,14 +1,17 @@
+# Reference requirements from the upstream NV-Segment-CT bundle, raised to
+# patched versions (ProbeScan/grype). Not installed by any image here — the
+# dedicated images install src/nvmedtech/requirements.txt.
 fire==0.6.0
 matplotlib==3.8.3
-monai==1.4.0
+monai==1.6.1
 nibabel==5.2.1
 numpy==1.24.4
-Pillow==10.4.0
+Pillow==13.0.0
 PyYAML==6.0.2
 scipy
 scikit-image==0.24.0
-torch==2.0.1
-tqdm==4.66.2
+torch>=2.13.0
+tqdm==4.67.1
 tensorboard==2.13.0
 einops==0.6.1
 ml-collections

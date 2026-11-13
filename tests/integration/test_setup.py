@@ -5,7 +5,6 @@ Test script to verify MedAnvil setup
 
 import sys
 import importlib
-import subprocess
 from pathlib import Path
 
 def test_imports():
@@ -149,7 +148,7 @@ def main():
         print("\nTo start the application:")
         print("1. Run: python main.py")
         print("2. Open: http://localhost:8000")
-        print("3. Start MLflow: mlflow server --host 0.0.0.0 --port 5000")
+        print("3. Start MLflow: mlflow server --host 127.0.0.1 --port 5000")
         print("4. Start TensorBoard: tensorboard --logdir=./logs/tensorboard --port=6006")
     else:
         print(f"\n⚠️  {len(results) - passed} test(s) failed. Please fix the issues above.")

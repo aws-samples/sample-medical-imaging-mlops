@@ -47,7 +47,7 @@ class BundleInfo:
     inference_configs: list = field(default_factory=list)
 
     @property
-    def is_valid(self) -> bool:
+    def valid(self) -> bool:
         return self.configs_dir is not None and bool(self.config_files)
 
     @property
@@ -118,7 +118,7 @@ def inspect_bundle(root: str) -> BundleInfo:
 
     logger.info(
         "Bundle @ %s: valid=%s configs=%s train=%s infer=%s ckpts=%d task=%s",
-        root, info.is_valid, info.config_files, info.train_configs,
+        root, info.valid, info.config_files, info.train_configs,
         info.inference_configs, len(info.checkpoints), info.task,
     )
     return info

@@ -164,7 +164,7 @@
     function renderStepPicker() {
         const sel = document.getElementById('pp-step-picker');
         if (!sel) return;
-        sel.innerHTML = '';
+        sel.replaceChildren();
         Object.keys(catalog).forEach(type => {
             const opt = document.createElement('option');
             opt.value = type;
@@ -176,9 +176,9 @@
     function renderSteps() {
         const box = document.getElementById('pp-steps-list');
         if (!box) return;
-        box.innerHTML = '';
+        box.replaceChildren();
         if (!steps.length) {
-            box.innerHTML = '<p style="color:#888; font-size:0.85rem; margin:0;">No steps yet — add one above, or click “Load Default”.</p>';
+            setHTML(box, html`<p style="color:#888; font-size:0.85rem; margin:0;">No steps yet — add one above, or click “Load Default”.</p>`);
             refreshSpecView();
             return;
         }
@@ -223,7 +223,7 @@
         b.type = 'button';
         b.className = 'btn btn-secondary';
         b.style.cssText = 'padding:2px 8px; font-size:0.75rem;' + (color ? ('color:' + color + ';') : '');
-        b.innerHTML = '<i class="fas ' + icon + '"></i>';   // static icon class only
+        setHTML(b, html`<i class="fas ${icon}"></i>`);   // static icon class only
         b.addEventListener('click', onClick);
         return b;
     }
@@ -248,7 +248,7 @@
     window.ppLoadDefault = function () {
         steps = DEFAULT_STEPS
             .filter(t => catalog[t])
-            .map(t => ({ type: t, params: JSON.parse(JSON.stringify(catalog[t].params || {})) }));
+            .map(t => ({ type: t, params: structuredClone(catalog[t].params || {}) }));
         renderSteps();
     };
 
@@ -294,25 +294,16 @@
         if (!box) return;
         const example = detail.example || '';
         const expected = detail.expected_location || '';
-        let html = '<div class="card" style="border-left:4px solid #e65100;"><div class="card-body">';
-        html += '<div style="display:flex; align-items:flex-start; gap:0.6rem; margin-bottom:0.75rem;">'
-            + '<i class="fas fa-triangle-exclamation" style="color:#e65100; margin-top:3px;"></i>'
-            + '<div><strong>No <code>dataset.json</code> found.</strong><br>'
-            + '<span style="font-size:0.85rem; color:#555;">' + escapeHtml(detail.message || '') + '</span></div></div>';
+        let _markup = html`<div class="card" style="border-left:4px solid #e65100;"><div class="card-body">`;
+        _markup = html`${_markup}${html`<div style="display:flex; align-items:flex-start; gap:0.6rem; margin-bottom:0.75rem;"><i class="fas fa-triangle-exclamation" style="color:#e65100; margin-top:3px;"></i><div><strong>No <code>dataset.json</code> found.</strong><br><span style="font-size:0.85rem; color:#555;">${detail.message || ''}</span></div></div>`}`;
         if (expected) {
-            html += '<div style="font-size:0.82rem; margin-bottom:0.5rem;"><strong>Expected location:</strong> '
-                + '<code>' + escapeHtml(expected) + '</code></div>';
+            _markup = html`${_markup}${html`<div style="font-size:0.82rem; margin-bottom:0.5rem;"><strong>Expected location:</strong> <code>${expected}</code></div>`}`;
         }
-        html += '<div style="font-size:0.82rem; margin-bottom:0.35rem; display:flex; justify-content:space-between; align-items:center;">'
-            + '<strong>Example <code>dataset.json</code> (MSD/Decathlon format):</strong>'
-            + '<button type="button" class="btn btn-secondary" style="padding:2px 10px; font-size:0.75rem;" onclick="ppCopyExample()"><i class="fas fa-copy"></i> Copy</button>'
-            + '</div>';
-        html += '<pre id="pp-example-json" style="background:#1e1e1e; color:#d4d4d4; padding:0.75rem; border-radius:6px; font-size:0.76rem; overflow:auto; max-height:340px; margin:0;">'
-            + escapeHtml(example) + '</pre>';
-        html += '<small style="color:#888; display:block; margin-top:0.5rem;">Paths are relative to the dataset root. '
-            + 'Entries with a <code>label</code> are treated as segmentation; image-only entries as classification.</small>';
-        html += '</div></div>';
-        box.innerHTML = html;
+        _markup = html`${_markup}${html`<div style="font-size:0.82rem; margin-bottom:0.35rem; display:flex; justify-content:space-between; align-items:center;"><strong>Example <code>dataset.json</code> (MSD/Decathlon format):</strong><button type="button" class="btn btn-secondary" style="padding:2px 10px; font-size:0.75rem;" onclick="ppCopyExample()"><i class="fas fa-copy"></i> Copy</button></div>`}`;
+        _markup = html`${_markup}${html`<pre id="pp-example-json" style="background:#1e1e1e; color:#d4d4d4; padding:0.75rem; border-radius:6px; font-size:0.76rem; overflow:auto; max-height:340px; margin:0;">${example}</pre>`}`;
+        _markup = html`${_markup}${html`<small style="color:#888; display:block; margin-top:0.5rem;">Paths are relative to the dataset root. Entries with a <code>label</code> are treated as segmentation; image-only entries as classification.</small>`}`;
+        _markup = html`${_markup}${html`</div></div>`}`;
+        setHTML(box, _markup);
         box.style.display = 'block';
     }
 
@@ -330,52 +321,42 @@
         if (!box) return;
         const c = res.counts || {};
         const labels = res.labels || {};
-        let html = '<div class="card"><div class="card-body">';
-        html += '<div style="display:flex; gap:1.5rem; flex-wrap:wrap; font-size:0.85rem; margin-bottom:0.5rem;">';
-        html += '<div><strong>Dataset:</strong> ' + escapeHtml(res.name || '—') + '</div>';
-        html += '<div><strong>Task:</strong> <span style="color:#00695c; font-weight:600;">' + escapeHtml(res.task_type || '—') + '</span> (derived)</div>';
+        let _markup = html`<div class="card"><div class="card-body">`;
+        _markup = html`${_markup}${html`<div style="display:flex; gap:1.5rem; flex-wrap:wrap; font-size:0.85rem; margin-bottom:0.5rem;">`}`;
+        _markup = html`${_markup}${html`<div><strong>Dataset:</strong> ${res.name || '—'}</div>`}`;
+        _markup = html`${_markup}${html`<div><strong>Task:</strong> <span style="color:#00695c; font-weight:600;">${res.task_type || '—'}</span> (derived)</div>`}`;
         if (res.source === 'imagefolder') {
-            html += '<div><strong>Source:</strong> ImageFolder (class = subfolder)</div>';
+            _markup = html`${_markup}${html`<div><strong>Source:</strong> ImageFolder (class = subfolder)</div>`}`;
         }
-        html += '<div><strong>Train:</strong> ' + escapeHtml(String(c.training ?? 0)) + '</div>';
-        html += '<div><strong>Val:</strong> ' + escapeHtml(String(c.validation ?? 0)) + '</div>';
-        html += '<div><strong>Test:</strong> ' + escapeHtml(String(c.test ?? 0)) + '</div>';
-        html += '<div><strong>Total:</strong> ' + escapeHtml(String(res.total_pairs ?? 0)) + '</div>';
-        html += '</div>';
+        _markup = html`${_markup}${html`<div><strong>Train:</strong> ${String(c.training ?? 0)}</div>`}`;
+        _markup = html`${_markup}${html`<div><strong>Val:</strong> ${String(c.validation ?? 0)}</div>`}`;
+        _markup = html`${_markup}${html`<div><strong>Test:</strong> ${String(c.test ?? 0)}</div>`}`;
+        _markup = html`${_markup}${html`<div><strong>Total:</strong> ${String(res.total_pairs ?? 0)}</div>`}`;
+        _markup = html`${_markup}${html`</div>`}`;
 
         // ImageFolder: show discovered classes and per-class counts.
         const classes = res.classes || {};
         const classNames = Object.keys(classes);
         if (classNames.length) {
-            html += '<div style="font-size:0.82rem; margin-bottom:0.5rem;"><strong>Classes (' + classNames.length + '):</strong> '
-                + classNames.map(k => escapeHtml(k) + ' (' + escapeHtml(String(classes[k])) + ')').join(', ') + '</div>';
+            _markup = html`${_markup}${html`<div style="font-size:0.82rem; margin-bottom:0.5rem;"><strong>Classes (${classNames.length}):</strong> ${joinHtml(classNames.map(k => html`${k} (${String(classes[k])})`), ', ')}</div>`}`;
         }
 
         const labelKeys = Object.keys(labels);
         if (labelKeys.length) {
-            html += '<div style="font-size:0.82rem; margin-bottom:0.5rem;"><strong>Labels:</strong> '
-                + labelKeys.map(k => escapeHtml(k) + '=' + escapeHtml(String(labels[k]))).join(', ') + '</div>';
+            _markup = html`${_markup}${html`<div style="font-size:0.82rem; margin-bottom:0.5rem;"><strong>Labels:</strong> ${joinHtml(labelKeys.map(k => html`${k}=${String(labels[k])}`), ', ')}</div>`}`;
         }
 
         const pairs = res.sample_pairs || [];
         if (pairs.length) {
-            html += '<table style="width:100%; font-size:0.8rem; border-collapse:collapse;">'
-                + '<tr style="text-align:left; color:#666; border-bottom:1px solid #ddd;">'
-                + '<th style="padding:4px;">#</th><th style="padding:4px;">split</th>'
-                + '<th style="padding:4px;">image</th><th style="padding:4px;">label</th></tr>';
+            _markup = html`${_markup}${html`<table style="width:100%; font-size:0.8rem; border-collapse:collapse;"><tr style="text-align:left; color:#666; border-bottom:1px solid #ddd;"><th style="padding:4px;">#</th><th style="padding:4px;">split</th><th style="padding:4px;">image</th><th style="padding:4px;">label</th></tr>`}`;
             pairs.forEach((p, i) => {
-                html += '<tr style="border-bottom:1px solid #f2f2f2;">'
-                    + '<td style="padding:4px; color:#999;">' + (i + 1) + '</td>'
-                    + '<td style="padding:4px;">' + escapeHtml(p.split || '') + '</td>'
-                    + '<td style="padding:4px; font-family:monospace;">' + escapeHtml(p.image || '') + '</td>'
-                    + '<td style="padding:4px; font-family:monospace;">' + escapeHtml(p.label || '—') + '</td>'
-                    + '</tr>';
+                _markup = html`${_markup}${html`<tr style="border-bottom:1px solid #f2f2f2;"><td style="padding:4px; color:#999;">${i + 1}</td><td style="padding:4px;">${p.split || ''}</td><td style="padding:4px; font-family:monospace;">${p.image || ''}</td><td style="padding:4px; font-family:monospace;">${p.label || '—'}</td></tr>`}`;
             });
-            html += '</table>';
-            html += '<small style="color:#888;">Showing first ' + pairs.length + ' of ' + escapeHtml(String(res.total_pairs ?? pairs.length)) + ' entries.</small>';
+            _markup = html`${_markup}${html`</table>`}`;
+            _markup = html`${_markup}${html`<small style="color:#888;">Showing first ${pairs.length} of ${String(res.total_pairs ?? pairs.length)} entries.</small>`}`;
         }
-        html += '</div></div>';
-        box.innerHTML = html;
+        _markup = html`${_markup}${html`</div></div>`}`;
+        setHTML(box, _markup);
         box.style.display = 'block';
     }
 
@@ -415,23 +396,20 @@
             ['Intensity min', fmt(inp.intensity_min), fmt(out.intensity_min)],
             ['Intensity max', fmt(inp.intensity_max), fmt(out.intensity_max)]
         ];
-        let html = '<table style="width:100%; font-size:0.85rem; border-collapse:collapse;">'
-            + '<tr style="text-align:left; color:#666;"><th></th><th>Before</th><th>After</th></tr>';
+        let _markup = html`<table style="width:100%; font-size:0.85rem; border-collapse:collapse;"><tr style="text-align:left; color:#666;"><th></th><th>Before</th><th>After</th></tr>`;
         rows.forEach(r => {
-            html += '<tr><td style="padding:3px 6px; color:#555;">' + escapeHtml(r[0]) + '</td>'
-                + '<td style="padding:3px 6px;">' + escapeHtml(r[1]) + '</td>'
-                + '<td style="padding:3px 6px; font-weight:600;">' + escapeHtml(r[2]) + '</td></tr>';
+            _markup = html`${_markup}${html`<tr><td style="padding:3px 6px; color:#555;">${r[0]}</td><td style="padding:3px 6px;">${r[1]}</td><td style="padding:3px 6px; font-weight:600;">${r[2]}</td></tr>`}`;
         });
-        html += '</table>';
+        _markup = html`${_markup}${html`</table>`}`;
 
         if (Array.isArray(res && res.timings) && res.timings.length) {
-            html += '<h4 style="margin:0.75rem 0 0.25rem; font-size:0.82rem; color:#555;">Per-step timing</h4><ul style="margin:0; padding-left:1.1rem; font-size:0.8rem;">';
+            _markup = html`${_markup}${html`<h4 style="margin:0.75rem 0 0.25rem; font-size:0.82rem; color:#555;">Per-step timing</h4><ul style="margin:0; padding-left:1.1rem; font-size:0.8rem;">`}`;
             res.timings.forEach(t => {
-                html += '<li>' + escapeHtml(t.step) + ': ' + escapeHtml(fmt(t.seconds)) + 's</li>';
+                _markup = html`${_markup}${html`<li>${t.step}: ${fmt(t.seconds)}s</li>`}`;
             });
-            html += '</ul>';
+            _markup = html`${_markup}${html`</ul>`}`;
         }
-        if (statsBox) statsBox.innerHTML = html;
+        if (statsBox) setHTML(statsBox, _markup);
 
         const img = document.getElementById('pp-preview-image');
         const noimg = document.getElementById('pp-preview-noimage');
@@ -528,7 +506,7 @@
                 _jobsPollTimer = null;
             }
         } catch (err) {
-            box.innerHTML = '<p style="color:#888; font-size:0.85rem;">Jobs unavailable: ' + escapeHtml(err.message) + '</p>';
+            setHTML(box, html`<p style="color:#888; font-size:0.85rem;">Jobs unavailable: ${err.message}</p>`);
         }
     };
 
@@ -542,7 +520,7 @@
     };
 
     window.ppDeleteJob = async function (jobName) {
-        if (!confirm('Delete job record ' + jobName + '? (S3 outputs are kept.)')) return;
+        if (!(await confirmAction('Delete job record ' + jobName + '? (S3 outputs are kept.)', { danger: true, confirmLabel: 'Delete' }))) return;
         try {
             await apiCall('/api/preprocessing/jobs/' + encodeURIComponent(jobName), { method: 'DELETE' });
             ppLoadJobs();
@@ -555,35 +533,26 @@
         const box = document.getElementById('pp-jobs-table');
         if (!box) return;
         if (!jobs.length) {
-            box.innerHTML = '<p style="color:#888; font-size:0.85rem;">No jobs yet.</p>';
+            setHTML(box, html`<p style="color:#888; font-size:0.85rem;">No jobs yet.</p>`);
             return;
         }
-        let html = '<table style="width:100%; font-size:0.82rem; border-collapse:collapse;">'
-            + '<tr style="text-align:left; color:#666; border-bottom:1px solid #ddd;">'
-            + '<th style="padding:6px;">Job</th><th style="padding:6px;">Status</th>'
-            + '<th style="padding:6px;">Output</th><th style="padding:6px;">Created</th><th></th></tr>';
+        let _markup = html`<table style="width:100%; font-size:0.82rem; border-collapse:collapse;"><tr style="text-align:left; color:#666; border-bottom:1px solid #ddd;"><th style="padding:6px;">Job</th><th style="padding:6px;">Status</th><th style="padding:6px;">Output</th><th style="padding:6px;">Created</th><th></th></tr>`;
         jobs.forEach(j => {
-            const name = escapeHtml(j.job_name || '');
-            const status = escapeHtml(j.status || '');
+            const name = j.job_name || '';
+            const status = j.status || '';
             const color = j.status === 'Completed' ? '#2e7d32'
                 : j.status === 'Failed' ? '#c62828'
                 : j.status === 'InProgress' ? '#1565c0' : '#666';
             // Failed jobs: show the reason on hover; completed: show finish time.
             const statusCell = j.status === 'Failed' && j.failure_reason
-                ? '<span title="' + escapeHtml(j.failure_reason) + '">' + status + ' ⓘ</span>'
+                ? html`<span title="${j.failure_reason}">${status} ⓘ</span>`
                 : (j.status === 'Completed' && j.completed_at)
-                ? '<span title="Completed ' + escapeHtml(formatDate(j.completed_at)) + '">' + status + '</span>'
+                ? html`<span title="Completed ${formatDate(j.completed_at)}">${status}</span>`
                 : status;
-            html += '<tr style="border-bottom:1px solid #f0f0f0;">'
-                + '<td style="padding:6px; font-family:monospace;">' + name + '</td>'
-                + '<td style="padding:6px; color:' + color + '; font-weight:600;">' + statusCell + '</td>'
-                + '<td style="padding:6px; font-family:monospace; word-break:break-all;">' + escapeHtml(j.output_s3_uri || '—') + '</td>'
-                + '<td style="padding:6px;">' + escapeHtml(j.created_at ? formatDate(j.created_at) : '—') + '</td>'
-                + '<td style="padding:6px;"><button type="button" class="btn btn-secondary" style="padding:2px 8px; font-size:0.75rem; color:#d9534f;" onclick="ppDeleteJob(\'' + escapeJsString(j.job_name || '') + '\')"><i class="fas fa-trash"></i></button></td>'
-                + '</tr>';
+            _markup = html`${_markup}${html`<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:6px; font-family:monospace;">${name}</td><td style="padding:6px; color:${color}; font-weight:600;">${statusCell}</td><td style="padding:6px; font-family:monospace; word-break:break-all;">${j.output_s3_uri || '—'}</td><td style="padding:6px;">${j.created_at ? formatDate(j.created_at) : '—'}</td><td style="padding:6px;"><button type="button" class="btn btn-secondary" style="padding:2px 8px; font-size:0.75rem; color:#d9534f;" onclick="ppDeleteJob('${escapeJsString(j.job_name || '')}')"><i class="fas fa-trash"></i></button></td></tr>`}`;
         });
-        html += '</table>';
-        box.innerHTML = html;
+        _markup = html`${_markup}${html`</table>`}`;
+        setHTML(box, _markup);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────────

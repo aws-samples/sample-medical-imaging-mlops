@@ -1,47 +1,21 @@
 // Main JavaScript file for MedAnvil
 
-// ── HTML escaping utility (prevents XSS in template strings) ─────────────────
-function escapeHtml(str) {
-    if (str == null) return '';
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
-
-// ── URL sanitization (prevents javascript: URI injection in href attributes) ──
-function safeUrl(url) {
-    if (!url) return '';
-    const s = String(url).trim();
-    if (s.startsWith('/') || s.startsWith('http://') || s.startsWith('https://')) return s;
-    return '';
-}
-
-// ── JavaScript string escaping (for use inside inline onclick handlers) ───────
-// HTML-escaping alone is insufficient in JS string contexts because browsers
-// HTML-decode attribute values before executing them as JavaScript.
-function escapeJsString(str) {
-    if (str == null) return '';
-    return String(str)
-        .replace(/\\/g, '\\\\')
-        .replace(/'/g, "\\'")
-        .replace(/"/g, '\\"')
-        .replace(/</g, '\\x3c')
-        .replace(/>/g, '\\x3e')
-        .replace(/&/g, '\\x26');
-}
+// escapeHtml / safeUrl / escapeJsString / html`` / setHTML / notify /
+// confirmAction live in safe_html.js (loaded before this file).
 
 // ── Tab system ────────────────────────────────────────────────────────────────
-const _tabInits   = {};
-const _tabVisited = {};
+// Map (not a plain object) so a tab id read from localStorage can only ever
+// resolve to an init function a module explicitly registered — never to an
+// inherited Object.prototype member.
+const _tabInits   = new Map();
+const _tabVisited = new Set();
 
 function registerTabInit(tabId, fn) {
+    if (typeof fn !== 'function') return;
     // Chain: multiple modules may register for the same tab (e.g. inference +
     // the prediction viewer). Overwriting would silently drop earlier inits.
-    const prev = _tabInits[tabId];
-    _tabInits[tabId] = prev ? function () { prev(); fn(); } : fn;
+    const prev = _tabInits.get(tabId);
+    _tabInits.set(tabId, prev ? function () { prev(); fn(); } : fn);
 }
 
 function switchTab(tabId, btn) {
@@ -51,9 +25,10 @@ function switchTab(tabId, btn) {
     if (panel) panel.classList.add('active');
     if (btn) btn.classList.add('active');
     localStorage.setItem('activeTab', tabId);
-    if (_tabInits[tabId] && !_tabVisited[tabId]) {
-        _tabVisited[tabId] = true;
-        _tabInits[tabId]();
+    const init = _tabInits.get(tabId);
+    if (typeof init === 'function' && !_tabVisited.has(tabId)) {
+        _tabVisited.add(tabId);
+        init();
     }
 }
 

@@ -254,8 +254,8 @@ def plot_roc_auc(y_true, y_prob, class_names, output_path: Path):
                 roc_auc     = auc(fpr, tpr)
                 ax.plot(fpr, tpr, color=color, lw=1.5,
                         label=f"{cls} (AUC = {roc_auc:.3f})")
-            except Exception:
-                pass
+            except Exception as _exc:
+                logger.debug("ignored, non-fatal: %s", _exc)
 
     ax.plot([0, 1], [0, 1], "k--", lw=1)
     ax.set_xlim([0.0, 1.0]); ax.set_ylim([0.0, 1.05])
@@ -613,8 +613,8 @@ def plot_roc_auc(y_true, y_prob, class_names, output_path: Path):
                 roc_auc     = auc(fpr, tpr)
                 ax.plot(fpr, tpr, color=color, lw=1.5,
                         label=f"{cls} (AUC = {roc_auc:.3f})")
-            except Exception:
-                pass
+            except Exception as _exc:
+                logger.debug("ignored, non-fatal: %s", _exc)
 
     ax.plot([0, 1], [0, 1], "k--", lw=1)
     ax.set_xlim([0.0, 1.0])

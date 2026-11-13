@@ -1,7 +1,7 @@
 // Inference JavaScript
-// Depends on: escapeHtml() defined in main.js (loaded before this file)
+// Depends on: html``/setHTML()/escapeHtml() from safe_html.js (loaded before this file)
 if (typeof escapeHtml !== 'function') {
-    throw new Error('escapeHtml() is required but not defined. Ensure main.js is loaded before inference.js.');
+    throw new Error('escapeHtml() is required but not defined. Ensure safe_html.js is loaded before inference.js.');
 }
 
 registerTabInit('inference', function () {
@@ -40,7 +40,7 @@ function _rememberViewerVolumes(imageUri, maskUri, classification, endpointName)
 // Fallback: also load on DOMContentLoaded in case tab init doesn't fire
 document.addEventListener('DOMContentLoaded', function() {
     const select = document.getElementById('inf-endpoint');
-    if (select && select.innerHTML.includes('Loading endpoints')) {
+    if (select && select.textContent.includes('Loading endpoints')) {
         loadInferenceEndpoints();
     }
     const form = document.getElementById('inference-form');
@@ -71,15 +71,15 @@ async function loadInferenceEndpoints() {
     try {
         const res = await apiCall('/api/inference/endpoints');
         if (res.endpoints && res.endpoints.length > 0) {
-            select.innerHTML = res.endpoints.map(e => {
+            setHTML(select, joinHtml(res.endpoints.map(e => {
                 const taskType    = e.task_type     || (e.name.toLowerCase().includes('segment') ? 'segmentation' : 'classification');
                 const epType      = e.endpoint_type || 'realtime';
                 const outputS3    = e.output_s3_uri || '';
                 const asyncLabel  = epType === 'async' ? ' ⚡' : '';
                 const scaledLabel = e.scaled_to_zero ? ' ⚠️ scaled to 0' : '';
                 const statusLabel = e.status !== 'InService' ? ` (${e.status})` : '';
-                return `<option value="${escapeHtml(e.name)}" data-type="${escapeHtml(epType)}" data-output-s3="${escapeHtml(outputS3)}" data-task="${escapeHtml(taskType)}" data-scaled="${e.scaled_to_zero ? '1' : '0'}" data-status="${escapeHtml(e.status || '')}">${escapeHtml(e.name)}${asyncLabel}${scaledLabel}${statusLabel}</option>`;
-            }).join('');
+                return html`<option value="${e.name}" data-type="${epType}" data-output-s3="${outputS3}" data-task="${taskType}" data-scaled="${e.scaled_to_zero ? '1' : '0'}" data-status="${e.status || ''}">${e.name}${asyncLabel}${scaledLabel}${statusLabel}</option>`;
+            }), ''));
             onInfEndpointChange();
             return;
         }
@@ -92,18 +92,18 @@ async function loadInferenceEndpoints() {
         const dep = await apiCall('/api/deployment/deployments?local_only=true');
         const active = (dep.deployments || []).filter(d => d.status === 'InService');
         if (active.length > 0) {
-            select.innerHTML = active.map(d => {
+            setHTML(select, joinHtml(active.map(d => {
                 const taskType   = d.task_type     || (d.endpoint_name.toLowerCase().includes('segment') ? 'segmentation' : 'classification');
                 const epType     = d.endpoint_type || 'realtime';
                 const asyncLabel = epType === 'async' ? ' ⚡' : '';
-                return `<option value="${escapeHtml(d.endpoint_name)}" data-type="${escapeHtml(epType)}" data-output-s3="${escapeHtml(d.output_s3_uri || '')}" data-task="${escapeHtml(taskType)}">${escapeHtml(d.endpoint_name)}${asyncLabel}</option>`;
-            }).join('');
+                return html`<option value="${d.endpoint_name}" data-type="${epType}" data-output-s3="${d.output_s3_uri || ''}" data-task="${taskType}">${d.endpoint_name}${asyncLabel}</option>`;
+            }), ''));
             onInfEndpointChange();
             return;
         }
     } catch (_) {}
 
-    select.innerHTML = '<option value="" disabled selected>No InService endpoints found</option>';
+    setHTML(select, html`<option value="" disabled selected>No InService endpoints found</option>`);
 }
 
 function onInfEndpointChange() {
@@ -124,7 +124,7 @@ function onInfEndpointChange() {
     if (banner) {
         if (scaledToZero) {
             banner.className = 'sm-status-banner sm-status-failed';
-            banner.innerHTML = '<i class="fas fa-exclamation-triangle"></i> This endpoint is scaled to 0 instances. Go to the Deploy tab to scale it up before invoking.';
+            setHTML(banner, html`<i class="fas fa-exclamation-triangle"></i> This endpoint is scaled to 0 instances. Go to the Deploy tab to scale it up before invoking.`);
             banner.style.display = 'flex';
         } else {
             banner.style.display = 'none';
@@ -176,8 +176,8 @@ async function runInference(e) {
     const placeholder = document.getElementById('inference-result-placeholder');
 
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running...';
-    if (banner) { banner.className = 'sm-status-banner sm-status-submitting'; banner.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Invoking endpoint...'; banner.style.display = 'flex'; }
+    setHTML(btn, html`<i class="fas fa-spinner fa-spin"></i> Running...`);
+    if (banner) { banner.className = 'sm-status-banner sm-status-submitting'; setHTML(banner, html`<i class="fas fa-spinner fa-spin"></i> Invoking endpoint...`); banner.style.display = 'flex'; }
     if (result) result.style.display = 'none';
     if (placeholder) placeholder.style.display = 'block';
 
@@ -212,21 +212,21 @@ async function runInference(e) {
         if (res.async) {
             // Async endpoint — show submission card and start polling.
             // (window._lastInputImage already remembers the source volume.)
-            if (banner) { banner.className = 'sm-status-banner sm-status-submitting'; banner.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Async inference submitted — waiting for result...'; }
+            if (banner) { banner.className = 'sm-status-banner sm-status-submitting'; setHTML(banner, html`<i class="fas fa-spinner fa-spin"></i> Async inference submitted — waiting for result...`); }
             displayAsyncResult(res);
         } else {
             // Restore result container structure if it was overwritten by a prior async call
             restoreResultContainer();
 
             if (res.predicted_class || res.probabilities || res.predicted_class_index !== undefined) {
-                if (banner) { banner.className = 'sm-status-banner sm-status-success'; banner.innerHTML = '<i class="fas fa-check-circle"></i> Inference complete'; }
+                if (banner) { banner.className = 'sm-status-banner sm-status-success'; setHTML(banner, html`<i class="fas fa-check-circle"></i> Inference complete`); }
                 displayClassificationResult(res);
             } else if (res.segmentation_mask_base64 || res.mask_nifti_b64 || res.segmented_voxels !== undefined) {
-                if (banner) { banner.className = 'sm-status-banner sm-status-success'; banner.innerHTML = '<i class="fas fa-check-circle"></i> Inference complete'; }
+                if (banner) { banner.className = 'sm-status-banner sm-status-success'; setHTML(banner, html`<i class="fas fa-check-circle"></i> Inference complete`); }
                 displaySegmentationResult(res);
             } else {
                 // Use task type from the endpoint's deployment record
-                if (banner) { banner.className = 'sm-status-banner sm-status-success'; banner.innerHTML = '<i class="fas fa-check-circle"></i> Inference complete'; }
+                if (banner) { banner.className = 'sm-status-banner sm-status-success'; setHTML(banner, html`<i class="fas fa-check-circle"></i> Inference complete`); }
                 const epSelect = document.getElementById('inf-endpoint');
                 const selectedOpt = epSelect?.options[epSelect.selectedIndex];
                 const taskType = selectedOpt?.dataset?.task || 'classification';
@@ -242,10 +242,10 @@ async function runInference(e) {
         if (savedTo) savedTo.textContent = res.saved_to ? `Saved to: ${res.saved_to}` : '';
 
     } catch (err) {
-        if (banner) { banner.className = 'sm-status-banner sm-status-error'; banner.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${escapeHtml(err.message)}`; }
+        if (banner) { banner.className = 'sm-status-banner sm-status-error'; setHTML(banner, html`<i class="fas fa-exclamation-circle"></i> ${err.message}`); }
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-play"></i> Run Inference';
+        setHTML(btn, html`<i class="fas fa-play"></i> Run Inference`);
     }
 }
 
@@ -254,7 +254,7 @@ function restoreResultContainer() {
     const resultDiv = document.getElementById('inference-result');
     if (!resultDiv) return;
     if (!document.getElementById('inf-class-result')) {
-        resultDiv.innerHTML = `
+        setHTML(resultDiv, html`
             <div id="inf-class-result" class="inf-class-card" style="display:none;">
                 <div class="inf-predicted-class"></div>
                 <div class="inf-confidence"></div>
@@ -265,26 +265,26 @@ function restoreResultContainer() {
                 <div id="inf-seg-stats" class="job-status-detail"></div>
             </div>
             <div id="inf-saved-to" style="margin-top:0.75rem; font-size:0.85rem; color:#666;"></div>
-        `;
+        `);
     }
 }
 
 function displayAsyncResult(res) {
     const resultDiv = document.getElementById('inference-result');
     if (!resultDiv) return;
-    resultDiv.innerHTML = `
+    setHTML(resultDiv, html`
         <div id="async-result-card" style="padding:1rem; background:#e8f4fd; border-radius:6px; border:1px solid #1a6fa0;">
             <h4 style="margin:0 0 0.5rem;"><i class="fas fa-spinner fa-spin"></i> Async Inference In Progress</h4>
             <div style="font-size:0.85rem; display:grid; grid-template-columns:auto 1fr; gap:0.3rem 1rem;">
-                <strong>Inference ID:</strong> <code>${escapeHtml(res.inference_id || 'N/A')}</code>
-                <strong>Output:</strong> <code style="word-break:break-all;">${escapeHtml(res.output_location || res.message || 'Check S3')}</code>
+                <strong>Inference ID:</strong> <code>${res.inference_id || 'N/A'}</code>
+                <strong>Output:</strong> <code style="word-break:break-all;">${res.output_location || res.message || 'Check S3'}</code>
                 <strong>Status:</strong> <span id="async-poll-status">Submitted — polling for result...</span>
             </div>
             <div id="async-poll-progress" style="margin-top:0.75rem; font-size:0.8rem; color:#666;">
                 <i class="fas fa-hourglass-half"></i> Waiting for result...
             </div>
         </div>
-    `;
+    `);
 
     // Poll for async result completion
     if (res.output_location) {
@@ -304,18 +304,18 @@ async function pollAsyncResult(outputLocation, inferenceId) {
         await new Promise(r => setTimeout(r, interval * 1000));
         elapsed += interval;
 
-        if (progressEl) progressEl.innerHTML = `<i class="fas fa-hourglass-half"></i> Waiting... (${elapsed}s)`;
+        if (progressEl) setHTML(progressEl, html`<i class="fas fa-hourglass-half"></i> Waiting... (${elapsed}s)`);
 
         try {
             // Check if result is ready via the backend
             const res = await apiCall(`/api/inference/async-status?output_location=${encodeURIComponent(outputLocation)}`);
             if (res.completed) {
-                if (statusEl) statusEl.innerHTML = '<span style="color:#1e8449;"><i class="fas fa-check-circle"></i> Completed</span>';
-                if (progressEl) progressEl.innerHTML = '';
+                if (statusEl) setHTML(statusEl, html`<span style="color:#1e8449;"><i class="fas fa-check-circle"></i> Completed</span>`);
+                if (progressEl) progressEl.replaceChildren();
                 if (card) {
                     card.style.background = '#e8f8f0';
                     card.style.borderColor = '#1e8449';
-                    card.querySelector('h4').innerHTML = '<i class="fas fa-check-circle" style="color:#1e8449;"></i> Async Inference Complete';
+                    setHTML(card.querySelector('h4'), html`<i class="fas fa-check-circle" style="color:#1e8449;"></i> Async Inference Complete`);
 
                     // Show the raw .out file contents
                     const rawOutputDiv = document.createElement('div');
@@ -326,27 +326,27 @@ async function pollAsyncResult(outputLocation, inferenceId) {
                     const epName = window._lastEndpoint || '';
                     _rememberViewerVolumes(srcImg, maskUri, null, epName);
                     const viewBtn = maskUri
-                        ? `<button class="btn btn-secondary" style="margin-bottom:0.5rem;" onclick="openInViewer('${escapeJsString(srcImg)}', '${escapeJsString(maskUri)}', '${escapeJsString(epName)}')">
+                        ? html`<button class="btn btn-secondary" style="margin-bottom:0.5rem;" onclick="openInViewer('${escapeJsString(srcImg)}', '${escapeJsString(maskUri)}', '${escapeJsString(epName)}')">
                                <i class="fas fa-eye"></i> View in viewer
                            </button>`
                         : '';
-                    rawOutputDiv.innerHTML = `
+                    setHTML(rawOutputDiv, html`
                         ${viewBtn}
                         <div style="margin-bottom:0.5rem;">
-                            <strong>Output S3:</strong> <code style="word-break:break-all;">${escapeHtml(outputUri)}</code>
+                            <strong>Output S3:</strong> <code style="word-break:break-all;">${outputUri}</code>
                         </div>
                         <details>
                             <summary style="cursor:pointer; color:#1a6fa0; font-weight:500;"><i class="fas fa-file-code"></i> Raw response (.out file)</summary>
-                            <pre style="margin-top:0.5rem; padding:0.75rem; background:#f4f6f9; border-radius:4px; overflow-x:auto; font-size:0.75rem; max-height:300px; overflow-y:auto;">${escapeHtml(JSON.stringify(res.result, null, 2))}</pre>
+                            <pre style="margin-top:0.5rem; padding:0.75rem; background:#f4f6f9; border-radius:4px; overflow-x:auto; font-size:0.75rem; max-height:300px; overflow-y:auto;">${JSON.stringify(res.result, null, 2)}</pre>
                         </details>
-                    `;
+                    `);
                     card.appendChild(rawOutputDiv);
                 }
                 // Update the top banner too
                 const banner = document.getElementById('inf-status-banner');
                 if (banner) {
                     banner.className = 'sm-status-banner sm-status-success';
-                    banner.innerHTML = '<i class="fas fa-check-circle"></i> Async inference complete';
+                    setHTML(banner, html`<i class="fas fa-check-circle"></i> Async inference complete`);
                 }
                 // Display the segmentation result
                 if (res.result) {
@@ -363,8 +363,8 @@ async function pollAsyncResult(outputLocation, inferenceId) {
     }
 
     // Timed out
-    if (statusEl) statusEl.innerHTML = '<span style="color:#c62828;">Timed out — check S3 manually</span>';
-    if (progressEl) progressEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Result not available after ${maxWait}s. It may still be processing.`;
+    if (statusEl) setHTML(statusEl, html`<span style="color:#c62828;">Timed out — check S3 manually</span>`);
+    if (progressEl) setHTML(progressEl, html`<i class="fas fa-exclamation-triangle"></i> Result not available after ${maxWait}s. It may still be processing.`);
 }
 
 function displayClassificationResult(res) {
@@ -393,15 +393,15 @@ function displayClassificationResult(res) {
     const barsEl = document.getElementById('inf-probabilities');
     if (barsEl && res.probabilities) {
         const sorted = Object.entries(res.probabilities).sort((a, b) => b[1] - a[1]);
-        barsEl.innerHTML = sorted.map(([cls, prob]) => `
+        setHTML(barsEl, joinHtml(sorted.map(([cls, prob]) => html`
             <div class="inf-prob-row">
-                <span class="inf-prob-label">${escapeHtml(cls)}</span>
+                <span class="inf-prob-label">${cls}</span>
                 <div class="inf-prob-bar-wrap">
                     <div class="inf-prob-bar" style="width:${(prob * 100).toFixed(1)}%"></div>
                 </div>
                 <span class="inf-prob-value">${(prob * 100).toFixed(1)}%</span>
             </div>
-        `).join('');
+        `), ''));
     }
 
     // Show output file location and raw response
@@ -409,20 +409,20 @@ function displayClassificationResult(res) {
     if (outputEl) {
         const srcImg = window._lastInputImage || '';
         const viewBtn = srcImg
-            ? `<div style="margin-bottom:0.5rem;"><button class="btn btn-secondary" onclick="openInViewer('${escapeJsString(srcImg)}', '')">
+            ? html`<div style="margin-bottom:0.5rem;"><button class="btn btn-secondary" onclick="openInViewer('${escapeJsString(srcImg)}', '')">
                    <i class="fas fa-eye"></i> View source image in viewer
                </button></div>`
             : '';
         const savedHtml = res.saved_to
-            ? `<div style="padding:0.5rem; background:#e8f8f0; border-radius:4px; font-size:0.8rem; margin-bottom:0.5rem;"><i class="fas fa-check-circle" style="color:#1e8449;"></i> Saved to: <code style="word-break:break-all;">${escapeHtml(res.saved_to)}</code></div>`
+            ? html`<div style="padding:0.5rem; background:#e8f8f0; border-radius:4px; font-size:0.8rem; margin-bottom:0.5rem;"><i class="fas fa-check-circle" style="color:#1e8449;"></i> Saved to: <code style="word-break:break-all;">${res.saved_to}</code></div>`
             : '';
-        const rawHtml = `
+        const rawHtml = html`
             <details style="margin-top:0.5rem; font-size:0.8rem;">
                 <summary style="cursor:pointer; color:#1a6fa0; font-weight:500;"><i class="fas fa-file-code"></i> Raw response</summary>
-                <pre style="margin-top:0.5rem; padding:0.75rem; background:#f4f6f9; border-radius:4px; overflow-x:auto; font-size:0.75rem; max-height:300px; overflow-y:auto;">${escapeHtml(JSON.stringify(res, null, 2))}</pre>
+                <pre style="margin-top:0.5rem; padding:0.75rem; background:#f4f6f9; border-radius:4px; overflow-x:auto; font-size:0.75rem; max-height:300px; overflow-y:auto;">${JSON.stringify(res, null, 2)}</pre>
             </details>
         `;
-        outputEl.innerHTML = viewBtn + savedHtml + rawHtml;
+        setHTML(outputEl, html`${viewBtn}${savedHtml}${rawHtml}`);
     }
 }
 
@@ -438,19 +438,19 @@ function displaySegmentationResult(res) {
         const srcImg = window._lastInputImage || '';
         _rememberViewerVolumes(srcImg, maskUri);
         const viewBtn = maskUri && /\.nii(\.gz)?$/i.test(maskUri)
-            ? `<div style="margin-top:0.75rem;"><button class="btn btn-secondary" onclick="openInViewer('${escapeJsString(srcImg)}', '${escapeJsString(maskUri)}')">
+            ? html`<div style="margin-top:0.75rem;"><button class="btn btn-secondary" onclick="openInViewer('${escapeJsString(srcImg)}', '${escapeJsString(maskUri)}')">
                    <i class="fas fa-eye"></i> View in viewer
                </button></div>`
             : '';
-        stats.innerHTML = `
-            <div class="status-detail-row"><span>Model:</span><strong>${escapeHtml(res.model_name || 'N/A')}</strong></div>
+        setHTML(stats, html`
+            <div class="status-detail-row"><span>Model:</span><strong>${res.model_name || 'N/A'}</strong></div>
             <div class="status-detail-row"><span>Original shape:</span><strong>${(res.original_shape || res.shape || []).join(' × ')}</strong></div>
             <div class="status-detail-row"><span>Segmentation shape:</span><strong>${(res.segmentation_shape || []).join(' × ')}</strong></div>
             <div class="status-detail-row"><span>Segmented voxels:</span><strong>${(res.segmented_voxels || res.voxels_positive || 0).toLocaleString()}</strong></div>
             <div class="status-detail-row"><span>Total voxels:</span><strong>${(res.total_voxels || 0).toLocaleString()}</strong></div>
-            <div class="status-detail-row"><span>Segmentation %:</span><strong>${res.segmentation_percentage != null ? res.segmentation_percentage + '%' : (res.volume_fraction != null ? (res.volume_fraction * 100).toFixed(2) + '%' : 'N/A')}</strong></div>
-            ${maskUri ? `<div style="margin-top:0.75rem; padding:0.5rem; background:#e8f8f0; border-radius:4px; font-size:0.8rem;"><i class="fas fa-check-circle" style="color:#1e8449;"></i> Mask saved to: <code style="word-break:break-all;">${escapeHtml(maskUri)}</code></div>` : ''}
+            <div class="status-detail-row"><span>Segmentation %:</span><strong>${res.segmentation_percentage != null ? html`${res.segmentation_percentage}%` : (res.volume_fraction != null ? html`${(res.volume_fraction * 100).toFixed(2)}%` : 'N/A')}</strong></div>
+            ${maskUri ? html`<div style="margin-top:0.75rem; padding:0.5rem; background:#e8f8f0; border-radius:4px; font-size:0.8rem;"><i class="fas fa-check-circle" style="color:#1e8449;"></i> Mask saved to: <code style="word-break:break-all;">${maskUri}</code></div>` : ''}
             ${viewBtn}
-        `;
+        `);
     }
 }

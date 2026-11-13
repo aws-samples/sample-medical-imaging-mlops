@@ -26,12 +26,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"   # project root
 LOCAL_DIR="$SCRIPT_DIR/"
 
 # ── Flags ────────────────────────────────────────────────────────────────────
-DRY_RUN=""
-DELETE=""
+RSYNC_OPTS=()
+
 for arg in "$@"; do
     case "$arg" in
-        --dry-run) DRY_RUN="-n" ;;
-        --delete)  DELETE="--delete" ;;
+        --dry-run) RSYNC_OPTS+=(-n) ;;
+        --delete)  RSYNC_OPTS+=(--delete) ;;
         *) echo "Unknown arg: $arg"; exit 1 ;;
     esac
 done
@@ -54,11 +54,11 @@ SSH_OPTS="ssh -i $SSH_KEY -o StrictHostKeyChecking=accept-new -o ConnectTimeout=
 
 echo "Syncing:  $LOCAL_DIR"
 echo "      ->  $REMOTE_HOST:$REMOTE_DIR"
-[[ -n "$DRY_RUN" ]] && echo "Mode:     DRY RUN (no changes)"
-[[ -n "$DELETE"  ]] && echo "Delete:   ON (remote files removed if deleted locally)"
+[[ " ${RSYNC_OPTS[*]-} " == *" -n "* ]] && echo "Mode:     DRY RUN (no changes)"
+[[ " ${RSYNC_OPTS[*]-} " == *" --delete "* ]] && echo "Delete:   ON (remote files removed if deleted locally)"
 
 # shellcheck disable=SC2086
-rsync -az --stats $DRY_RUN $DELETE \
+rsync -az --stats ${RSYNC_OPTS[@]+"${RSYNC_OPTS[@]}"} \
     -e "$SSH_OPTS" \
     --exclude='.venv/' \
     --exclude='venv/' \

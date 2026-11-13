@@ -2,20 +2,10 @@
 // Research use only — rendered predictions are not clinical diagnoses.
 // Loads volumes through the same-origin proxy /api/viewer/fetch (no bucket
 // CORS needed). Deep-linkable: /viewer?image=s3://...&mask=s3://...
-// Self-contained: this page does not load main.js, so helpers live here.
+// Self-contained: this page does not load main.js; the shared escaping and
+// safe-DOM helpers come from safe_html.js (loaded first in viewer.html).
 
 let _nvViewer = null;
-
-function _viewerEscapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = String(str);
-    return div.innerHTML;
-}
-
-function _viewerEscapeJs(str) {
-    return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'")
-                      .replace(/"/g, '\\"').replace(/</g, '\\x3c');
-}
 
 function viewerInit() {
     if (_nvViewer) return _nvViewer;
@@ -225,7 +215,7 @@ async function viewerLoad(silent) {
     const maskUri = document.getElementById('viewer-mask-uri').value.trim();
     const status = document.getElementById('viewer-status');
     if (!imgUri && !maskUri) {
-        if (!silent) alert('Provide an image and/or mask S3 URI');
+        if (!silent) notify('Provide an image and/or mask S3 URI', 'info');
         return;
     }
     status.textContent = 'Loading volumes…';
@@ -263,7 +253,7 @@ async function viewerLoad(silent) {
             : 'Loaded 1 volume.';
     } catch (e) {
         status.textContent = 'Load failed: ' + e.message;
-        if (!silent) alert('Viewer load failed: ' + e.message);
+        if (!silent) notify('Viewer load failed: ' + e.message, 'error');
     }
 }
 
@@ -289,29 +279,21 @@ function viewerSetSliceType(kind) {
 async function viewerLoadRecent() {
     const list = document.getElementById('viewer-recent-list');
     if (!list) return;
-    list.innerHTML = '<p style="color:#888; padding:0.6rem;">Loading…</p>';
+    setHTML(list, html`<p style="color:#888; padding:0.6rem;">Loading…</p>`);
     try {
         const r = await fetch('/api/viewer/recent-masks');
         const d = await r.json();
         if (!r.ok) throw new Error(d.detail || 'recent-masks failed');
         const masks = d.masks || [];
         if (!masks.length) {
-            list.innerHTML = '<p style="color:#888; padding:0.6rem; font-size:0.8rem;">' +
-                _viewerEscapeHtml(d.note || 'No prediction masks found yet.') + '</p>';
+            setHTML(list, html`<p style="color:#888; padding:0.6rem; font-size:0.8rem;">${d.note || 'No prediction masks found yet.'}</p>`);
             return;
         }
-        list.innerHTML = masks.map(function (m) {
-            return '<div style="padding:0.45rem 0.6rem; border-bottom:1px solid #f0f0f0; cursor:pointer; display:flex; justify-content:space-between; gap:0.5rem;"' +
-                ' onmouseover="this.style.background=\'#f5f5f5\'" onmouseout="this.style.background=\'\'"' +
-                ' onclick="viewerPickMask(\'' + _viewerEscapeJs(m.s3_uri) + '\')">' +
-                '<span style="font-size:0.8rem; overflow-wrap:anywhere;">' + _viewerEscapeHtml(m.name) + '</span>' +
-                '<span style="font-size:0.72rem; color:#888; white-space:nowrap;">' +
-                    _viewerEscapeHtml((m.last_modified || '').slice(0, 16).replace('T', ' ')) + '</span>' +
-            '</div>';
-        }).join('');
+        setHTML(list, joinHtml(masks.map(function (m) {
+            return html`<div style="padding:0.45rem 0.6rem; border-bottom:1px solid #f0f0f0; cursor:pointer; display:flex; justify-content:space-between; gap:0.5rem;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''" onclick="viewerPickMask('${escapeJsString(m.s3_uri)}')"><span style="font-size:0.8rem; overflow-wrap:anywhere;">${m.name}</span><span style="font-size:0.72rem; color:#888; white-space:nowrap;">${(m.last_modified || '').slice(0, 16).replace('T', ' ')}</span></div>`;
+        }), ''));
     } catch (e) {
-        list.innerHTML = '<p style="color:#c62828; padding:0.6rem; font-size:0.8rem;">' +
-            _viewerEscapeHtml(e.message) + '</p>';
+        setHTML(list, html`<p style="color:#c62828; padding:0.6rem; font-size:0.8rem;">${e.message}</p>`);
     }
 }
 
@@ -330,24 +312,19 @@ function viewerShowClassification(cls) {
     const panel = document.getElementById('viewer-classification');
     const body = document.getElementById('viewer-classification-body');
     if (!panel || !body || !cls || cls.predicted_class == null) return;
-    let html = '<div style="font-size:1.05rem; font-weight:700; color:#232f3e;">' +
-        _viewerEscapeHtml(cls.predicted_class) + '</div>';
+    let _markup = html`<div style="font-size:1.05rem; font-weight:700; color:#232f3e;">${cls.predicted_class}</div>`;
     if (cls.confidence != null) {
-        html += '<div style="font-size:0.8rem; color:#666; margin-bottom:0.5rem;">Confidence: ' +
-            (Number(cls.confidence) * 100).toFixed(1) + '%</div>';
+        _markup = html`${_markup}${html`<div style="font-size:0.8rem; color:#666; margin-bottom:0.5rem;">Confidence: ${(Number(cls.confidence) * 100).toFixed(1)}%</div>`}`;
     }
     if (cls.probabilities) {
         const sorted = Object.entries(cls.probabilities).sort((a, b) => b[1] - a[1]);
-        html += '<div class="inf-prob-bars">' + sorted.map(function ([c, p]) {
+        _markup = html`${_markup}${html`<div class="inf-prob-bars">${joinHtml(sorted.map(function ([c, p]) {
             const pct = (Number(p) * 100).toFixed(1);
-            return '<div class="inf-prob-row">' +
-                '<span class="inf-prob-label">' + _viewerEscapeHtml(c) + '</span>' +
-                '<div class="inf-prob-bar-wrap"><div class="inf-prob-bar" style="width:' + pct + '%"></div></div>' +
-                '<span class="inf-prob-value">' + pct + '%</span></div>';
-        }).join('') + '</div>';
+            return html`<div class="inf-prob-row"><span class="inf-prob-label">${c}</span><div class="inf-prob-bar-wrap"><div class="inf-prob-bar" style="width:${pct}%"></div></div><span class="inf-prob-value">${pct}%</span></div>`;
+        }), '')}</div>`}`;
     }
-    html += '<p style="font-size:0.68rem; color:#999; margin:0.6rem 0 0;">Research use only — not a clinical diagnosis.</p>';
-    body.innerHTML = html;
+    _markup = html`${_markup}${html`<p style="font-size:0.68rem; color:#999; margin:0.6rem 0 0;">Research use only — not a clinical diagnosis.</p>`}`;
+    setHTML(body, _markup);
     panel.style.display = 'block';
 }
 

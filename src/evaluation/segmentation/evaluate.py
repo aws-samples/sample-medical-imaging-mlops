@@ -77,16 +77,18 @@ def invoke_endpoint(runtime_client, endpoint_name: str, s3_uri: str, s3_client=N
     out_parts = output_location.replace("s3://", "").split("/", 1)
     out_bucket, out_key = out_parts[0], out_parts[1]
 
-    # Poll for result (max 5 min)
-    for _ in range(60):
-        time.sleep(5)
-        try:
-            obj = s3_client.get_object(Bucket=out_bucket, Key=out_key)
-            return json.loads(obj["Body"].read().decode("utf-8"))
-        except s3_client.exceptions.NoSuchKey:
-            continue
-
-    raise TimeoutError(f"Async inference timed out for {s3_uri}")
+    # Wait for the async result (max 5 min) with the S3 waiter instead of a
+    # hand-rolled sleep loop.
+    from botocore.exceptions import WaiterError
+    try:
+        s3_client.get_waiter("object_exists").wait(
+            Bucket=out_bucket, Key=out_key,
+            WaiterConfig={"Delay": 5, "MaxAttempts": 60},
+        )
+    except WaiterError as e:
+        raise TimeoutError(f"Async inference timed out for {s3_uri}") from e
+    obj = s3_client.get_object(Bucket=out_bucket, Key=out_key)
+    return json.loads(obj["Body"].read().decode("utf-8"))
 
 
 # ── Metrics ───────────────────────────────────────────────────────────────────
@@ -104,9 +106,8 @@ def decode_mask(result: dict, s3_client=None) -> np.ndarray:
     if mask_s3_uri and s3_client:
         parts = mask_s3_uri.replace("s3://", "").split("/", 1)
         bucket, key = parts[0], parts[1]
-        with tempfile.NamedTemporaryFile(suffix=".nii.gz", delete=False) as f:
-            f.flush()
-            tmp_path = f.name
+        _fd, tmp_path = tempfile.mkstemp(suffix=".nii.gz")
+        os.close(_fd)
         s3_client.download_file(bucket, key, tmp_path)
         mask = nib.load(tmp_path).get_fdata().astype(np.uint8)
         os.unlink(tmp_path)
@@ -116,10 +117,9 @@ def decode_mask(result: dict, s3_client=None) -> np.ndarray:
     b64 = result.get("mask_nifti_b64") or result.get("segmentation_mask_base64")
     if b64:
         raw = base64.b64decode(b64)
-        with tempfile.NamedTemporaryFile(suffix=".nii.gz", delete=False) as f:
+        _fd, tmp_path = tempfile.mkstemp(suffix=".nii.gz")
+        with os.fdopen(_fd, "wb") as f:
             f.write(raw)
-            f.flush()
-            tmp_path = f.name
         mask = nib.load(tmp_path).get_fdata().astype(np.uint8)
         os.unlink(tmp_path)
         return mask
@@ -131,9 +131,8 @@ def load_gt_mask(s3_client, bucket: str, key: str) -> np.ndarray:
     """Download ground truth NIfTI mask from S3 and return as binary numpy array."""
     import tempfile, nibabel as nib
 
-    with tempfile.NamedTemporaryFile(suffix=".nii.gz", delete=False) as f:
-        f.flush()
-        tmp_path = f.name
+    _fd, tmp_path = tempfile.mkstemp(suffix=".nii.gz")
+    os.close(_fd)
     s3_client.download_file(bucket, key, tmp_path)
     mask = nib.load(tmp_path).get_fdata().astype(np.uint8)
     os.unlink(tmp_path)
