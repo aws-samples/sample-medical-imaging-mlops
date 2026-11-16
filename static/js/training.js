@@ -696,12 +696,42 @@ function renderValidationResults(result, container) {
 
         // Build chart data
         const splits = Object.keys(stats.splits);
-        const allClasses = [...new Set(splits.flatMap(s => Object.keys(stats.splits[s].classes || {})))].sort();
         const colors = [
             '#4B9CD3', '#FF9900', '#16A085', '#E74C3C',
             '#8E44AD', '#2ECC71', '#F39C12', '#1ABC9C',
             '#E67E22', '#3498DB', '#E91E63', '#00BCD4'
         ];
+
+        if (stats.layout === 'segmentation') {
+            // One bar per split: number of cases (img + label pairs).
+            new Chart(document.getElementById(chartId), {
+                type: 'bar',
+                data: {
+                    labels: splits,
+                    datasets: [{
+                        label: 'Cases',
+                        data: splits.map(s => Number(stats.splits[s].cases) || 0),
+                        backgroundColor: splits.map((_, i) => colors[i % colors.length] + 'cc'),
+                        borderColor: splits.map((_, i) => colors[i % colors.length]),
+                        borderWidth: 1,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'Cases per Split', font: { size: 14 } }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Split' } },
+                        y: { title: { display: true, text: 'Number of Cases' }, beginAtZero: true }
+                    }
+                }
+            });
+            return;
+        }
+
+        const allClasses = [...new Set(splits.flatMap(s => Object.keys(stats.splits[s].classes || {})))].sort();
 
         const datasets = splits.map((split, i) => ({
             label: split,

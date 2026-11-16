@@ -22,7 +22,9 @@ FROM --platform=linux/amd64 763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch
 
 # ── VISTA-3D runtime dependencies (MONAI 1.5.2 stack; cucim excluded) ──────────
 COPY src/nvmedtech/requirements.txt /tmp/requirements-nvmedtech-inference.txt
-RUN pip install --no-cache-dir -r /tmp/requirements-nvmedtech-inference.txt
+# Freeze the DLC's torch stack so no dependency can replace it.
+RUN pip list --format=freeze | grep -iE '^(torch|torchvision|torchaudio)==' > /tmp/constraints.txt \
+ && pip install --no-cache-dir -c /tmp/constraints.txt -r /tmp/requirements-nvmedtech-inference.txt
 
 # ── Handler baked at /opt/program (discovered via SAGEMAKER_PROGRAM) ─────────
 COPY src/nvmedtech/inference.py /opt/program/inference.py

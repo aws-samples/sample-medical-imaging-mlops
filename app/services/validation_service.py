@@ -107,11 +107,13 @@ def validate_training_data(
         if not split_ok:
             passed = False
     else:
-        # Segmentation — just report what's there
-        total_files, total_size = _count_objects(s3_client, bucket, prefix)
-        statistics["total_files"] = total_files
-        statistics["total_size_mb"] = round(total_size / 1024 / 1024, 2)
-        checks.append(_ok("S3 Data Structure", f"Found {total_files} files ({statistics['total_size_mb']} MB) under {data_s3_uri}"))
+        split_check, split_stats, split_ok = _validate_segmentation_structure(
+            s3_client, bucket, prefix, top_level_dirs
+        )
+        checks.extend(split_check)
+        statistics.update(split_stats)
+        if not split_ok:
+            passed = False
 
     # ── 5. IAM Role ──────────────────────────────────────────────────────────
     role_check = _validate_iam_role(iam_client, role_arn)
@@ -206,6 +208,102 @@ def _validate_classification_structure(s3_client, bucket, prefix, top_level_dirs
                 f"{s['num_classes']} classes, {s['total_files']} files, {s['total_size_mb']} MB"
             ))
 
+    return checks, stats, ok
+
+
+SEGMENTATION_IMAGE_FILE = "img.nii.gz"
+SEGMENTATION_LABEL_FILE = "label.nii.gz"
+MAX_REPORTED_INCOMPLETE = 5
+
+
+def _scan_segmentation_split(s3_client, bucket: str, split_prefix: str) -> Dict:
+    """Group every object under split_prefix by case folder in one listing.
+
+    Mirrors src/segmentation/utils.py::_build_file_list: each immediate
+    subfolder is a case and must hold img.nii.gz and label.nii.gz.
+    """
+    normalized = split_prefix.rstrip("/") + "/"
+    paginator = s3_client.get_paginator("list_objects_v2")
+    cases: Dict[str, set] = {}
+    total_files = 0
+    total_size = 0
+    for page in paginator.paginate(Bucket=bucket, Prefix=normalized):
+        for obj in page.get("Contents", []):
+            rel = obj["Key"][len(normalized):]
+            if "/" not in rel:
+                continue  # loose file directly under the split; trainer ignores it
+            case, rest = rel.split("/", 1)
+            cases.setdefault(case, set()).add(rest)
+            total_files += 1
+            total_size += obj.get("Size", 0)
+
+    incomplete = sorted(
+        c for c, files in cases.items()
+        if SEGMENTATION_IMAGE_FILE not in files or SEGMENTATION_LABEL_FILE not in files
+    )
+    return {
+        "cases": len(cases),
+        "complete_cases": len(cases) - len(incomplete),
+        "incomplete_cases": incomplete[:MAX_REPORTED_INCOMPLETE],
+        "num_incomplete": len(incomplete),
+        "total_files": total_files,
+        "total_size_mb": round(total_size / 1024 / 1024, 2),
+    }
+
+
+def _validate_segmentation_structure(s3_client, bucket, prefix, top_level_dirs):
+    """Check the per-case layout the segmentation trainer reads.
+
+    Expected: <root>/train/<case>/{img,label}.nii.gz, the same under val/
+    (the trainer falls back to valid/), and an optional test/.
+    """
+    checks = []
+    stats = {"layout": "segmentation"}
+    ok = True
+
+    val_dir = "val" if "val" in top_level_dirs else ("valid" if "valid" in top_level_dirs else None)
+    missing = []
+    if "train" not in top_level_dirs:
+        missing.append("train")
+    if val_dir is None:
+        missing.append("val")
+    if missing:
+        checks.append(_fail(
+            "Split Folders",
+            f"Missing required folder(s): {missing}. Found: {top_level_dirs}. "
+            f"Expected train/<case>/{SEGMENTATION_IMAGE_FILE} + {SEGMENTATION_LABEL_FILE}, "
+            "the same under val/, and optionally test/."
+        ))
+        return checks, stats, False
+
+    splits = ["train", val_dir] + [s for s in OPTIONAL_SPLITS if s in top_level_dirs]
+    checks.append(_ok("Split Folders", f"Found splits: {splits} (train and val required, test optional)"))
+
+    split_stats = {}
+    for split in splits:
+        split_prefix = f"{prefix.rstrip('/')}/{split}" if prefix else split
+        s = _scan_segmentation_split(s3_client, bucket, split_prefix)
+        split_stats[split] = s
+
+        if s["cases"] == 0:
+            checks.append(_fail(f"{split} Cases", f"No case folders found under '{split}/'."))
+            ok = False
+        elif s["num_incomplete"]:
+            examples = ", ".join(s["incomplete_cases"])
+            more = f" (+{s['num_incomplete'] - len(s['incomplete_cases'])} more)" if s["num_incomplete"] > len(s["incomplete_cases"]) else ""
+            checks.append(_fail(
+                f"{split} Cases",
+                f"{s['num_incomplete']} of {s['cases']} cases are missing "
+                f"{SEGMENTATION_IMAGE_FILE} or {SEGMENTATION_LABEL_FILE}: {examples}{more}"
+            ))
+            ok = False
+        else:
+            checks.append(_ok(
+                f"{split} Data",
+                f"{s['cases']} cases, {s['total_files']} files, {s['total_size_mb']} MB"
+            ))
+
+    stats["splits"] = split_stats
     return checks, stats, ok
 
 

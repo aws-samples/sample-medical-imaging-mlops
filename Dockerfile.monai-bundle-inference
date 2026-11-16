@@ -19,7 +19,9 @@ FROM 763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-inference:2.6.0-gpu-py
 
 # ── MONAI bundle runtime dependencies ────────────────────────────────────────
 COPY src/monai_bundle/requirements-inference.txt /tmp/requirements-monai-bundle-inference.txt
-RUN pip install --no-cache-dir -r /tmp/requirements-monai-bundle-inference.txt
+# Freeze the DLC's torch stack so no dependency can replace it.
+RUN pip list --format=freeze | grep -iE '^(torch|torchvision|torchaudio)==' > /tmp/constraints.txt \
+ && pip install --no-cache-dir -c /tmp/constraints.txt -r /tmp/requirements-monai-bundle-inference.txt
 
 # ── Handler baked at /opt/program (discovered via SAGEMAKER_PROGRAM) ─────────
 COPY src/monai_bundle/inference.py    /opt/program/inference.py

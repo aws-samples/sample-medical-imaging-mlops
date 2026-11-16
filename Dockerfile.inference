@@ -15,7 +15,9 @@ FROM 763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-inference:2.6.0-gpu-py
 ARG TASK
 
 COPY src/inference/${TASK}/requirements.txt /tmp/requirements-inference.txt
-RUN pip install --no-cache-dir -r /tmp/requirements-inference.txt
+# Freeze the DLC's torch stack so no dependency can replace it.
+RUN pip list --format=freeze | grep -iE '^(torch|torchvision|torchaudio)==' > /tmp/constraints.txt \
+ && pip install --no-cache-dir -c /tmp/constraints.txt -r /tmp/requirements-inference.txt
 
 # Copy inference code (uniform structure: src/inference/${TASK}/ always has inference.py)
 COPY src/inference/${TASK}/ /opt/program/
