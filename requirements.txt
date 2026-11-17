@@ -24,6 +24,9 @@ python-dotenv==1.0.0
 sagemaker>=2.200.0,<3.0.0
 sagemaker-mlflow
 monai==1.6.1
+# MONAI bundle staging downloads bundles from the Hugging Face Hub
+# (app/services/monai_bundle_service.py: snapshot_download).
+huggingface_hub>=0.34.0
 moto==4.2.0
 pytest==7.4.3
 pytest-asyncio==0.21.1
