@@ -27,6 +27,9 @@ monai==1.6.1
 # MONAI bundle staging downloads bundles from the Hugging Face Hub
 # (app/services/monai_bundle_service.py: snapshot_download).
 huggingface_hub>=0.34.0
+# Imported directly by app/services/monai_bundle_service.py (version parsing);
+# declared so it doesn't depend on another package pulling it in.
+packaging>=23.0
 moto==4.2.0
 pytest==7.4.3
 pytest-asyncio==0.21.1
