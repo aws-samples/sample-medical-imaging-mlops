@@ -1,5 +1,7 @@
 # Inference Guide
 
+> **⚠ Research Use Only** — Models trained and deployed through this platform are for research and development purposes. Predictions are not clinical diagnoses and must not be used as the sole basis for medical decisions. All outputs require review by qualified healthcare professionals. Clinical deployment requires regulatory review, validation against clinical standards, and human oversight. Model performance can differ across patient subgroups; see the [Fairness Analysis Guide](fairness.md).
+
 This guide covers invoking deployed SageMaker endpoints for classification and segmentation predictions.
 
 ## Prerequisites
@@ -100,7 +102,8 @@ Set these variables in the endpoint's environment (see [Configuration](../config
 {
   "predictions": [[0.1034, 0.1202, 0.1366, 0.0866, 0.1258, 0.1408, 0.1155, 0.1713]],
   "predicted_class": [7],
-  "confidence": [0.1713]
+  "confidence": [0.1713],
+  "disclaimer": "Research use only. Not a clinical diagnosis. Requires review by qualified healthcare professionals."
 }
 ```
 
@@ -109,6 +112,7 @@ Set these variables in the endpoint's environment (see [Configuration](../config
 | `predictions` | `list[list[float]]` | Probability array per input (batched) |
 | `predicted_class` | `list[int]` | Index of the highest-probability class |
 | `confidence` | `list[float]` | Probability of the predicted class |
+| `disclaimer` | `string` | Research-use-only notice. Display it wherever the prediction is shown |
 
 ### Segmentation
 
@@ -118,7 +122,8 @@ Set these variables in the endpoint's environment (see [Configuration](../config
   "shape": [128, 128, 64],
   "voxels_positive": 14823,
   "voxels_total": 1048576,
-  "volume_fraction": 0.0141
+  "volume_fraction": 0.0141,
+  "disclaimer": "Research use only. Not a clinical diagnosis. Requires review by qualified healthcare professionals."
 }
 ```
 
@@ -129,6 +134,7 @@ Set these variables in the endpoint's environment (see [Configuration](../config
 | `voxels_positive` | `int` | Number of positive (foreground) voxels |
 | `voxels_total` | `int` | Total voxels in the mask |
 | `volume_fraction` | `float` | Ratio of positive voxels to total |
+| `disclaimer` | `string` | Research-use-only notice. Display it wherever the prediction is shown |
 
 The segmentation inference pipeline uses `SlidingWindowInferer` for memory-efficient processing of large 3D volumes, with `Orientation` and `Spacing` transforms applied to normalize inputs before prediction. This ensures consistent results regardless of the input volume's original orientation or voxel spacing.
 
