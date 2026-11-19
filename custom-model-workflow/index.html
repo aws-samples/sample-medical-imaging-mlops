@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -319,6 +319,25 @@
   
 
       
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="https://github.com/aws-samples/sample-medical-imaging-mlops/blob/main/CHANGELOG.md" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
     </ul>
   </div>
 </nav>
@@ -597,6 +616,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../user-guide/preprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Preprocessing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../user-guide/training/" class="md-nav__link">
         
   
@@ -605,6 +652,34 @@
     
   
     Training
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/monai-bundle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MONAI Bundle
   
 
     
@@ -661,6 +736,34 @@
     
   
     Inference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/viewer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Prediction Viewer
   
 
     
@@ -1192,6 +1295,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/aws-samples/sample-medical-imaging-mlops/blob/main/CHANGELOG.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1432,28 +1562,28 @@
 <p>Your <code>model_def.py</code> must have:
 1. A <code>MODELS</code> dict that registers your model(s) with metadata
 2. A <code>get_model(model_name, num_classes, **kwargs)</code> function that returns an instantiated PyTorch model</p>
-<div class="highlight"><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<div class="highlight"><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">Custom model: Cardiac Attention UNet</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
 
-<span class="c1"># This dict makes the model appear in the dashboard dropdown under &quot;Custom Models&quot;</span>
+<span class="c1"># This dict makes the model appear in the dashboard dropdown under "Custom Models"</span>
 <span class="n">MODELS</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;cardiac-attention-unet&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Attention UNet for cardiac MRI segmentation&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="s2">&quot;4.2M&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;input_size&quot;</span><span class="p">:</span> <span class="s2">&quot;128x128x64&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;pretrained&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="s2">&quot;segmentation&quot;</span><span class="p">,</span>       <span class="c1"># &quot;classification&quot; or &quot;segmentation&quot;</span>
-        <span class="s2">&quot;dimension&quot;</span><span class="p">:</span> <span class="s2">&quot;3D&quot;</span><span class="p">,</span>            <span class="c1"># &quot;2D&quot; or &quot;3D&quot;</span>
+    <span class="s2">"cardiac-attention-unet"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"description"</span><span class="p">:</span> <span class="s2">"Attention UNet for cardiac MRI segmentation"</span><span class="p">,</span>
+        <span class="s2">"parameters"</span><span class="p">:</span> <span class="s2">"4.2M"</span><span class="p">,</span>
+        <span class="s2">"input_size"</span><span class="p">:</span> <span class="s2">"128x128x64"</span><span class="p">,</span>
+        <span class="s2">"pretrained"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"task"</span><span class="p">:</span> <span class="s2">"segmentation"</span><span class="p">,</span>       <span class="c1"># "classification" or "segmentation"</span>
+        <span class="s2">"dimension"</span><span class="p">:</span> <span class="s2">"3D"</span><span class="p">,</span>            <span class="c1"># "2D" or "3D"</span>
     <span class="p">}</span>
 <span class="p">}</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">get_model</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="n">num_classes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Called by train.py and inference.py to instantiate the model.&quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s2">&quot;cardiac-attention-unet&quot;</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Called by train.py and inference.py to instantiate the model."""</span>
+    <span class="k">if</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s2">"cardiac-attention-unet"</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">CardiacAttentionUNet</span><span class="p">(</span><span class="n">in_channels</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">out_channels</span><span class="o">=</span><span class="n">num_classes</span><span class="p">)</span>
-    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown model: </span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown model: </span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">CardiacAttentionUNet</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -1583,11 +1713,11 @@
 - <code>tqdm</code></p>
 <h3 id="sample_configjson-suggested-hyperparameters"><code>sample_config.json</code> (suggested hyperparameters)<a class="headerlink" href="#sample_configjson-suggested-hyperparameters" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;epochs&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;batch_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;learning_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0001</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;instance_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ml.g5.xlarge&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;val_interval&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span>
+<span class="w">    </span><span class="nt">"epochs"</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"batch_size"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"learning_rate"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0001</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"instance_type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ml.g5.xlarge"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"val_interval"</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span>
 <span class="p">}</span>
 </code></pre></div>
 <h2 id="what-you-dont-need-to-worry-about">What You Don't Need to Worry About<a class="headerlink" href="#what-you-dont-need-to-worry-about" title="Permanent link">&para;</a></h2>
@@ -1666,27 +1796,27 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">monai.networks.nets</span><span class="w"> </span><span class="kn">import</span> <span class="n">ResNet</span>
 
 <span class="n">MODELS</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;resnet3d-18&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;3D ResNet-18 for volumetric classification&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="s2">&quot;33M&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;input_size&quot;</span><span class="p">:</span> <span class="s2">&quot;64x64x64&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;pretrained&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="s2">&quot;classification&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;dimension&quot;</span><span class="p">:</span> <span class="s2">&quot;3D&quot;</span><span class="p">,</span>
+    <span class="s2">"resnet3d-18"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"description"</span><span class="p">:</span> <span class="s2">"3D ResNet-18 for volumetric classification"</span><span class="p">,</span>
+        <span class="s2">"parameters"</span><span class="p">:</span> <span class="s2">"33M"</span><span class="p">,</span>
+        <span class="s2">"input_size"</span><span class="p">:</span> <span class="s2">"64x64x64"</span><span class="p">,</span>
+        <span class="s2">"pretrained"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"task"</span><span class="p">:</span> <span class="s2">"classification"</span><span class="p">,</span>
+        <span class="s2">"dimension"</span><span class="p">:</span> <span class="s2">"3D"</span><span class="p">,</span>
     <span class="p">}</span>
 <span class="p">}</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">get_model</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="n">num_classes</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s2">&quot;resnet3d-18&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s2">"resnet3d-18"</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">ResNet</span><span class="p">(</span>
-            <span class="n">block</span><span class="o">=</span><span class="s2">&quot;basic&quot;</span><span class="p">,</span>
+            <span class="n">block</span><span class="o">=</span><span class="s2">"basic"</span><span class="p">,</span>
             <span class="n">layers</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
             <span class="n">block_inplanes</span><span class="o">=</span><span class="p">[</span><span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">512</span><span class="p">],</span>
             <span class="n">spatial_dims</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
             <span class="n">n_input_channels</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
             <span class="n">num_classes</span><span class="o">=</span><span class="n">num_classes</span><span class="p">,</span>
         <span class="p">)</span>
-    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown model: </span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown model: </span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div>
 <p>Then zip it:
 <div class="highlight"><pre><span></span><code>zip<span class="w"> </span>resnet3d-18.zip<span class="w"> </span>model_def.py
@@ -1769,10 +1899,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
     
   </body>

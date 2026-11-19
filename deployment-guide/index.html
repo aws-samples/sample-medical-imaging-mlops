@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -319,6 +319,25 @@
   
 
       
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="https://github.com/aws-samples/sample-medical-imaging-mlops/blob/main/CHANGELOG.md" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
     </ul>
   </div>
 </nav>
@@ -597,6 +616,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../user-guide/preprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Preprocessing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../user-guide/training/" class="md-nav__link">
         
   
@@ -605,6 +652,34 @@
     
   
     Training
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/monai-bundle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MONAI Bundle
   
 
     
@@ -661,6 +736,34 @@
     
   
     Inference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/viewer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Prediction Viewer
   
 
     
@@ -1409,6 +1512,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/aws-samples/sample-medical-imaging-mlops/blob/main/CHANGELOG.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1913,8 +2043,8 @@
 <span class="k">for</span><span class="w"> </span>repo<span class="w"> </span><span class="k">in</span><span class="w"> </span>sm-training-byoc-classification<span class="w"> </span>sm-training-byoc-segmentation<span class="w"> </span><span class="se">\</span>
 <span class="w">            </span>sm-inference-byoc-classification<span class="w"> </span>sm-inference-byoc-segmentation<span class="p">;</span><span class="w"> </span><span class="k">do</span>
 <span class="w">  </span>aws<span class="w"> </span>ecr<span class="w"> </span>create-repository<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--repository-name<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$repo</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--region<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$AWS_REGION</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--repository-name<span class="w"> </span><span class="s2">"</span><span class="nv">$repo</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--region<span class="w"> </span><span class="s2">"</span><span class="nv">$AWS_REGION</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>--image-scanning-configuration<span class="w"> </span><span class="nv">scanOnPush</span><span class="o">=</span><span class="nb">true</span>
 <span class="k">done</span>
 </code></pre></div>
@@ -1938,8 +2068,8 @@
 <span class="w">  </span>--registry-id<span class="w"> </span><span class="m">763104351884</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--repository-name<span class="w"> </span>pytorch-training<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--region<span class="w"> </span>us-east-1<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--query<span class="w"> </span><span class="s1">&#39;imageDetails[*].imageTags&#39;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--output<span class="w"> </span>text<span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span><span class="s1">&#39;\t&#39;</span><span class="w"> </span><span class="s1">&#39;\n&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s2">&quot;py312&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sort
+<span class="w">  </span>--query<span class="w"> </span><span class="s1">'imageDetails[*].imageTags'</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--output<span class="w"> </span>text<span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span><span class="s1">'\t'</span><span class="w"> </span><span class="s1">'\n'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s2">"py312"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sort
 </code></pre></div>
 <p>A known working alternative:
 <div class="highlight"><pre><span></span><code>763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-training:2.6.0-gpu-py312-cu124-ubuntu22.04-sagemaker
@@ -2122,7 +2252,7 @@ python<span class="w"> </span>main.py
 <h2 id="transferring-to-another-machine">Transferring to Another Machine<a class="headerlink" href="#transferring-to-another-machine" title="Permanent link">&para;</a></h2>
 <p>The cleanest approach is git:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Source machine</span>
-git<span class="w"> </span>add<span class="w"> </span>-A<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;your message&quot;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>&lt;branch&gt;
+git<span class="w"> </span>add<span class="w"> </span>-A<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"your message"</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>&lt;branch&gt;
 
 <span class="c1"># Target machine</span>
 git<span class="w"> </span>clone<span class="w"> </span>&lt;repo-url&gt;<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>checkout<span class="w"> </span>&lt;branch&gt;
@@ -2150,8 +2280,8 @@ src/inference/         (for inference images)
 <span class="w">  </span>--registry-id<span class="w"> </span><span class="m">763104351884</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--repository-name<span class="w"> </span>pytorch-training<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--region<span class="w"> </span>&lt;your-region&gt;<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--query<span class="w"> </span><span class="s1">&#39;imageDetails[*].imageTags&#39;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--output<span class="w"> </span>text<span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span><span class="s1">&#39;\t&#39;</span><span class="w"> </span><span class="s1">&#39;\n&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s2">&quot;py312&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sort
+<span class="w">  </span>--query<span class="w"> </span><span class="s1">'imageDetails[*].imageTags'</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--output<span class="w"> </span>text<span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span><span class="s1">'\t'</span><span class="w"> </span><span class="s1">'\n'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s2">"py312"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sort
 </code></pre></div></p>
 <h3 id="sagemaker-training-job-fails-immediately">SageMaker training job fails immediately<a class="headerlink" href="#sagemaker-training-job-fails-immediately" title="Permanent link">&para;</a></h3>
 <p>Check:
@@ -2241,10 +2371,10 @@ src/inference/         (for inference images)
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
     
   </body>

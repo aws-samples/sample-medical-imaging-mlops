@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
     
     
       
@@ -29,10 +29,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -317,6 +317,25 @@
   
 
       
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="https://github.com/aws-samples/sample-medical-imaging-mlops/blob/main/CHANGELOG.md" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
     </ul>
   </div>
 </nav>
@@ -595,6 +614,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../user-guide/preprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Preprocessing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../user-guide/training/" class="md-nav__link">
         
   
@@ -603,6 +650,34 @@
     
   
     Training
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/monai-bundle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MONAI Bundle
   
 
     
@@ -659,6 +734,34 @@
     
   
     Inference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/viewer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Prediction Viewer
   
 
     
@@ -1303,10 +1406,43 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#frontend-xss-prevention-escapehtml" class="md-nav__link">
+  <a href="#frontend-xss-prevention-safe_htmljs" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Frontend XSS Prevention (escapeHtml)
+        Frontend XSS Prevention (safe_html.js)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#request-origin-protection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Request-origin protection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inference-handler-input-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inference handler input validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dependency-and-container-hygiene" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dependency and container hygiene
       
     </span>
   </a>
@@ -1416,6 +1552,33 @@
   
 </nav>
       
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/aws-samples/sample-medical-imaging-mlops/blob/main/CHANGELOG.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1747,10 +1910,43 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#frontend-xss-prevention-escapehtml" class="md-nav__link">
+  <a href="#frontend-xss-prevention-safe_htmljs" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Frontend XSS Prevention (escapeHtml)
+        Frontend XSS Prevention (safe_html.js)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#request-origin-protection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Request-origin protection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inference-handler-input-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inference handler input validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dependency-and-container-hygiene" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dependency and container hygiene
       
     </span>
   </a>
@@ -1973,7 +2169,7 @@
 <li>General <code>Exception</code> → 500 Internal Server Error</li>
 <li>Always log errors before re-raising:
   <div class="highlight"><pre><span></span><code><span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Operation failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Operation failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
 </code></pre></div></li>
 </ul>
@@ -1999,13 +2195,13 @@
 </ol>
 <div class="highlight"><pre><span></span><code><span class="n">MODELS</span> <span class="o">=</span> <span class="p">{</span>
     <span class="c1"># ... existing models ...</span>
-    <span class="s2">&quot;my_new_model&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;My custom architecture&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="s2">&quot;12.5M&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;input_size&quot;</span><span class="p">:</span> <span class="s2">&quot;224x224&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;pretrained&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="s2">&quot;classification&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;dimension&quot;</span><span class="p">:</span> <span class="s2">&quot;2D&quot;</span><span class="p">,</span>
+    <span class="s2">"my_new_model"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"description"</span><span class="p">:</span> <span class="s2">"My custom architecture"</span><span class="p">,</span>
+        <span class="s2">"parameters"</span><span class="p">:</span> <span class="s2">"12.5M"</span><span class="p">,</span>
+        <span class="s2">"input_size"</span><span class="p">:</span> <span class="s2">"224x224"</span><span class="p">,</span>
+        <span class="s2">"pretrained"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"task"</span><span class="p">:</span> <span class="s2">"classification"</span><span class="p">,</span>
+        <span class="s2">"dimension"</span><span class="p">:</span> <span class="s2">"2D"</span><span class="p">,</span>
     <span class="p">},</span>
 <span class="p">}</span>
 </code></pre></div>
@@ -2013,7 +2209,7 @@
 <li><strong>Implement the factory function</strong> — In the same <code>model_def.py</code>, add a case to the <code>get_model()</code> function:</li>
 </ol>
 <div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_model</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s2">&quot;my_new_model&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s2">"my_new_model"</span><span class="p">:</span>
         <span class="n">model</span> <span class="o">=</span> <span class="n">MyNewModel</span><span class="p">(</span><span class="n">num_classes</span><span class="o">=</span><span class="n">num_classes</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="n">pretrained</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">model</span>
     <span class="c1"># ... existing cases ...</span>
@@ -2046,9 +2242,9 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">MyService</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">do_something</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">param</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;param is required&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"param is required"</span><span class="p">)</span>
         <span class="c1"># business logic here</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;result&quot;</span><span class="p">:</span> <span class="n">param</span><span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"result"</span><span class="p">:</span> <span class="n">param</span><span class="p">}</span>
 </code></pre></div>
 <h3 id="step-3-add-the-router-endpoint">Step 3: Add the router endpoint<a class="headerlink" href="#step-3-add-the-router-endpoint" title="Permanent link">&para;</a></h3>
 <p>In the appropriate router file:</p>
@@ -2056,7 +2252,7 @@
 
 <span class="n">my_service</span> <span class="o">=</span> <span class="n">MyService</span><span class="p">()</span>
 
-<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/my-endpoint&quot;</span><span class="p">)</span>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">"/my-endpoint"</span><span class="p">)</span>
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">my_endpoint</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n">MyNewRequest</span><span class="p">):</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">result</span> <span class="o">=</span> <span class="n">my_service</span><span class="o">.</span><span class="n">do_something</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">field_one</span><span class="p">)</span>
@@ -2064,13 +2260,13 @@
     <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Operation failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Operation failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
 </code></pre></div>
 <h3 id="step-4-register-the-router-if-new-file">Step 4: Register the router (if new file)<a class="headerlink" href="#step-4-register-the-router-if-new-file" title="Permanent link">&para;</a></h3>
 <p>In <code>main.py</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">app.routers</span><span class="w"> </span><span class="kn">import</span> <span class="n">my_router</span>
-<span class="n">app</span><span class="o">.</span><span class="n">include_router</span><span class="p">(</span><span class="n">my_router</span><span class="o">.</span><span class="n">router</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;/api/my-prefix&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;MyTag&quot;</span><span class="p">])</span>
+<span class="n">app</span><span class="o">.</span><span class="n">include_router</span><span class="p">(</span><span class="n">my_router</span><span class="o">.</span><span class="n">router</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">"/api/my-prefix"</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">"MyTag"</span><span class="p">])</span>
 </code></pre></div>
 <h3 id="step-5-add-tests">Step 5: Add tests<a class="headerlink" href="#step-5-add-tests" title="Permanent link">&para;</a></h3>
 <p>Add a unit test in <code>tests/unit/</code> with mocked AWS dependencies and an integration test if the endpoint calls AWS.</p>
@@ -2100,9 +2296,9 @@ coverage<span class="w"> </span>run<span class="w"> </span>-m<span class="w"> </
 <span class="nd">@mock_s3</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">test_import_model</span><span class="p">():</span>
     <span class="c1"># Setup mock S3</span>
-    <span class="n">s3</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="s2">&quot;us-east-1&quot;</span><span class="p">)</span>
-    <span class="n">s3</span><span class="o">.</span><span class="n">create_bucket</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="s2">&quot;test-bucket&quot;</span><span class="p">)</span>
-    <span class="n">s3</span><span class="o">.</span><span class="n">put_object</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="s2">&quot;test-bucket&quot;</span><span class="p">,</span> <span class="n">Key</span><span class="o">=</span><span class="s2">&quot;model.pth&quot;</span><span class="p">,</span> <span class="n">Body</span><span class="o">=</span><span class="sa">b</span><span class="s2">&quot;fake model&quot;</span><span class="p">)</span>
+    <span class="n">s3</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">"s3"</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="s2">"us-east-1"</span><span class="p">)</span>
+    <span class="n">s3</span><span class="o">.</span><span class="n">create_bucket</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="s2">"test-bucket"</span><span class="p">)</span>
+    <span class="n">s3</span><span class="o">.</span><span class="n">put_object</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="s2">"test-bucket"</span><span class="p">,</span> <span class="n">Key</span><span class="o">=</span><span class="s2">"model.pth"</span><span class="p">,</span> <span class="n">Body</span><span class="o">=</span><span class="sa">b</span><span class="s2">"fake model"</span><span class="p">)</span>
 
     <span class="n">service</span> <span class="o">=</span> <span class="n">TrainingService</span><span class="p">()</span>
     <span class="c1"># ... test logic ...</span>
@@ -2161,23 +2357,72 @@ chmod<span class="w"> </span>+x<span class="w"> </span>.git/hooks/pre-commit
 <li><strong>Leaked secrets</strong> — detects AWS access key patterns (<code>AKIA[0-9A-Z]{16}</code>)</li>
 </ol>
 <p>The workflow excludes the <code>.github/</code> directory itself from scanning.</p>
-<h3 id="frontend-xss-prevention-escapehtml">Frontend XSS Prevention (escapeHtml)<a class="headerlink" href="#frontend-xss-prevention-escapehtml" title="Permanent link">&para;</a></h3>
-<p>All user-supplied or API-returned data rendered in the DOM is passed through the <code>escapeHtml()</code> function defined in <code>static/js/main.js</code>:</p>
-<div class="highlight"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">escapeHtml</span><span class="p">(</span><span class="nx">str</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="c1">// Escapes &lt;, &gt;, &amp;, &quot;, &#39; to prevent XSS</span>
-<span class="p">}</span>
-</code></pre></div>
-<p>This is used consistently across all frontend JavaScript files (<code>training.js</code>, <code>deployment.js</code>, <code>evaluation.js</code>, <code>monitoring.js</code>, <code>inference.js</code>, <code>fairness.js</code>, <code>data.js</code>).</p>
+<h3 id="frontend-xss-prevention-safe_htmljs">Frontend XSS Prevention (<code>safe_html.js</code>)<a class="headerlink" href="#frontend-xss-prevention-safe_htmljs" title="Permanent link">&para;</a></h3>
+<p>All dynamic HTML is built with the escape-by-default helpers in <code>static/js/safe_html.js</code>, which <code>templates/base.html</code> and <code>templates/viewer.html</code> load before every other script. Never assign strings to <code>innerHTML</code> / <code>outerHTML</code>, call <code>insertAdjacentHTML</code>, or use <code>document.write</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Need</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Markup with dynamic values</td>
+<td><code>html`&lt;td title="${v}"&gt;${v}&lt;/td&gt;`</code> — every <code>${}</code> value is HTML-escaped</td>
+</tr>
+<tr>
+<td>Insert into the page</td>
+<td><code>setHTML(el, fragment)</code>, <code>appendHTML(el, fragment)</code>, <code>insertHTML(el, position, fragment)</code></td>
+</tr>
+<tr>
+<td>Lists</td>
+<td><code>joinHtml(items.map(i =&gt; html`&lt;li&gt;${i}&lt;/li&gt;`), '')</code> or interpolate the array directly</td>
+</tr>
+<tr>
+<td>Inline handler argument</td>
+<td><code>html`&lt;button onclick="fn(${jsArg(value)})"&gt;`</code></td>
+</tr>
+<tr>
+<td><code>href</code> / <code>src</code> URL</td>
+<td><code>html`&lt;a href="${safeUrl(url)}"&gt;`</code> — blocks <code>javascript:</code>, <code>data:</code> and <code>//host</code> URLs</td>
+</tr>
+<tr>
+<td>Plain text</td>
+<td><code>el.textContent = value</code></td>
+</tr>
+<tr>
+<td>Messages and confirmations</td>
+<td><code>notify(message, 'info' \| 'success' \| 'warning' \| 'error')</code> and <code>await confirmAction(message, { danger: true })</code> instead of <code>alert()</code> / <code>confirm()</code></td>
+</tr>
+</tbody>
+</table>
+<p>Plain strings passed to <code>setHTML</code> are escaped as text, so a missed conversion shows visible markup rather than creating an injection. <code>setHTML</code> parses with <code>DOMParser</code> into an inert fragment, so scripts in the markup never run.</p>
+<h3 id="request-origin-protection">Request-origin protection<a class="headerlink" href="#request-origin-protection" title="Permanent link">&para;</a></h3>
+<p>The dashboard has no login, so <code>main.py</code> adds two checks in front of every route:</p>
+<ul>
+<li><strong>Host allowlist</strong> (<code>TrustedHostMiddleware</code>): only <code>ALLOWED_HOSTS</code> (default <code>localhost,127.0.0.1,[::1]</code>) are accepted, which blocks DNS-rebinding attacks.</li>
+<li><strong>Cross-site write check</strong>: <code>POST</code>/<code>PUT</code>/<code>PATCH</code>/<code>DELETE</code> requests whose <code>Sec-Fetch-Site</code> is not <code>same-origin</code>/<code>none</code>, or whose <code>Origin</code> differs from the <code>Host</code>, get <code>403</code>.</li>
+</ul>
+<p>Unit tests send requests with <code>TestClient(main.app, base_url="http://localhost")</code> so they pass the Host check.</p>
+<h3 id="inference-handler-input-validation">Inference handler input validation<a class="headerlink" href="#inference-handler-input-validation" title="Permanent link">&para;</a></h3>
+<p>The SageMaker inference handlers (<code>src/inference/*</code>, <code>src/monai_bundle/inference.py</code>, <code>src/nvmedtech/inference.py</code>) validate every request field before use. Local paths are confined to <code>LOCAL_INPUT_ROOTS</code>, S3 buckets can be limited with <code>ALLOWED_INPUT_BUCKETS</code>, and MONAI CLI arguments built from a request reject <code>$</code>/<code>@</code>/<code>%</code> expressions. Keep <code>subprocess</code> calls as argument lists (never <code>shell=True</code>) and validate any request value before adding it. See <code>tests/unit/test_security_hardening.py</code>.</p>
+<h3 id="dependency-and-container-hygiene">Dependency and container hygiene<a class="headerlink" href="#dependency-and-container-hygiene" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Keep dependencies on versions with no known advisories. Check with <code>pip-audit -r requirements.txt</code> before releasing.</li>
+<li>Do not pin <code>torch</code>/<code>torchvision</code> in container requirement files; they come from the AWS Deep Learning Container base.</li>
+<li>Base images are pinned by digest. Refresh the digest when you update a base image.</li>
+</ul>
 <h3 id="subresource-integrity-sri">Subresource Integrity (SRI)<a class="headerlink" href="#subresource-integrity-sri" title="Permanent link">&para;</a></h3>
 <p>External CDN resources include <code>integrity</code> attributes and <code>crossorigin="anonymous"</code>:</p>
-<div class="highlight"><pre><span></span><code><span class="p">&lt;</span><span class="nt">link</span> <span class="na">href</span><span class="o">=</span><span class="s">&quot;https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css&quot;</span>
-      <span class="na">rel</span><span class="o">=</span><span class="s">&quot;stylesheet&quot;</span>
-      <span class="na">integrity</span><span class="o">=</span><span class="s">&quot;sha384-3B6NwesSXE7YJlcLI9RpRqGf2p/EgVH8BgoKTaUrmKNDkHPStTQ3EyoYjCGXaOTS&quot;</span>
-      <span class="na">crossorigin</span><span class="o">=</span><span class="s">&quot;anonymous&quot;</span><span class="p">&gt;</span>
+<div class="highlight"><pre><span></span><code><span class="p">&lt;</span><span class="nt">link</span> <span class="na">href</span><span class="o">=</span><span class="s">"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"</span>
+      <span class="na">rel</span><span class="o">=</span><span class="s">"stylesheet"</span>
+      <span class="na">integrity</span><span class="o">=</span><span class="s">"sha384-3B6NwesSXE7YJlcLI9RpRqGf2p/EgVH8BgoKTaUrmKNDkHPStTQ3EyoYjCGXaOTS"</span>
+      <span class="na">crossorigin</span><span class="o">=</span><span class="s">"anonymous"</span><span class="p">&gt;</span>
 
-<span class="p">&lt;</span><span class="nt">script</span> <span class="na">src</span><span class="o">=</span><span class="s">&quot;https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js&quot;</span>
-        <span class="na">integrity</span><span class="o">=</span><span class="s">&quot;sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g&quot;</span>
-        <span class="na">crossorigin</span><span class="o">=</span><span class="s">&quot;anonymous&quot;</span><span class="p">&gt;&lt;/</span><span class="nt">script</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">script</span> <span class="na">src</span><span class="o">=</span><span class="s">"https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"</span>
+        <span class="na">integrity</span><span class="o">=</span><span class="s">"sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g"</span>
+        <span class="na">crossorigin</span><span class="o">=</span><span class="s">"anonymous"</span><span class="p">&gt;&lt;/</span><span class="nt">script</span><span class="p">&gt;</span>
 </code></pre></div>
 <p>This ensures CDN-served files haven't been tampered with.</p>
 <h3 id="no-hardcoded-credentials">No Hardcoded Credentials<a class="headerlink" href="#no-hardcoded-credentials" title="Permanent link">&para;</a></h3>
@@ -2224,8 +2469,8 @@ curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </spa
 <h3 id="adding-a-new-js-file">Adding a new JS file<a class="headerlink" href="#adding-a-new-js-file" title="Permanent link">&para;</a></h3>
 <ol>
 <li>Create the file in <code>static/js/</code></li>
-<li>Include it in <code>templates/base.html</code></li>
-<li>Use <code>escapeHtml()</code> for all dynamic content rendered into the DOM</li>
+<li>Include it in <code>templates/index.html</code> (or <code>base.html</code>) with <code>{{ static_script('js/&lt;name&gt;.js') }}</code>, after <code>safe_html.js</code></li>
+<li>Build dynamic markup with <code>html`...`</code> and insert it with <code>setHTML()</code> — never <code>innerHTML</code></li>
 <li>Add SRI <code>integrity</code> attributes for any new external CDN resources</li>
 </ol>
 
@@ -2305,10 +2550,10 @@ curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </spa
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
     
   </body>

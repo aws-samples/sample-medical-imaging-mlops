@@ -16,14 +16,14 @@
         <link rel="prev" href="../configuration/">
       
       
-        <link rel="next" href="training/">
+        <link rel="next" href="preprocessing/">
       
       
         
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -313,6 +313,25 @@
     
   
   Development
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="https://github.com/aws-samples/sample-medical-imaging-mlops/blob/main/CHANGELOG.md" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
 
       </a>
     </li>
@@ -680,6 +699,34 @@
   
   
     <li class="md-nav__item">
+      <a href="preprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Preprocessing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="training/" class="md-nav__link">
         
   
@@ -688,6 +735,34 @@
     
   
     Training
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="monai-bundle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MONAI Bundle
   
 
     
@@ -744,6 +819,34 @@
     
   
     Inference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="viewer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Prediction Viewer
   
 
     
@@ -1048,6 +1151,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/aws-samples/sample-medical-imaging-mlops/blob/main/CHANGELOG.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1131,9 +1261,12 @@
 <div class="highlight"><pre><span></span><code>:maxdepth: 2
 :caption: User Guide
 
+preprocessing
 training
+monai-bundle
 deployment
 inference
+viewer
 evaluation
 monitoring
 fairness
@@ -1160,8 +1293,16 @@ report-generation
 </thead>
 <tbody>
 <tr>
+<td><a href="preprocessing/">Preprocessing</a></td>
+<td>Build a MONAI transform pipeline, preview it on one image, and run it over an S3 dataset as a Processing Job</td>
+</tr>
+<tr>
 <td><a href="training/">Training</a></td>
-<td>Launch local or SageMaker training jobs for classification and segmentation models</td>
+<td>Launch local or SageMaker training jobs for classification and segmentation models (binary or multi-class)</td>
+</tr>
+<tr>
+<td><a href="monai-bundle/">MONAI Bundle</a></td>
+<td>Bring any MONAI bundle (Model Zoo or your own) or NVIDIA NV-Segment-CT — stage, fine-tune, and deploy to async endpoints</td>
 </tr>
 <tr>
 <td><a href="deployment/">Deployment</a></td>
@@ -1170,6 +1311,10 @@ report-generation
 <tr>
 <td><a href="inference/">Inference</a></td>
 <td>Invoke deployed endpoints with DICOM, NIfTI, or image files</td>
+</tr>
+<tr>
+<td><a href="viewer/">Prediction Viewer</a></td>
+<td>View images and predicted masks in the browser (experimental)</td>
 </tr>
 <tr>
 <td><a href="evaluation/">Evaluation</a></td>
@@ -1193,9 +1338,10 @@ report-generation
 <ol>
 <li><strong>Connect to AWS</strong> — Enter credentials or rely on environment variables (<code>AWS_ACCESS_KEY_ID</code>, <code>AWS_SECRET_ACCESS_KEY</code>, <code>AWS_DEFAULT_REGION</code>)</li>
 <li><strong>Upload data to S3</strong> — Organize training data in the expected folder structure</li>
+<li><strong>Preprocess (optional)</strong> — Resample, window and crop the dataset with a Processing Job</li>
 <li><strong>Train a model</strong> — Launch a SageMaker training job from the Training tab</li>
 <li><strong>Deploy the model</strong> — Deploy the resulting <code>model.tar.gz</code> to a SageMaker endpoint</li>
-<li><strong>Test inference</strong> — Invoke the endpoint with a sample image</li>
+<li><strong>Test inference</strong> — Invoke the endpoint with a sample image and open the result in the Prediction Viewer</li>
 <li><strong>Evaluate</strong> — Run a full evaluation job against a labeled test set</li>
 <li><strong>Monitor</strong> — Enable data capture and set up drift monitoring schedules</li>
 <li><strong>Audit fairness</strong> — Scan your DICOM dataset for demographic imbalances</li>
@@ -1278,10 +1424,10 @@ report-generation
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
     
   </body>

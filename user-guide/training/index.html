@@ -13,17 +13,17 @@
         <link rel="canonical" href="https://aws-samples.github.io/sample-medical-imaging-mlops/user-guide/training/">
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../preprocessing/">
       
       
-        <link rel="next" href="../deployment/">
+        <link rel="next" href="../monai-bundle/">
       
       
         
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -319,6 +319,25 @@
   
 
       
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="https://github.com/aws-samples/sample-medical-imaging-mlops/blob/main/CHANGELOG.md" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
     </ul>
   </div>
 </nav>
@@ -597,6 +616,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../preprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Preprocessing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -729,6 +776,23 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Segmentation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#segmentation-only-training-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Segmentation-only training options
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -947,6 +1011,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../monai-bundle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MONAI Bundle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../deployment/" class="md-nav__link">
         
   
@@ -983,6 +1075,34 @@
     
   
     Inference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../viewer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Prediction Viewer
   
 
     
@@ -1287,6 +1407,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/aws-samples/sample-medical-imaging-mlops/blob/main/CHANGELOG.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1383,6 +1530,23 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Segmentation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#segmentation-only-training-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Segmentation-only training options
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -1703,9 +1867,37 @@
     └── subject_004/
 </code></pre></div>
 <ul>
-<li>Each subject folder contains an image volume and a binary mask</li>
-<li>Output is always 1 channel (binary segmentation)</li>
+<li>Each subject folder contains an image volume and a label mask</li>
+<li>Binary masks (0/1) and multi-class label maps (0 = background, 1..N = classes) are both supported</li>
 </ul>
+<h4 id="segmentation-only-training-options">Segmentation-only training options<a class="headerlink" href="#segmentation-only-training-options" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Number of Classes</strong></td>
+<td>Output channels, including background. <code>0</code> derives it from the largest label value in the training masks</td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td><strong>Patch Size (ROI, D,H,W)</strong></td>
+<td>Size of the 3D patches sampled for training; inference uses the same size for sliding-window prediction</td>
+<td><code>96,96,96</code></td>
+</tr>
+<tr>
+<td><strong>Patches per Volume</strong></td>
+<td>Foreground-biased patches sampled from each volume per iteration (1–8)</td>
+<td><code>2</code></td>
+</tr>
+</tbody>
+</table>
+<p>Training runs at native resolution on patches. The segmentation inference image reads these settings from the model artifact, so rebuild and redeploy the inference image after upgrading.</p>
 <h2 id="launching-a-sagemaker-training-job">Launching a SageMaker Training Job<a class="headerlink" href="#launching-a-sagemaker-training-job" title="Permanent link">&para;</a></h2>
 <h3 id="step-1-open-the-training-tab">Step 1 — Open the Training tab<a class="headerlink" href="#step-1-open-the-training-tab" title="Permanent link">&para;</a></h3>
 <p>Navigate to <code>http://localhost:8000</code> and click the <strong>Training</strong> tab.</p>
@@ -1886,8 +2078,8 @@
     <span class="k">return</span> <span class="n">model</span>
 </code></pre></div>
 <h3 id="step-2-upload-the-zip">Step 2 — Upload the zip<a class="headerlink" href="#step-2-upload-the-zip" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">&quot;http://localhost:8000/api/training/models/upload-code?model_name=my_custom_model&quot;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-F<span class="w"> </span><span class="s2">&quot;file=@my_model.zip&quot;</span>
+<div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">"http://localhost:8000/api/training/models/upload-code?model_name=my_custom_model"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-F<span class="w"> </span><span class="s2">"file=@my_model.zip"</span>
 </code></pre></div>
 <p>Or use the dashboard's Upload Custom Model form.</p>
 <h3 id="step-3-select-in-training-form">Step 3 — Select in training form<a class="headerlink" href="#step-3-select-in-training-form" title="Permanent link">&para;</a></h3>
@@ -1978,10 +2170,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
     
   </body>

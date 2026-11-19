@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -313,6 +313,25 @@
     
   
   Development
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="https://github.com/aws-samples/sample-medical-imaging-mlops/blob/main/CHANGELOG.md" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
 
       </a>
     </li>
@@ -615,6 +634,28 @@
     <span class="md-ellipsis">
       
         Example .env.local
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dashboard-security-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dashboard security settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inference-endpoint-security" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inference endpoint security
       
     </span>
   </a>
@@ -1147,6 +1188,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../user-guide/preprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Preprocessing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../user-guide/training/" class="md-nav__link">
         
   
@@ -1155,6 +1224,34 @@
     
   
     Training
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/monai-bundle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MONAI Bundle
   
 
     
@@ -1211,6 +1308,34 @@
     
   
     Inference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/viewer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Prediction Viewer
   
 
     
@@ -1515,6 +1640,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/aws-samples/sample-medical-imaging-mlops/blob/main/CHANGELOG.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1614,6 +1766,28 @@
     <span class="md-ellipsis">
       
         Example .env.local
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dashboard-security-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dashboard security settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inference-endpoint-security" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inference endpoint security
       
     </span>
   </a>
@@ -2097,7 +2271,7 @@
 </table>
 <p><strong>Load order:</strong> <code>.env</code> is loaded first, then <code>.env.local</code> overrides any overlapping keys:</p>
 <div class="highlight"><pre><span></span><code><span class="n">load_dotenv</span><span class="p">()</span>                          <span class="c1"># loads .env</span>
-<span class="n">load_dotenv</span><span class="p">(</span><span class="s2">&quot;.env.local&quot;</span><span class="p">,</span> <span class="n">override</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># loads .env.local, overriding duplicates</span>
+<span class="n">load_dotenv</span><span class="p">(</span><span class="s2">".env.local"</span><span class="p">,</span> <span class="n">override</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># loads .env.local, overriding duplicates</span>
 </code></pre></div>
 <h3 id="initial-setup">Initial setup<a class="headerlink" href="#initial-setup" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code>cp<span class="w"> </span>.env.example<span class="w"> </span>.env
@@ -2121,13 +2295,13 @@ cp<span class="w"> </span>.env.local.example<span class="w"> </span>.env.local
 <td><code>AWS_ACCESS_KEY_ID</code></td>
 <td>AWS access key (optional if using <code>~/.aws/credentials</code> or IAM roles)</td>
 <td>—</td>
-<td><code>AKIAIOSFODNN7EXAMPLE</code></td>
+<td><code>&lt;your-access-key-id&gt;</code></td>
 </tr>
 <tr>
 <td><code>AWS_SECRET_ACCESS_KEY</code></td>
 <td>AWS secret key</td>
 <td>—</td>
-<td><code>wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY</code></td>
+<td><code>&lt;your-secret-access-key&gt;</code></td>
 </tr>
 <tr>
 <td><code>AWS_DEFAULT_REGION</code></td>
@@ -2241,6 +2415,11 @@ cp<span class="w"> </span>.env.local.example<span class="w"> </span>.env.local
 <td>S3 URI of a test NIfTI volume for segmentation tests</td>
 <td><code>s3://&lt;your-bucket-name&gt;/test/volume.nii.gz</code></td>
 </tr>
+<tr>
+<td><code>VIEWER_MASKS_BUCKET</code></td>
+<td>Bucket the Prediction Viewer scans for recent prediction masks (optional)</td>
+<td><code>your-output-bucket</code></td>
+</tr>
 </tbody>
 </table>
 <h3 id="example-envlocal">Example <code>.env.local</code><a class="headerlink" href="#example-envlocal" title="Permanent link">&para;</a></h3>
@@ -2263,13 +2442,75 @@ cp<span class="w"> </span>.env.local.example<span class="w"> </span>.env.local
 <span class="nv">TEST_IMAGE_S3_URI</span><span class="o">=</span>s3://&lt;your-bucket-name&gt;/test/sample.dcm
 <span class="nv">TEST_SEGMENTATION_S3_URI</span><span class="o">=</span>s3://&lt;your-bucket-name&gt;/test/volume.nii.gz
 </code></pre></div>
+<h3 id="dashboard-security-settings">Dashboard security settings<a class="headerlink" href="#dashboard-security-settings" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HOST</code></td>
+<td>Address the dashboard listens on. Keep it on loopback: the dashboard has no login and uses your AWS credentials</td>
+<td><code>127.0.0.1</code></td>
+</tr>
+<tr>
+<td><code>ALLOWED_HOSTS</code></td>
+<td>Comma-separated <code>Host</code> header values the dashboard accepts. Add a name here if you reach it through an SSH tunnel or proxy under another hostname. Other hosts get <code>400</code> (blocks DNS rebinding)</td>
+<td><code>localhost,127.0.0.1,[::1]</code></td>
+</tr>
+<tr>
+<td><code>AWS_ACCOUNT_ID</code></td>
+<td>Also enables the S3 bucket-ownership check: before uploading job code (preprocessing and evaluation scripts, staged MONAI bundles), the dashboard verifies the bucket belongs to this account and uploads with <code>ExpectedBucketOwner</code></td>
+<td>unset (check skipped with a warning)</td>
+</tr>
+<tr>
+<td><code>REQUIRE_BUCKET_OWNER_CHECK</code></td>
+<td><code>true</code> refuses those uploads when <code>AWS_ACCOUNT_ID</code> is unset, instead of warning</td>
+<td>unset</td>
+</tr>
+</tbody>
+</table>
+<p>State-changing requests (<code>POST</code>, <code>PUT</code>, <code>PATCH</code>, <code>DELETE</code>) are rejected with <code>403</code> when the browser marks them as cross-site or sends a foreign <code>Origin</code> header. This blocks other websites from driving the dashboard (CSRF). Scripts and <code>curl</code>, which send neither header, are unaffected.</p>
+<h3 id="inference-endpoint-security">Inference endpoint security<a class="headerlink" href="#inference-endpoint-security" title="Permanent link">&para;</a></h3>
+<p>Set these in the SageMaker endpoint (model) environment, not in <code>.env.local</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>LOCAL_INPUT_ROOTS</code></td>
+<td>Comma-separated directories from which a request's local <code>file_path</code> / <code>image</code> is accepted</td>
+<td><code>/opt/ml/input/data,/opt/ml/processing/input</code></td>
+</tr>
+<tr>
+<td><code>ALLOWED_INPUT_BUCKETS</code></td>
+<td>Comma-separated S3 buckets the endpoint may read input from</td>
+<td>unset (any bucket the endpoint role can read)</td>
+</tr>
+<tr>
+<td><code>OUTPUT_FILENAME_PATTERN</code></td>
+<td>Default output filename; only <code>{patient_id}</code>, <code>{filename}</code>, <code>{endpoint_name}</code>, <code>{timestamp}</code>, <code>{model_name}</code> placeholders are allowed</td>
+<td>handler default</td>
+</tr>
+</tbody>
+</table>
+<p>See <a href="../user-guide/inference/#input-restrictions">Inference — Input restrictions</a> for how requests are validated.</p>
 <hr />
 <h2 id="4-aws-credentials">4. AWS Credentials<a class="headerlink" href="#4-aws-credentials" title="Permanent link">&para;</a></h2>
 <p>The application supports three methods for providing AWS credentials, checked in this order:</p>
 <h3 id="method-1-environment-variables-env-or-envlocal">Method 1: Environment variables (<code>.env</code> or <code>.env.local</code>)<a class="headerlink" href="#method-1-environment-variables-env-or-envlocal" title="Permanent link">&para;</a></h3>
 <p>Set <code>AWS_ACCESS_KEY_ID</code> and <code>AWS_SECRET_ACCESS_KEY</code> in your <code>.env</code> file:</p>
-<div class="highlight"><pre><span></span><code><span class="nv">AWS_ACCESS_KEY_ID</span><span class="o">=</span>AKIAIOSFODNN7EXAMPLE
-<span class="nv">AWS_SECRET_ACCESS_KEY</span><span class="o">=</span>wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+<div class="highlight"><pre><span></span><code><span class="nv">AWS_ACCESS_KEY_ID</span><span class="o">=</span>&lt;your-access-key-id&gt;
+<span class="nv">AWS_SECRET_ACCESS_KEY</span><span class="o">=</span>&lt;your-secret-access-key&gt;
 <span class="nv">AWS_DEFAULT_REGION</span><span class="o">=</span>us-east-1
 </code></pre></div>
 <p>Best for: local development when you don't have AWS CLI configured.</p>
@@ -2293,14 +2534,14 @@ python<span class="w"> </span>main.py
 <p>The <code>GET /api/config</code> endpoint serves non-secret configuration values to the frontend, allowing the UI to pre-populate forms with ECR URIs, role ARNs, and default data paths.</p>
 <h3 id="response">Response<a class="headerlink" href="#response" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;aws_account_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;123456789012&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;aws_region&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;us-east-1&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;sagemaker_role_arn&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:iam::123456789012:role/AmazonSageMaker-ExecutionRole-sgm&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;training_image_classification&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-classification:latest&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;training_image_segmentation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-segmentation:latest&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;inference_image_classification&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;inference_image_segmentation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-segmentation:latest&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;default_data_s3_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s3://&lt;your-bucket-name&gt;/training/spine-xr/&quot;</span>
+<span class="w">  </span><span class="nt">"aws_account_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"123456789012"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"aws_region"</span><span class="p">:</span><span class="w"> </span><span class="s2">"us-east-1"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"sagemaker_role_arn"</span><span class="p">:</span><span class="w"> </span><span class="s2">"arn:aws:iam::123456789012:role/AmazonSageMaker-ExecutionRole-sgm"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"training_image_classification"</span><span class="p">:</span><span class="w"> </span><span class="s2">"123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-classification:latest"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"training_image_segmentation"</span><span class="p">:</span><span class="w"> </span><span class="s2">"123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-segmentation:latest"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"inference_image_classification"</span><span class="p">:</span><span class="w"> </span><span class="s2">"123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"inference_image_segmentation"</span><span class="p">:</span><span class="w"> </span><span class="s2">"123456789012.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-segmentation:latest"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"default_data_s3_uri"</span><span class="p">:</span><span class="w"> </span><span class="s2">"s3://&lt;your-bucket-name&gt;/training/spine-xr/"</span>
 <span class="p">}</span>
 </code></pre></div>
 <h3 id="how-it-works">How it works<a class="headerlink" href="#how-it-works" title="Permanent link">&para;</a></h3>
@@ -2311,23 +2552,23 @@ python<span class="w"> </span>main.py
 </ul>
 <h3 id="frontend-usage">Frontend usage<a class="headerlink" href="#frontend-usage" title="Permanent link">&para;</a></h3>
 <p>The dashboard JavaScript fetches <code>/api/config</code> on page load to pre-fill the SageMaker training form:</p>
-<div class="highlight"><pre><span></span><code><span class="kd">const</span><span class="w"> </span><span class="nx">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">fetch</span><span class="p">(</span><span class="s1">&#39;/api/config&#39;</span><span class="p">).</span><span class="nx">then</span><span class="p">(</span><span class="nx">r</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">r</span><span class="p">.</span><span class="nx">json</span><span class="p">());</span>
-<span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">&#39;image-uri&#39;</span><span class="p">).</span><span class="nx">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">config</span><span class="p">.</span><span class="nx">training_image_classification</span><span class="p">;</span>
-<span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">&#39;role-arn&#39;</span><span class="p">).</span><span class="nx">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">config</span><span class="p">.</span><span class="nx">sagemaker_role_arn</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="kd">const</span><span class="w"> </span><span class="nx">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">fetch</span><span class="p">(</span><span class="s1">'/api/config'</span><span class="p">).</span><span class="nx">then</span><span class="p">(</span><span class="nx">r</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">r</span><span class="p">.</span><span class="nx">json</span><span class="p">());</span>
+<span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">'image-uri'</span><span class="p">).</span><span class="nx">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">config</span><span class="p">.</span><span class="nx">training_image_classification</span><span class="p">;</span>
+<span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">'role-arn'</span><span class="p">).</span><span class="nx">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">config</span><span class="p">.</span><span class="nx">sagemaker_role_arn</span><span class="p">;</span>
 </code></pre></div>
 <hr />
 <h2 id="6-docker-configuration">6. Docker Configuration<a class="headerlink" href="#6-docker-configuration" title="Permanent link">&para;</a></h2>
 <h3 id="docker-composeyml"><code>docker-compose.yml</code><a class="headerlink" href="#docker-composeyml" title="Permanent link">&para;</a></h3>
 <p>The single-container setup runs FastAPI, MLflow, and TensorBoard together:</p>
-<div class="highlight"><pre><span></span><code><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;3.8&#39;</span>
+<div class="highlight"><pre><span></span><code><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">'3.8'</span>
 
 <span class="nt">services</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">medml-platform</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">build</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.</span>
 <span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;8000:8000&quot;</span><span class="w">  </span><span class="c1"># FastAPI application</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;5000:5000&quot;</span><span class="w">  </span><span class="c1"># MLflow</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;6006:6006&quot;</span><span class="w">  </span><span class="c1"># TensorBoard</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"8000:8000"</span><span class="w">  </span><span class="c1"># FastAPI application</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"5000:5000"</span><span class="w">  </span><span class="c1"># MLflow</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"6006:6006"</span><span class="w">  </span><span class="c1"># TensorBoard</span>
 <span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
 <span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DEBUG=True</span>
 <span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">LOG_LEVEL=INFO</span>
@@ -2425,14 +2666,14 @@ services:
 <h3 id="trust-policy">Trust policy<a class="headerlink" href="#trust-policy" title="Permanent link">&para;</a></h3>
 <p>The role trusts the SageMaker service to assume it:</p>
 <div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;Version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2012-10-17&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;Statement&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="nt">"Version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2012-10-17"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"Statement"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">    </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;Principal&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;Service&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sagemaker.amazonaws.com&quot;</span>
+<span class="w">      </span><span class="nt">"Effect"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Allow"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"Principal"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"Service"</span><span class="p">:</span><span class="w"> </span><span class="s2">"sagemaker.amazonaws.com"</span>
 <span class="w">      </span><span class="p">},</span>
-<span class="w">      </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sts:AssumeRole&quot;</span>
+<span class="w">      </span><span class="nt">"Action"</span><span class="p">:</span><span class="w"> </span><span class="s2">"sts:AssumeRole"</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">  </span><span class="p">]</span>
 <span class="p">}</span>
@@ -2495,13 +2736,13 @@ services:
 <h3 id="inline-mlflow-policy">Inline MLflow policy<a class="headerlink" href="#inline-mlflow-policy" title="Permanent link">&para;</a></h3>
 <p>An inline policy named <code>mlflow-policy</code> is added for SageMaker MLflow experiment tracking. The resource is scoped to your specific tracking server:</p>
 <div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;Version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2012-10-17&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;Statement&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="nt">"Version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2012-10-17"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"Statement"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">    </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;MLflowTrackingAccess&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;sagemaker-mlflow:*&quot;</span><span class="p">],</span>
-<span class="w">      </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:sagemaker:&lt;region&gt;:&lt;account-id&gt;:mlflow-tracking-server/&lt;server-name&gt;&quot;</span>
+<span class="w">      </span><span class="nt">"Sid"</span><span class="p">:</span><span class="w"> </span><span class="s2">"MLflowTrackingAccess"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"Effect"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Allow"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"Action"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"sagemaker-mlflow:*"</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">"Resource"</span><span class="p">:</span><span class="w"> </span><span class="s2">"arn:aws:sagemaker:&lt;region&gt;:&lt;account-id&gt;:mlflow-tracking-server/&lt;server-name&gt;"</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">  </span><span class="p">]</span>
 <span class="p">}</span>
@@ -2561,7 +2802,7 @@ services:
 aws<span class="w"> </span>iam<span class="w"> </span>create-role<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--role-name<span class="w"> </span>AmazonSageMaker-ExecutionRole-sgm<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--assume-role-policy-document<span class="w"> </span>file://trust-policy.json<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--description<span class="w"> </span><span class="s2">&quot;SageMaker execution role for medical imaging training&quot;</span>
+<span class="w">  </span>--description<span class="w"> </span><span class="s2">"SageMaker execution role for medical imaging training"</span>
 
 <span class="c1"># 2. Attach managed policies</span>
 aws<span class="w"> </span>iam<span class="w"> </span>attach-role-policy<span class="w"> </span>--role-name<span class="w"> </span>AmazonSageMaker-ExecutionRole-sgm<span class="w"> </span><span class="se">\</span>
@@ -2670,7 +2911,7 @@ aws<span class="w"> </span>iam<span class="w"> </span>put-role-policy<span class
 <span class="w">  </span>--repository-name<span class="w"> </span>sm-inference-byoc-classification<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--region<span class="w"> </span>us-east-1<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--image-ids<span class="w"> </span><span class="nv">imageTag</span><span class="o">=</span>latest<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--query<span class="w"> </span><span class="s1">&#39;images[0].imageManifestMediaType&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--query<span class="w"> </span><span class="s1">'images[0].imageManifestMediaType'</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--output<span class="w"> </span>text
 </code></pre></div>
 <p>Expected: <code>application/vnd.docker.distribution.manifest.v2+json</code>
@@ -2700,22 +2941,22 @@ aws<span class="w"> </span>ecr<span class="w"> </span>batch-delete-image<span cl
 <span class="c1"># Rebuild with BuildKit disabled and no cache</span>
 <span class="nv">DOCKER_BUILDKIT</span><span class="o">=</span><span class="m">0</span><span class="w"> </span>docker<span class="w"> </span>build<span class="w"> </span>--no-cache<span class="w"> </span>--platform<span class="w"> </span>linux/amd64<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-f<span class="w"> </span>Dockerfile.inference<span class="w"> </span>--build-arg<span class="w"> </span><span class="nv">TASK</span><span class="o">=</span>classification<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-t<span class="w"> </span><span class="m">811260109607</span>.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest<span class="w"> </span>.
+<span class="w">  </span>-t<span class="w"> </span><span class="m">123456789012</span>.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest<span class="w"> </span>.
 
 <span class="c1"># Login to your ECR</span>
 aws<span class="w"> </span>ecr<span class="w"> </span>get-login-password<span class="w"> </span>--region<span class="w"> </span>us-east-1<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span><span class="p">|</span><span class="w"> </span>docker<span class="w"> </span>login<span class="w"> </span>--username<span class="w"> </span>AWS<span class="w"> </span>--password-stdin<span class="w"> </span><span class="m">811260109607</span>.dkr.ecr.us-east-1.amazonaws.com
+<span class="w">  </span><span class="p">|</span><span class="w"> </span>docker<span class="w"> </span>login<span class="w"> </span>--username<span class="w"> </span>AWS<span class="w"> </span>--password-stdin<span class="w"> </span><span class="m">123456789012</span>.dkr.ecr.us-east-1.amazonaws.com
 
 <span class="c1"># Push fresh</span>
-docker<span class="w"> </span>push<span class="w"> </span><span class="m">811260109607</span>.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest
+docker<span class="w"> </span>push<span class="w"> </span><span class="m">123456789012</span>.dkr.ecr.us-east-1.amazonaws.com/sm-inference-byoc-classification:latest
 
 <span class="c1"># Verify — must return application/vnd.docker.distribution.manifest.v2+json</span>
 aws<span class="w"> </span>ecr<span class="w"> </span>batch-get-image<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--repository-name<span class="w"> </span>sm-inference-byoc-classification<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--region<span class="w"> </span>us-east-1<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--image-ids<span class="w"> </span><span class="nv">imageTag</span><span class="o">=</span>latest<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--query<span class="w"> </span><span class="s1">&#39;images[0].imageManifest&#39;</span><span class="w"> </span>--output<span class="w"> </span>text<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span><span class="p">|</span><span class="w"> </span>python3<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import sys,json; print(json.loads(sys.stdin.read()).get(&#39;mediaType&#39;,&#39;unknown&#39;))&quot;</span>
+<span class="w">  </span>--query<span class="w"> </span><span class="s1">'images[0].imageManifest'</span><span class="w"> </span>--output<span class="w"> </span>text<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="p">|</span><span class="w"> </span>python3<span class="w"> </span>-c<span class="w"> </span><span class="s2">"import sys,json; print(json.loads(sys.stdin.read()).get('mediaType','unknown'))"</span>
 </code></pre></div>
 <p>All three steps are critical:
 - <strong><code>docker system prune -a</code></strong> — Without this, Docker reuses cached OCI-format base image layers even with <code>--no-cache</code>
@@ -2723,10 +2964,10 @@ aws<span class="w"> </span>ecr<span class="w"> </span>batch-get-image<span class
 - <strong><code>DOCKER_BUILDKIT=0</code></strong> — Forces the legacy builder which outputs Docker V2 format</p>
 <p><strong>4. If the above still produces OCI manifests:</strong></p>
 <p>Configure the Docker daemon to disable OCI output entirely:</p>
-<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>tee<span class="w"> </span>/etc/docker/daemon.json<span class="w"> </span><span class="s">&lt;&lt;&#39;EOF&#39;</span>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>tee<span class="w"> </span>/etc/docker/daemon.json<span class="w"> </span><span class="s">&lt;&lt;'EOF'</span>
 <span class="s">{</span>
-<span class="s">  &quot;features&quot;: {</span>
-<span class="s">    &quot;containerd-snapshotter&quot;: false</span>
+<span class="s">  "features": {</span>
+<span class="s">    "containerd-snapshotter": false</span>
 <span class="s">  }</span>
 <span class="s">}</span>
 <span class="s">EOF</span>
@@ -2766,11 +3007,11 @@ sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class=
 aws<span class="w"> </span>ecr<span class="w"> </span>describe-images<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--repository-name<span class="w"> </span>sm-training-byoc-classification<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--region<span class="w"> </span>us-east-1<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--query<span class="w"> </span><span class="s1">&#39;imageDetails[*].{Tags:imageTags,Pushed:imagePushedAt,Size:imageSizeInBytes}&#39;</span>
+<span class="w">  </span>--query<span class="w"> </span><span class="s1">'imageDetails[*].{Tags:imageTags,Pushed:imagePushedAt,Size:imageSizeInBytes}'</span>
 
 <span class="c1"># Pull and test locally</span>
 docker<span class="w"> </span>pull<span class="w"> </span><span class="m">123456789012</span>.dkr.ecr.us-east-1.amazonaws.com/sm-training-byoc-classification:latest
-docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-it<span class="w"> </span>&lt;image-uri&gt;<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import torch; import monai; print(f&#39;PyTorch {torch.__version__}, MONAI {monai.__version__}&#39;)&quot;</span>
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-it<span class="w"> </span>&lt;image-uri&gt;<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"import torch; import monai; print(f'PyTorch {torch.__version__}, MONAI {monai.__version__}')"</span>
 </code></pre></div>
 <hr />
 <h2 id="quick-reference">Quick Reference<a class="headerlink" href="#quick-reference" title="Permanent link">&para;</a></h2>
@@ -2880,10 +3121,10 @@ python<span class="w"> </span>main.py
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
     
   </body>
