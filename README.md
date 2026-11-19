@@ -71,6 +71,12 @@ Bring **any [MONAI Bundle](https://docs.monai.io/en/stable/bundle_intro.html)** 
 
 One model-agnostic image serves any bundle; the model artifact is just `configs/` + `models/`. See the [MONAI Bundle guide](docs/user-guide/monai-bundle.md) for full instructions on bringing a new bundle to MedAnvil.
 
+### 🧬 NVIDIA MedTech (NV-Segment-CT / VISTA-3D)
+A dedicated tab for fine-tuning and running NVIDIA's NV-Segment-CT bundle on SageMaker. Fine-tuning uses the bundle's own continual-learning recipe, and async inference accepts optional label and point prompts. Weights are fetched from Hugging Face when you stage the bundle and are never stored in git. CT only.
+
+### 🖼 Prediction Viewer (experimental)
+A full-page NiiVue viewer at `/viewer` for NIfTI and DICOM, with multiplanar and 3D views, mask overlays and a per-label legend. Volumes stream from S3 through the backend, so no bucket CORS setup is needed. See the [Viewer guide](docs/user-guide/viewer.md).
+
 ### 🚀 Deploy
 
 One-click deployment to SageMaker endpoints. Choose real-time or async inference. Monitor endpoint health and auto-scaling from the dashboard.
@@ -160,6 +166,10 @@ Resume training from checkpoints with full lineage tracking. Know exactly which 
 
 ## Architecture
 
+<p align="center">
+  <img src="static/architecture.png" alt="MedAnvil architecture on Amazon SageMaker AI" width="900" />
+</p>
+
 | Layer | Technology |
 |---|---|
 | **Frontend** | Jinja2 templates, vanilla JavaScript, Chart.js |
@@ -210,11 +220,21 @@ Open **http://localhost:8000** and you're ready to go.
 ./start.sh --build
 ```
 
-Builds and pushes 4 Docker images to ECR:
+Builds and pushes the 4 core images to ECR:
 - Classification training container
 - Segmentation training container
 - Classification inference container
 - Segmentation inference container
+
+The preprocessing, MONAI Bundle and NVIDIA MedTech images have their own scripts. Run the ones you need:
+
+```bash
+./build_and_push_preprocessing.sh
+./build_and_push_monai_bundle.sh
+./build_and_push_monai_bundle_inference.sh
+./build_and_push_nvmedtech.sh
+./build_and_push_nvmedtech_inference.sh
+```
 
 ---
 
@@ -231,7 +251,7 @@ Comprehensive documentation is also available in the [`docs/`](docs/) directory:
 - **[User Guide](docs/user-guide/)** — Feature walkthroughs for every tab
 - **[Development](docs/development.md)** — Contributing, testing, and architecture details
 - **[Custom Model Workflow](docs/custom-model-workflow.md)** — Bring your own model architecture
-- **[Changelog](CHANGELOG.md)** — Release notes and upgrade steps
+- **[Changelog](CHANGELOG.md)** — Release notes and upgrade steps (rebuild and re-push all images after upgrading to 1.1.0)
 
 ## Security
 
